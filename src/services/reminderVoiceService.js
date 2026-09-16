@@ -6,11 +6,10 @@ const { handleUniversalKeys } = require('./voiceUniversalHandler');
 const { buildVoiceResponse, buildGetDigits, buildSay } = require('../utils/xmlBuilder');
 
 const generateReminderXml = (callEventId, audioUrl, baseUrl) => {
-  const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId}`;
+  const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId || ''}`;
   const digitsXml = buildGetDigits({
     numDigits: 1,
     timeout: 10,
-    finishOnKey: '#',
     callbackUrl,
     playUrl: audioUrl
   });

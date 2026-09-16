@@ -20,6 +20,8 @@ const alertRoutes = require('./routes/alertRoutes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Core Middleware
 app.use(cors());
 app.use(express.json());

@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { generateReminderXml, processReminderConfirm } = require('../services/reminderVoiceService');
-const { getCallEventById } = require('../db/queries/callEvents');
-const { getMedicationById } = require('../db/queries/medications');
+const { getCallEventById, createCallEvent, getRecentCallEventsForMedication } = require('../db/queries/callEvents');
+const { getMedicationById, getMedicationsByPatientId } = require('../db/queries/medications');
+const { getPatientByPhoneNumber } = require('../db/queries/patients');
 
 /**
  * @openapi
@@ -29,11 +30,33 @@ const { getMedicationById } = require('../db/queries/medications');
  */
 router.post('/reminder', (req, res, next) => {
   try {
-    const callEventId = req.query.callEventId || req.body.callEventId;
-    const callEvent = callEventId ? getCallEventById(callEventId) : null;
-    const medication = callEvent ? getMedicationById(callEvent.medication_id) : null;
-    const audioUrl = medication ? medication.audio_url : `${req.baseUrl}/audio/default-reminder.mp3`;
+    let callEventId = req.query.callEventId || req.body.callEventId;
+    let callEvent = callEventId ? getCallEventById(callEventId) : null;
+    let medication = callEvent ? getMedicationById(callEvent.medication_id) : null;
+
+    const callerPhone = req.body.callerNumber;
+    const destPhone = req.body.destinationNumber;
+    if (!callEvent) {
+      const patient = (callerPhone && getPatientByPhoneNumber(callerPhone)) || (destPhone && getPatientByPhoneNumber(destPhone));
+      if (patient) {
+        const meds = getMedicationsByPatientId(patient.id);
+        if (meds.length > 0) {
+          medication = meds[0];
+          callEvent = createCallEvent({
+            patient_id: patient.id,
+            medication_id: medication.id,
+            scheduled_time: new Date().toISOString(),
+            call_type: 'reminder',
+            attempt_number: 1,
+            dose_date: new Date().toISOString().split('T')[0]
+          });
+          callEventId = callEvent.id;
+        }
+      }
+    }
+
     const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const audioUrl = medication ? medication.audio_url : `${baseUrl}/audio/default-reminder.mp3`;
 
     const xml = generateReminderXml(callEventId, audioUrl, baseUrl);
     res.set('Content-Type', 'text/xml');
@@ -70,7 +93,22 @@ router.post('/reminder', (req, res, next) => {
  */
 router.post('/reminder/confirm', (req, res, next) => {
   try {
-    const callEventId = req.query.callEventId || req.body.callEventId;
+    let callEventId = req.query.callEventId || req.body.callEventId;
+    if (!callEventId || callEventId === 'undefined') {
+      const callerPhone = req.body.callerNumber;
+      const destPhone = req.body.destinationNumber;
+      const patient = (callerPhone && getPatientByPhoneNumber(callerPhone)) || (destPhone && getPatientByPhoneNumber(destPhone));
+      if (patient) {
+        const meds = getMedicationsByPatientId(patient.id);
+        if (meds.length > 0) {
+          const recents = getRecentCallEventsForMedication(meds[0].id, 1);
+          if (recents.length > 0) {
+            callEventId = recents[0].id;
+          }
+        }
+      }
+    }
+
     const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
     const baseUrl = `${req.protocol}://${req.get('host')}`;
 
