@@ -28,7 +28,7 @@ const { getPatientByPhoneNumber } = require('../db/queries/patients');
  *               type: string
  *               example: "<Response><GetDigits timeout='10' numDigits='1' callbackUrl='...'><Play url='...'/></GetDigits></Response>"
  */
-router.post('/reminder', (req, res, next) => {
+const handleReminderCall = (req, res, next) => {
   try {
     let callEventId = req.query.callEventId || req.body.callEventId;
     let callEvent = callEventId ? getCallEventById(callEventId) : null;
@@ -55,16 +55,32 @@ router.post('/reminder', (req, res, next) => {
       }
     }
 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const audioUrl = medication ? medication.audio_url : `${baseUrl}/audio/default-reminder.mp3`;
 
-    const xml = generateReminderXml(callEventId, audioUrl, baseUrl);
+    const { getPatientById } = require('../db/queries/patients');
+    const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
+    const isEnglish = patientObj && (patientObj.preferred_language || '').toLowerCase() === 'english';
+    let sayText = null;
+
+    if (isEnglish && process.env.ENABLE_AI_AGENT === 'true' && medication?.instruction_source !== 'recorded') {
+      const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
+      const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
+      sayText = (latestMsg && latestMsg.content)
+        ? latestMsg.content
+        : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press 1 to confirm you have taken your dose, Press 2 for side effects, Press 3 for cost issues, or Press 4 for an earlier reminder.`;
+    }
+
+    const xml = generateReminderXml(callEventId, audioUrl, baseUrl, sayText);
     res.set('Content-Type', 'text/xml');
     return res.status(200).send(xml);
   } catch (err) {
     return next(err);
   }
-});
+};
+
+router.post('/reminder', handleReminderCall);
+router.post('/', handleReminderCall);
 
 /**
  * @openapi
@@ -91,7 +107,7 @@ router.post('/reminder', (req, res, next) => {
  *               type: string
  *               example: "<Response><Say>Thank you for confirming your medication.</Say></Response>"
  */
-router.post('/reminder/confirm', (req, res, next) => {
+const handleReminderConfirm = async (req, res, next) => {
   try {
     let callEventId = req.query.callEventId || req.body.callEventId;
     if (!callEventId || callEventId === 'undefined') {
@@ -110,14 +126,21 @@ router.post('/reminder/confirm', (req, res, next) => {
     }
 
     const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
-    const xml = processReminderConfirm(callEventId, dtmfDigits, baseUrl);
+    const xml = await processReminderConfirm(callEventId, dtmfDigits, baseUrl);
     res.set('Content-Type', 'text/xml');
     return res.status(200).send(xml);
   } catch (err) {
     return next(err);
   }
-});
+};
 
-module.exports = router;
+router.post('/reminder/confirm', handleReminderConfirm);
+router.post('/confirm', handleReminderConfirm);
+
+module.exports = {
+  router,
+  handleReminderCall,
+  handleReminderConfirm
+};

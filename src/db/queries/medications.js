@@ -53,9 +53,15 @@ const getMedicationWithPatient = (id) => {
   `).get(id);
 };
 
+const updateMedicationSchedule = (id, schedule_times) => {
+  db.prepare('UPDATE medications SET schedule_times = ? WHERE id = ?').run(schedule_times, id);
+  return getMedicationById(id);
+};
+
 module.exports = {
   createMedication,
   getMedicationsByPatientId,
   getMedicationById,
-  getMedicationWithPatient
+  getMedicationWithPatient,
+  updateMedicationSchedule
 };

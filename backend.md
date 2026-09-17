@@ -123,11 +123,11 @@ Export decideNextAction(patientId, medicationId):
   rule, kept alongside the same-day rule above)
 - If is_chronic is false, never trigger diagnostic flow regardless of misses
 - On diagnostic_responses reason:
-  - 'cost' → escalate 'pharmacist_cost'
-  - 'side_effects' → escalate 'health_worker_side_effect'
-  - 'forgot' → close_case UNLESS this is the 3rd+ consecutive 'forgot' for 
-    this medication, in which case escalate 'repeated_forgetting' instead
-  - 'other' / unclear → escalate 'general_attention'
+  - 'cost' → escalate 'pharmacist_cost' + immediate SMS alert to pharmacist
+  - 'side_effects' → escalate 'health_worker_side_effect' + immediate SMS alert to nurse
+  - 'forgot' → adapt schedule with 10-min pre-reminder call; UNLESS this is the 3rd+ consecutive 'forgot' for 
+    this medication, in which case also escalate 'repeated_forgetting' via SMS
+  - 'other' / unclear → escalate 'general_attention' + SMS alert
 - Caregiver notification: if 2+ consecutive no_answer outcomes for the same 
   medication AND patient has a non-null caregiver_phone AND 
   caregiver_notified_at is null for this episode → send caregiver SMS (see 
@@ -138,26 +138,18 @@ Export decideNextAction(patientId, medicationId):
 STAGE 6 — SMS additions
 - Add sendSms(toNumber, message) helper using Africa's Talking's SMS API, 
   reusable across the codebase
+- Immediate Clinician SMS: Every escalation immediately triggers an SMS to the 
+  health worker/pharmacist (low-resource environment focus: no need to watch web dashboard).
 - Caregiver notification message: "[Patient name] may have missed their 
   medication reminder. Please check in with them."
-- Optional reminder-companion SMS alongside each outbound call, behind a 
-  simple config flag so it can be disabled easily
-- Handle SMS failures the same way other external API failures are handled 
-  (see error handling rules), a failed SMS must never break the surrounding 
-  call-handling logic
+- Optional reminder-companion SMS alongside each outbound call or on patient preference (e.g. keypress 5).
+- Handle SMS failures gracefully without breaking voice call workflows.
 
-STAGE 7 — Stub for future LLM enhancement
-- agent.js exporting decideNextAction(patientId, medicationId) with the same 
-  signature as decisionEngine.js, initially a pass-through to it, with a 
-  comment marking where a Groq API call would later replace the pass-through
-
-Follow the project's AGENT_RULES.md for file size limits, modularity, error 
-handling, security, and documentation standards throughout.
-
-Ask me before generating code if the Africa's Talking XML response format for 
-<Play> and <GetDigits> is unclear, or if the 30-minute/2-hour retry windows 
-and the 60-minute collision buffer should be configurable rather than 
-hardcoded constants, I lean toward hardcoded for the hackathon build but flag 
-it if you disagree. Start with Stage 1 and Stage 3's /voice/reminder endpoint 
-first, so I can test a real sandbox call before building everything else on 
-top of it.
+STAGE 7 — AI Agent & Adaptive Reminders (agent.js)
+- ReAct Agent powered by Groq LLM (default: gpt-oss-120B / Llama 3) with tool calling:
+  1. escalate_case: logs DB escalation AND immediately dispatches SMS alert to clinician
+  2. editCronReminder: adds 10-min pre-reminder call when patient forgets
+  3. notifybySMS: sends direct SMS reminder or companion text
+- Context Pre-loading: Injects patient profile, drug schedule, missed doses, and diagnostic history directly into system prompt.
+- Memory: Stored in agent_conversations table.
+- Graceful Fallback: Seamlessly falls back to Stage 5 deterministic decision engine if LLM service is offline.

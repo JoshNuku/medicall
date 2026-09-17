@@ -16,4 +16,5 @@ const server = app.listen(PORT, () => {
   console.log(`Interactive API Documentation: http://localhost:${PORT}/api-docs`);
 });
 
+// MediCall Server reloaded with do_nothing tool & DTMF hangup guard
 module.exports = server;

@@ -17,7 +17,7 @@ const getDiagnosticResponsesByPatientId = (patientId) => {
   return db.prepare(`
     SELECT * FROM diagnostic_responses
     WHERE patient_id = ?
-    ORDER BY responded_at DESC
+    ORDER BY responded_at DESC, id DESC
   `).all(patientId);
 };
 

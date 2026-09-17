@@ -7,7 +7,7 @@ const { generalLimiter, voiceWebhookLimiter } = require('./middleware/rateLimite
 const errorHandler = require('./middleware/errorHandler');
 
 const healthRoutes = require('./routes/healthRoutes');
-const voiceRoutes = require('./routes/voiceRoutes');
+const { router: voiceRoutes, handleReminderCall, handleReminderConfirm } = require('./routes/voiceRoutes');
 const voiceInboundRoutes = require('./routes/voiceInboundRoutes');
 const voiceDiagnosticRoutes = require('./routes/voiceDiagnosticRoutes');
 const patientEnrollRoutes = require('./routes/patientEnrollRoutes');
@@ -47,6 +47,14 @@ app.use('/alerts', generalLimiter, alertRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceInboundRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceDiagnosticRoutes);
+
+// Fallback: If Africa's Talking dashboard callback is configured at root '/'
+app.post('/', voiceWebhookLimiter, (req, res, next) => {
+  if (req.body && (req.body.dtmfDigits !== undefined || req.query.dtmfDigits !== undefined)) {
+    return handleReminderConfirm(req, res, next);
+  }
+  return handleReminderCall(req, res, next);
+});
 
 // Centralized Error Handling
 app.use(errorHandler);

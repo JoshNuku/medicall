@@ -65,3 +65,11 @@ CREATE TABLE IF NOT EXISTS escalations (
   resolved_at DATETIME,
   resolved_by TEXT
 );
+
+CREATE TABLE IF NOT EXISTS agent_conversations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('system', 'user', 'assistant', 'tool')),
+  content TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
