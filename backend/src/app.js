@@ -17,6 +17,7 @@ const medicationCreateRoutes = require('./routes/medicationCreateRoutes');
 const medicationListRoutes = require('./routes/medicationListRoutes');
 const templateRoutes = require('./routes/templateRoutes');
 const alertRoutes = require('./routes/alertRoutes');
+const callRoutes = require('./routes/callRoutes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/patients', generalLimiter, patientEnrollRoutes);
 app.use('/patients', generalLimiter, patientRoutes);
 app.use('/instruction-templates', generalLimiter, templateRoutes);
 app.use('/alerts', generalLimiter, alertRoutes);
+app.use('/calls', generalLimiter, callRoutes);
 
 // Africa's Talking Voice Webhook Routes
 app.use('/voice', voiceWebhookLimiter, voiceRoutes);

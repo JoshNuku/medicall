@@ -54,9 +54,20 @@ const getRecentCallEventsForMedication = (medicationId, limit = 10) => {
   `).all(medicationId, limit);
 };
 
+const getTodayCallEvents = () => {
+  return db.prepare(`
+    SELECT ce.*, p.name AS patient_name, p.phone_number AS patient_phone, m.drug_name
+    FROM call_events ce
+    JOIN patients p ON ce.patient_id = p.id
+    JOIN medications m ON ce.medication_id = m.id
+    ORDER BY ce.scheduled_time DESC
+  `).all();
+};
+
 module.exports = {
   createCallEvent,
   updateCallOutcome,
   getCallEventById,
-  getRecentCallEventsForMedication
+  getRecentCallEventsForMedication,
+  getTodayCallEvents
 };

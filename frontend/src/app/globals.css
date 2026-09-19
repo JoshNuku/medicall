@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), sans-serif;
+  --font-outfit: var(--font-outfit), sans-serif;
+  --color-warm-bg: #FAF9F6;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F5F4F0;
+  --color-primary-text: #111827;
+  --color-muted-text: #64748B;
+  --color-subtle-border: #EBEAE5;
+  --color-medicall-green: #0D9488;
+  --color-medicall-green-light: #F0FDF4;
+}
+
+:root {
+  --background: #FAF9F6;
+  --foreground: #111827;
+  --surface: #FFFFFF;
+  --border-subtle: #EBEAE5;
+}
+
+* {
+  font-family: var(--font-outfit), sans-serif !important;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: #FAF9F6;
+  color: #111827;
+  font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
+}
+
+/* Custom animation for waveform bars */
+@keyframes wavePulse {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-wave-bar {
+  transform-origin: bottom;
+  animation: wavePulse 1.2s ease-in-out infinite;
+}
+
+/* Pulsing record indicator */
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.15);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
