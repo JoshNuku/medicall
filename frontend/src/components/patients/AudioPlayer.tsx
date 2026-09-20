@@ -23,6 +23,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(durationSeconds);
   const [isMuted, setIsMuted] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(0.85);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
@@ -34,6 +35,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const audio = new Audio(audioUrl);
     realAudioRef.current = audio;
     audio.muted = isMuted;
+    audio.playbackRate = playbackSpeed;
     audio.onloadedmetadata = () => {
       setAudioDuration(audio.duration || durationSeconds);
       setCurrentTime(0);
@@ -51,7 +53,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audio.src = '';
       realAudioRef.current = null;
     };
-  }, [audioUrl, durationSeconds, isMuted]);
+  }, [audioUrl, durationSeconds, isMuted, playbackSpeed]);
 
   const startSyntheticAudio = useCallback(() => {
     try {
@@ -175,6 +177,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   };
 
+  const toggleSpeed = () => {
+    const nextSpeed = playbackSpeed === 0.85 ? 1.0 : (playbackSpeed === 1.0 ? 0.75 : 0.85);
+    setPlaybackSpeed(nextSpeed);
+    if (realAudioRef.current) {
+      realAudioRef.current.playbackRate = nextSpeed;
+    }
+  };
+
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
@@ -216,6 +226,15 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           })}
         </div>
 
+        <button
+          type="button"
+          onClick={toggleSpeed}
+          className="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+          title="Toggle speed"
+        >
+          {playbackSpeed}x
+        </button>
+
         <span className="text-xs text-gray-500 font-mono shrink-0">
           {formatTime(currentTime)}
         </span>
@@ -231,9 +250,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <Badge variant="language" language={language} />
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
         </div>
-        <span className="text-xs text-gray-400 font-mono shrink-0">
-          {formatTime(currentTime)} / {formatTime(displayDuration)}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSpeed}
+            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
+            title="Adjust playback speed for patient clarity"
+          >
+            {playbackSpeed}x pace
+          </button>
+          <span className="text-xs text-gray-400 font-mono shrink-0">
+            {formatTime(currentTime)} / {formatTime(displayDuration)}
+          </span>
+        </div>
       </div>
 
       {/* Main player controls + waveform */}

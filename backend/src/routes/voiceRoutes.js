@@ -56,19 +56,20 @@ const handleReminderCall = (req, res, next) => {
     }
 
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const audioUrl = medication ? medication.audio_url : `${baseUrl}/audio/default-reminder.mp3`;
-
     const { getPatientById } = require('../db/queries/patients');
     const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
     const isEnglish = patientObj && (patientObj.preferred_language || '').toLowerCase() === 'english';
+
+    let audioUrl = null;
     let sayText = null;
 
-    if (isEnglish && process.env.ENABLE_AI_AGENT === 'true' && medication?.instruction_source !== 'recorded') {
-      const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
-      const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
-      sayText = (latestMsg && latestMsg.content)
-        ? latestMsg.content
-        : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press 1 to confirm you have taken your dose, Press 2 for side effects, Press 3 for cost issues, or Press 4 for an earlier reminder.`;
+    if (medication && medication.instruction_source === 'recorded' && medication.audio_url) {
+      audioUrl = medication.audio_url;
+    } else if (isEnglish) {
+      sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your pharmacy calling with a reminder to take your ${medication ? medication.drug_name : 'medication'}. Have you taken your dose? Press 1 if you have taken it, or press 2 if not taken.`;
+    } else {
+      // Default Asante Twi Outbound Reminder Prompt
+      audioUrl = `${baseUrl}/audio/twi_outbound_reminder.mp3`;
     }
 
     const xml = generateReminderXml(callEventId, audioUrl, baseUrl, sayText);

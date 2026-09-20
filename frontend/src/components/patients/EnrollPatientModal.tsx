@@ -135,22 +135,22 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               onClick={() => setPreferredLanguage('twi')}
               className={`py-2.5 px-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 preferredLanguage === 'twi'
-                  ? 'bg-emerald-50 border-emerald-600 text-emerald-900 font-semibold shadow-xs'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <span>🇬🇭 Twi (Akan)</span>
+              <span>Twi (Akan)</span>
             </button>
             <button
               type="button"
               onClick={() => setPreferredLanguage('english')}
               className={`py-2.5 px-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 preferredLanguage === 'english'
-                  ? 'bg-emerald-50 border-emerald-600 text-emerald-900 font-semibold shadow-xs'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <span>🇬🇧 English</span>
+              <span>English</span>
             </button>
           </div>
         </div>

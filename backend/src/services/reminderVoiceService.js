@@ -11,12 +11,17 @@ const { buildVoiceResponse, buildGetDigits, buildSay } = require('../utils/xmlBu
 const generateReminderXml = (callEventId, audioUrl, baseUrl, sayText = null) => {
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId || ''}`;
   let fullAudioUrl = audioUrl;
-  if (audioUrl && !audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
-    fullAudioUrl = `${baseUrl}${audioUrl.startsWith('/') ? '' : '/'}${audioUrl}`;
+  if (audioUrl) {
+    if (audioUrl.includes('localhost:3000')) {
+      fullAudioUrl = audioUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
+    } else if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
+      fullAudioUrl = `${baseUrl}${audioUrl.startsWith('/') ? '' : '/'}${audioUrl}`;
+    }
   }
+
   const digitsXml = buildGetDigits({
     numDigits: 1,
-    timeout: 10,
+    timeout: 12,
     callbackUrl,
     playUrl: sayText ? null : fullAudioUrl,
     sayText: sayText || null
@@ -133,6 +138,15 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   }
 
   updateCallOutcome(callEventId, outcome);
+
+  const patientForAudio = getPatientById(callEvent.patient_id);
+  const isTwiCaller = patientForAudio && (patientForAudio.preferred_language || '').toLowerCase() !== 'english';
+
+  if (isTwiCaller) {
+    const audioFile = outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_not_taken_ack.mp3';
+    return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${audioFile}`));
+  }
+
   return buildVoiceResponse(buildSay(responseMessage));
 };
 

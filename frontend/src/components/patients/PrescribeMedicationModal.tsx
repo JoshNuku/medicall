@@ -43,14 +43,69 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   const [durationDays, setDurationDays] = useState(7);
   const [isChronic, setIsChronic] = useState(false);
 
+  // Authentic Asante Twi template library fallbacks
+  const defaultTemplates = [
+    { id: 1, category: 'dosage', label_english: '1 tablet', text_twi: 'Fa baa baako' },
+    { id: 2, category: 'dosage', label_english: '2 tablets', text_twi: 'Fa mmaa mmienu' },
+    { id: 3, category: 'dosage', label_english: 'half tablet', text_twi: 'Fa fā' },
+    { id: 4, category: 'dosage', label_english: '1 capsule', text_twi: 'Fa kotokuo baako' },
+    { id: 5, category: 'dosage', label_english: '2 capsules', text_twi: 'Fa kotokuo mmienu' },
+    { id: 6, category: 'dosage', label_english: '5ml (1 teaspoon)', text_twi: 'Nomi atere ketewa baako (5ml)' },
+    { id: 7, category: 'dosage', label_english: '10ml (2 teaspoons)', text_twi: 'Nomi atere nketewa mmienu (10ml)' },
+    { id: 8, category: 'dosage', label_english: '15ml (1 tablespoon)', text_twi: 'Nomi atere kɛseɛ baako (15ml)' },
+
+    { id: 10, category: 'frequency', label_english: 'Once daily', text_twi: 'da biara pɛnkoro' },
+    { id: 11, category: 'frequency', label_english: 'Twice daily', text_twi: 'da biara mprenu (anɔpa ne anwummerɛ)' },
+    { id: 12, category: 'frequency', label_english: 'Three times daily', text_twi: 'da biara mprɛnsa (anɔpa, awia, ne anwummerɛ)' },
+    { id: 13, category: 'frequency', label_english: 'Four times daily', text_twi: 'da biara mprɛnan' },
+    { id: 14, category: 'frequency', label_english: 'Every other day', text_twi: 'da a ɛto so mmienu biara' },
+
+    { id: 15, category: 'timing', label_english: 'Before meals', text_twi: 'ansa na woadidi' },
+    { id: 16, category: 'timing', label_english: 'After meals', text_twi: 'sɛ wodidi wie a' },
+    { id: 17, category: 'timing', label_english: 'With food', text_twi: 'bere a woregu so redidi' },
+    { id: 18, category: 'timing', label_english: 'At bedtime', text_twi: 'ansa na wobɛkɔ akɔda' },
+  ];
+
+  // Map any outdated placeholders to authentic Twi
+  const activeTemplates = React.useMemo(() => {
+    if (!templates || templates.length === 0) return defaultTemplates;
+    return templates.map((t) => {
+      if (t.text_twi && t.text_twi.includes('[TWI:')) {
+        const fallback = defaultTemplates.find((d) => d.label_english === t.label_english);
+        if (fallback) return { ...t, text_twi: fallback.text_twi };
+      }
+      return t;
+    });
+  }, [templates]);
+
   // Template Mode fields
-  const dosages = templates.filter((t) => t.category === 'dosage');
-  const frequencies = templates.filter((t) => t.category === 'frequency');
-  const timings = templates.filter((t) => t.category === 'timing');
+  const dosages = activeTemplates.filter((t) => t.category === 'dosage');
+  const frequencies = activeTemplates.filter((t) => t.category === 'frequency');
+  const timings = activeTemplates.filter((t) => t.category === 'timing');
 
   const [selectedDosageId, setSelectedDosageId] = useState<number>(dosages[0]?.id || 1);
   const [selectedFrequencyId, setSelectedFrequencyId] = useState<number>(frequencies[1]?.id || 10);
   const [selectedTimingId, setSelectedTimingId] = useState<number>(timings[1]?.id || 15);
+
+  const selectedDosage = dosages.find((d) => d.id === selectedDosageId);
+  const selectedFrequency = frequencies.find((f) => f.id === selectedFrequencyId);
+  const selectedTiming = timings.find((t) => t.id === selectedTimingId);
+
+  // Auto-assembled authentic Twi prompt
+  const autoAssembledTwi = React.useMemo(() => {
+    if (!selectedDosage || !selectedFrequency || !selectedTiming) return '';
+    return `${selectedDosage.text_twi}, ${selectedFrequency.text_twi}, ${selectedTiming.text_twi}.`;
+  }, [selectedDosage, selectedFrequency, selectedTiming]);
+
+  const [twiPrompt, setTwiPrompt] = useState<string>('');
+  const [isTwiManuallyEdited, setIsTwiManuallyEdited] = useState<boolean>(false);
+
+  // Synchronize unless clinician manually edited it
+  React.useEffect(() => {
+    if (!isTwiManuallyEdited) {
+      setTwiPrompt(autoAssembledTwi);
+    }
+  }, [autoAssembledTwi, isTwiManuallyEdited]);
 
   // Recorded Mode states: 'ready' | 'recording' | 'recorded'
   const [recordingState, setRecordingState] = useState<'ready' | 'recording' | 'recorded'>('ready');
@@ -68,10 +123,6 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   const audioGainRef = useRef<GainNode | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
-
-  const selectedDosage = dosages.find((d) => d.id === selectedDosageId);
-  const selectedFrequency = frequencies.find((f) => f.id === selectedFrequencyId);
-  const selectedTiming = timings.find((t) => t.id === selectedTimingId);
 
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -156,9 +207,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
 
       const recorder = new MediaRecorder(cleanedStream, mimeType
         ? {
-            mimeType,
-            bitsPerSecond: mimeType.includes('opus') ? 96000 : 128000,
-          }
+          mimeType,
+          bitsPerSecond: mimeType.includes('opus') ? 96000 : 128000,
+        }
         : undefined);
       audioChunksRef.current = [];
       mediaRecorderRef.current = recorder;
@@ -285,7 +336,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           dosage_label: selectedDosage?.label_english,
           frequency_label: selectedFrequency?.label_english,
           timing_label: selectedTiming?.label_english,
-          assembled_twi: `${selectedDosage?.text_twi}, ${selectedFrequency?.text_twi}, ${selectedTiming?.text_twi}.`,
+          assembled_twi: twiPrompt.trim() || autoAssembledTwi,
           schedule_times: scheduleTimes,
           duration_days: isChronic ? 90 : durationDays,
           is_chronic: isChronic,
@@ -300,8 +351,8 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         const audioFile = recordedAudioBlob instanceof File
           ? recordedAudioBlob
           : new File([recordedAudioBlob], 'recording_voice_note.webm', {
-              type: recordedAudioBlob.type || 'audio/webm',
-            });
+            type: recordedAudioBlob.type || 'audio/webm',
+          });
 
         await prescribeMedication(patientId, {
           drug_name: drugName.trim(),
@@ -356,11 +407,10 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           <button
             type="button"
             onClick={() => setMode('template')}
-            className={`py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
-              mode === 'template'
-                ? 'bg-white text-gray-900 shadow-xs border border-gray-200'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
+            className={`py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${mode === 'template'
+              ? 'bg-white text-gray-900 shadow-xs border border-gray-200'
+              : 'text-gray-500 hover:text-gray-800'
+              }`}
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Mode 1: Verified Template</span>
@@ -368,11 +418,10 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           <button
             type="button"
             onClick={() => setMode('recorded')}
-            className={`py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
-              mode === 'recorded'
-                ? 'bg-white text-gray-900 shadow-xs border border-gray-200'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
+            className={`py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${mode === 'recorded'
+              ? 'bg-white text-gray-900 shadow-xs border border-gray-200'
+              : 'text-gray-500 hover:text-gray-800'
+              }`}
           >
             <Mic className="w-4 h-4 text-purple-600" />
             <span>Mode 2: Pharmacist Recorded</span>
@@ -382,7 +431,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         {/* Drug Name (Shared) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-            Drug name & strength *
+            Drug name &amp; strength *
           </label>
           <div className="relative">
             <input
@@ -391,7 +440,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               placeholder="e.g. Amoxicillin 500mg, Metformin 850mg"
               value={drugName}
               onChange={(e) => setDrugName(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all"
             />
             <Pill className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
@@ -401,24 +450,19 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         {mode === 'template' && (
           <div className="space-y-4 animate-in fade-in">
             {/* Notice about verified templates */}
-            <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-xl flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-              <p className="text-xs text-emerald-900 leading-relaxed">
-                <strong>Clinically verified phrases:</strong> Instructions are assembled from human-curated, medically validated Twi audio recordings. <em>No machine translation is ever used.</em>
-              </p>
-            </div>
+
 
             {/* Template Dropdowns */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Dosage */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                   Dosage *
                 </label>
                 <select
                   value={selectedDosageId}
                   onChange={(e) => setSelectedDosageId(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all cursor-pointer"
                 >
                   {dosages.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -430,13 +474,13 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
 
               {/* Frequency */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                   Frequency *
                 </label>
                 <select
                   value={selectedFrequencyId}
                   onChange={(e) => setSelectedFrequencyId(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all cursor-pointer"
                 >
                   {frequencies.map((f) => (
                     <option key={f.id} value={f.id}>
@@ -448,13 +492,13 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
 
               {/* Timing */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                   Timing *
                 </label>
                 <select
                   value={selectedTimingId}
                   onChange={(e) => setSelectedTimingId(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all cursor-pointer"
                 >
                   {timings.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -465,17 +509,46 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               </div>
             </div>
 
-            {/* Assembled Preview */}
-            <div className="bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl p-3.5 space-y-1">
-              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block">
-                Assembled Patient Call Prompt (Twi)
-              </span>
-              <p className="text-xs font-medium text-gray-800">
-                {selectedDosage?.label_english} &middot; {selectedFrequency?.label_english} &middot; {selectedTiming?.label_english}
-              </p>
-              <p className="text-xs text-emerald-800 font-mono italic">
-                &ldquo;{selectedDosage?.text_twi}, {selectedFrequency?.text_twi}, {selectedTiming?.text_twi}&rdquo;
-              </p>
+            {/* Assembled Asante Twi Voice Prompt */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Voice Instructions (Asante Twi)
+                </label>
+                {isTwiManuallyEdited && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTwiManuallyEdited(false);
+                      setTwiPrompt(autoAssembledTwi);
+                    }}
+                    className="text-xs font-medium text-[#55941E] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+
+              <textarea
+                value={twiPrompt}
+                onChange={(e) => {
+                  setTwiPrompt(e.target.value);
+                  setIsTwiManuallyEdited(true);
+                }}
+                rows={2}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-[#F8F9FA] text-sm text-gray-900 leading-relaxed focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all resize-none"
+                placeholder="Assembled Twi instructions..."
+              />
+
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-0.5">
+                <span>
+                  {selectedDosage?.label_english} &middot; {selectedFrequency?.label_english} &middot; {selectedTiming?.label_english}
+                </span>
+                <span className="text-gray-400 text-[11px]">
+                  Keypad: 1 = Taken &middot; 2 = Missed
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -486,7 +559,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
             <div className="p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl flex items-start gap-2.5">
               <Mic className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
               <p className="text-xs text-purple-900 leading-relaxed">
-                <strong>Direct Voice Recording:</strong> Record or upload custom instructions spoken in Twi directly by the pharmacist.
+                <strong>Direct Voice Recording:</strong> Record or upload custom instructions spoken.
               </p>
             </div>
 
@@ -612,12 +685,12 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 placeholder="08:00, 20:00"
                 value={scheduleTimes}
                 onChange={(e) => setScheduleTimes(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all"
               />
-              <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+              <Clock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
             <p className="text-[11px] text-gray-400 mt-1">
-              Comma-separated 24-hour reminder call times.
+              Comma-separated reminder times (e.g. 08:00, 20:00)
             </p>
           </div>
 
@@ -633,9 +706,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 disabled={isChronic}
                 value={isChronic ? 90 : durationDays}
                 onChange={(e) => setDurationDays(Number(e.target.value))}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 disabled:bg-gray-100"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] disabled:bg-gray-100 transition-all"
               />
-              <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+              <Calendar className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
             <div className="flex items-center gap-2 mt-2">
               <input
@@ -643,9 +716,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 id="chronic"
                 checked={isChronic}
                 onChange={(e) => setIsChronic(e.target.checked)}
-                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                className="w-4 h-4 rounded text-[#70BF2B] focus:ring-[#70BF2B] cursor-pointer"
               />
-              <label htmlFor="chronic" className="text-xs text-gray-700 font-medium cursor-pointer">
+              <label htmlFor="chronic" className="text-xs text-gray-700 font-medium cursor-pointer select-none">
                 Chronic medication (Ongoing regimen)
               </label>
             </div>

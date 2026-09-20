@@ -45,17 +45,60 @@ const translateEnglishToTwi = async (englishText) => {
   }
 };
 
+let ffmpeg = null;
+try {
+  ffmpeg = require('fluent-ffmpeg');
+  const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
+  if (ffmpegInstaller && ffmpegInstaller.path) {
+    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+  }
+} catch (e) {
+  console.warn('[FFmpeg] fluent-ffmpeg or @ffmpeg-installer not available:', e.message);
+}
+
 /**
- * Synthesizes Twi text into speech using Khaya AI TTS API v2.
+ * Adjusts audio playback speed (tempo) without changing pitch.
+ * E.g. tempo = 0.88 slows down speech by 12% for patient clarity.
  */
-const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'female') => {
+const adjustAudioTempo = (inputPath, outputPath, tempo = 0.88) => {
+  if (!ffmpeg) return Promise.resolve(inputPath);
+
+  return new Promise((resolve) => {
+    ffmpeg(inputPath)
+      .audioFilters(`atempo=${tempo}`)
+      .output(outputPath)
+      .on('end', () => {
+        // Clean up temporary raw file
+        try {
+          if (fs.existsSync(inputPath) && inputPath !== outputPath) {
+            fs.unlinkSync(inputPath);
+          }
+        } catch {
+          // Ignore unlink errors
+        }
+        resolve(outputPath);
+      })
+      .on('error', (err) => {
+        console.warn(`[FFmpeg Tempo Warning]: ${err.message}. Keeping raw audio.`);
+        resolve(inputPath);
+      })
+      .run();
+  });
+};
+
+/**
+ * Synthesizes Twi text into speech using Khaya AI TTS API v2,
+ * then slows down the speech tempo slightly (0.88x) for clear patient comprehension.
+ */
+const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'female', tempo = 0.88) => {
   if (!textTwi || !KHAYA_API_KEY) return null;
 
   const audioDir = path.join(__dirname, '../../public/audio');
   if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
 
   const outputName = filename || `khaya_${Date.now()}_${Math.random().toString(36).substring(7)}.mp3`;
-  const filePath = path.join(audioDir, outputName);
+  const finalFilePath = path.join(audioDir, outputName);
+  const tempRawPath = path.join(audioDir, `temp_raw_${Date.now()}_${outputName}`);
 
   try {
     const response = await fetch(KHAYA_TTS_URL, {
@@ -80,7 +123,13 @@ const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'female
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
+    
+    // Save raw audio from Khaya
+    fs.writeFileSync(tempRawPath, Buffer.from(arrayBuffer));
+
+    // Slow down speed slightly (0.88x) for patient comprehension
+    await adjustAudioTempo(tempRawPath, finalFilePath, tempo);
+
     return `/audio/${outputName}`;
   } catch (err) {
     console.error('[Khaya AI TTS] Error:', err.message);

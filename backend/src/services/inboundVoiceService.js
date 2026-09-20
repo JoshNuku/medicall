@@ -8,7 +8,7 @@ const handleInboundCall = (callerNumber, baseUrl) => {
 
   if (!patient) {
     return buildVoiceResponse(
-      buildSay('Welcome to MediCall. Your phone number is not registered in our system. Please contact your clinic. Goodbye.')
+      buildSay('Welcome to your pharmacy helpline. Your phone number is not registered in our system. Please contact your pharmacy. Goodbye.')
     );
   }
 
@@ -33,9 +33,14 @@ const handleInboundCall = (callerNumber, baseUrl) => {
     dose_date: today
   });
 
-  const fullAudioUrl = activeMed.audio_url.startsWith('http')
-    ? activeMed.audio_url
-    : `${baseUrl}${activeMed.audio_url}`;
+  let fullAudioUrl = activeMed.audio_url;
+  if (fullAudioUrl) {
+    if (fullAudioUrl.includes('localhost:3000')) {
+      fullAudioUrl = fullAudioUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
+    } else if (!fullAudioUrl.startsWith('http://') && !fullAudioUrl.startsWith('https://')) {
+      fullAudioUrl = `${baseUrl}${fullAudioUrl.startsWith('/') ? '' : '/'}${fullAudioUrl}`;
+    }
+  }
 
   return buildVoiceResponse(buildPlay(fullAudioUrl));
 };

@@ -43,23 +43,15 @@ export const Sidebar: React.FC = () => {
   const systemNav = [
     {
       name: 'Settings',
-      href: '#settings',
+      href: '/settings',
       icon: Settings,
-      active: false,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        alert('MediCall Telephony: Africa\'s Talking Voice Gateway connected.');
-      },
+      active: pathname === '/settings',
     },
     {
       name: 'Support',
-      href: '#support',
+      href: '/support',
       icon: HelpCircle,
-      active: false,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        alert('MediCall Clinical Support: pharmacist.support@medicall.gh');
-      },
+      active: pathname === '/support',
     },
   ];
 
@@ -136,10 +128,17 @@ export const Sidebar: React.FC = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  onClick={item.onClick}
-                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-950 hover:bg-[#F8F9FA] transition-colors"
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    item.active
+                      ? 'bg-[#70BF2B] text-white font-semibold shadow-xs'
+                      : 'text-gray-600 hover:text-gray-950 hover:bg-[#F8F9FA]'
+                  }`}
                 >
-                  <Icon className="w-4 h-4 text-gray-500" />
+                  <Icon
+                    className={`w-4 h-4 ${
+                      item.active ? 'text-white stroke-[2.2]' : 'text-gray-500'
+                    }`}
+                  />
                   <span>{item.name}</span>
                 </Link>
               );

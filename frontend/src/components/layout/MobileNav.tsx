@@ -11,6 +11,8 @@ import {
   Menu,
   X,
   Bell,
+  Settings,
+  HelpCircle,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 
@@ -38,6 +40,18 @@ export const MobileNav: React.FC = () => {
       icon: AlertTriangle,
       active: pathname === '/alerts',
       badge: metrics.open_alerts > 0 ? metrics.open_alerts : undefined,
+    },
+    {
+      name: 'Settings',
+      href: '/settings',
+      icon: Settings,
+      active: pathname === '/settings',
+    },
+    {
+      name: 'Support',
+      href: '/support',
+      icon: HelpCircle,
+      active: pathname === '/support',
     },
   ];
 
@@ -89,20 +103,26 @@ export const MobileNav: React.FC = () => {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   item.active
-                    ? 'bg-[#F0F9EB] text-[#1C4D2E] font-semibold border border-[#D5EFC0]'
+                    ? 'bg-[#70BF2B] text-white font-semibold'
                     : 'text-gray-700 hover:bg-[#F6FAF1] border border-transparent'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon
                     className={`w-4 h-4 ${
-                      item.active ? 'text-[#55941E]' : 'text-gray-500'
+                      item.active ? 'text-white stroke-[2.2]' : 'text-gray-500'
                     }`}
                   />
                   <span>{item.name}</span>
                 </div>
                 {item.badge !== undefined && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#E9F6DC] text-[#447817] font-semibold">
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      item.active
+                        ? 'bg-white text-[#70BF2B]'
+                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                    }`}
+                  >
                     {item.badge}
                   </span>
                 )}
@@ -111,12 +131,12 @@ export const MobileNav: React.FC = () => {
           })}
 
           <div className="pt-3 mt-2 border-t border-gray-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-[10px] flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
-              MP
+            <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
+              JN
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">MediCall Pharmacy</p>
-              <p className="text-[11px] text-gray-500">Pharmacy</p>
+              <p className="text-xs font-semibold text-gray-900">Josh Nuku</p>
+              <p className="text-[11px] text-gray-500">Pharmacist Admin</p>
             </div>
           </div>
         </div>

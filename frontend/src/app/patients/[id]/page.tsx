@@ -269,9 +269,8 @@ export default function PatientDetailPage() {
                       {med.dosage_label || '1 tablet'} &middot; {med.frequency_label || 'Twice daily'} &middot; {med.timing_label || 'After meals'}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="status" status="active" size="sm" />
-                    <Badge variant="source" source={med.instruction_source} size="sm" />
                   </div>
                 </div>
 

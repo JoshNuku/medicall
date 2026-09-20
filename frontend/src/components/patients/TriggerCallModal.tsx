@@ -62,27 +62,22 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Live Patient Voice Demo"
-      description="Trigger an immediate automated medication check-in call via Africa's Talking"
-      maxWidth="lg"
+      title="Trigger Outbound Call"
+      description="Automated medication reminder call with live DTMF keypress capture."
+      maxWidth="md"
     >
-      <div className="space-y-5">
-        {/* Status Preview Card */}
-        <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#70BF2B] text-white flex items-center justify-center shrink-0 shadow-xs">
-            <PhoneCall className="w-5 h-5 animate-pulse" />
+      <div className="space-y-4 pt-1">
+        {/* Minimalist Gateway Status */}
+        <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#F8F9FA] border border-[#EAEAEA] rounded-xl text-xs">
+          <div className="flex items-center gap-2 text-gray-700">
+            <span className="w-2 h-2 rounded-full bg-[#70BF2B] shrink-0" />
+            <span className="font-semibold text-gray-900">Voice Adherence Call</span>
+            <span className="text-gray-300">&middot;</span>
+            <span className="text-gray-500">Twi &amp; English IVR</span>
           </div>
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-              <span>Interactive Adherence Call</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider bg-[#70BF2B]/15 text-[#55941E] px-2 py-0.5 rounded-full">
-                Live Telco
-              </span>
-            </h4>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-              Dials the patient’s physical phone using verified local instructions (Twi or English) and captures keypress outcomes in real time.
-            </p>
-          </div>
+          <span className="text-[11px] font-semibold text-[#55941E] bg-[#F0F9EB] px-2 py-0.5 rounded-md border border-[#70BF2B]/30">
+            Live Gateway
+          </span>
         </div>
 
         {/* Patient Selection */}
@@ -128,35 +123,35 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
         )}
 
         {/* Keypad Menu Guide */}
-        <div className="bg-[#FAF9F6] border border-gray-200/80 rounded-xl p-3.5 text-xs text-gray-600">
-          <p className="font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-            <Volume2 className="w-3.5 h-3.5 text-[#70BF2B]" />
-            What the patient will hear & keypad actions:
+        <div className="bg-[#F8F9FA] border border-[#ECECEC] rounded-xl p-3.5 text-xs text-gray-600">
+          <p className="font-semibold text-gray-800 mb-2.5 flex items-center gap-1.5 text-xs">
+            <Volume2 className="w-3.5 h-3.5 text-gray-400" />
+            <span>Interactive IVR Keypad Responses</span>
           </p>
-          <div className="grid grid-cols-2 gap-2 text-[11px]">
-            <div className="bg-white p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-xs">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+              <span className="w-5 h-5 rounded bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
                 1
               </span>
-              <span>Confirm dose taken</span>
+              <span className="text-gray-700">Confirm dose taken</span>
             </div>
-            <div className="bg-white p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-md bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-xs">
+            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+              <span className="w-5 h-5 rounded bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
                 2
               </span>
-              <span>Side effects / Not taken</span>
+              <span className="text-gray-700">Side effects / Missed</span>
             </div>
-            <div className="bg-white p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-md bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-xs">
+            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+              <span className="w-5 h-5 rounded bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
                 9
               </span>
-              <span>Replay instructions</span>
+              <span className="text-gray-700">Replay instruction</span>
             </div>
-            <div className="bg-white p-2 rounded-lg border border-gray-100 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-md bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-xs">
+            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+              <span className="w-5 h-5 rounded bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
                 0
               </span>
-              <span>Request pharmacist help</span>
+              <span className="text-gray-700">Pharmacist assistance</span>
             </div>
           </div>
         </div>

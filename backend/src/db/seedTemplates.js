@@ -11,27 +11,27 @@ const seedTemplates = () => {
 
   const templates = [
     // Dosages (~8)
-    ['dosage', '1 tablet', '[TWI: 1 tablet]', null],
-    ['dosage', '2 tablets', '[TWI: 2 tablets]', null],
-    ['dosage', 'half tablet', '[TWI: half tablet]', null],
-    ['dosage', '1 capsule', '[TWI: 1 capsule]', null],
-    ['dosage', '2 capsules', '[TWI: 2 capsules]', null],
-    ['dosage', '5ml (1 teaspoon)', '[TWI: 5ml / 1 teaspoon]', null],
-    ['dosage', '10ml (2 teaspoons)', '[TWI: 10ml / 2 teaspoons]', null],
-    ['dosage', '15ml (1 tablespoon)', '[TWI: 15ml / 1 tablespoon]', null],
+    ['dosage', '1 tablet', 'Fa baa baako', null],
+    ['dosage', '2 tablets', 'Fa mmaa mmienu', null],
+    ['dosage', 'half tablet', 'Fa fā', null],
+    ['dosage', '1 capsule', 'Fa kotokuo baako', null],
+    ['dosage', '2 capsules', 'Fa kotokuo mmienu', null],
+    ['dosage', '5ml (1 teaspoon)', 'Nomi atere ketewa baako (5ml)', null],
+    ['dosage', '10ml (2 teaspoons)', 'Nomi atere nketewa mmienu (10ml)', null],
+    ['dosage', '15ml (1 tablespoon)', 'Nomi atere kɛseɛ baako (15ml)', null],
 
     // Frequencies (~5)
-    ['frequency', 'Once daily', '[TWI: once daily]', null],
-    ['frequency', 'Twice daily', '[TWI: twice daily]', null],
-    ['frequency', 'Three times daily', '[TWI: three times daily]', null],
-    ['frequency', 'Four times daily', '[TWI: four times daily]', null],
-    ['frequency', 'Every other day', '[TWI: every other day]', null],
+    ['frequency', 'Once daily', 'da biara pɛnkoro', null],
+    ['frequency', 'Twice daily', 'da biara mprenu (anɔpa ne anwummerɛ)', null],
+    ['frequency', 'Three times daily', 'da biara mprɛnsa (anɔpa, awia, ne anwummerɛ)', null],
+    ['frequency', 'Four times daily', 'da biara mprɛnan', null],
+    ['frequency', 'Every other day', 'da a ɛto so mmienu biara', null],
 
     // Timings (~4)
-    ['timing', 'Before meals', '[TWI: before meals]', null],
-    ['timing', 'After meals', '[TWI: after meals]', null],
-    ['timing', 'With food', '[TWI: with food]', null],
-    ['timing', 'At bedtime', '[TWI: at bedtime]', null]
+    ['timing', 'Before meals', 'ansa na woadidi', null],
+    ['timing', 'After meals', 'sɛ wodidi wie a', null],
+    ['timing', 'With food', 'bere a woregu so redidi', null],
+    ['timing', 'At bedtime', 'ansa na wobɛkɔ akɔda', null]
   ];
 
   const insertMany = db.transaction((items) => {
