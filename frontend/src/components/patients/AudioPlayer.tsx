@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
@@ -21,13 +21,39 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(durationSeconds);
   const [isMuted, setIsMuted] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  const realAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Synthesized tone generator to simulate voice instruction audio
-  const startSyntheticAudio = () => {
+  useEffect(() => {
+    if (!audioUrl) return;
+
+    const audio = new Audio(audioUrl);
+    realAudioRef.current = audio;
+    audio.muted = isMuted;
+    audio.onloadedmetadata = () => {
+      setAudioDuration(audio.duration || durationSeconds);
+      setCurrentTime(0);
+    };
+    audio.ontimeupdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+    audio.onended = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+      realAudioRef.current = null;
+    };
+  }, [audioUrl, durationSeconds, isMuted]);
+
+  const startSyntheticAudio = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AudioCtx();
@@ -51,9 +77,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     } catch {
       // Audio context may not be allowed prior to user interaction
     }
-  };
+  }, [isMuted]);
 
-  const stopSyntheticAudio = () => {
+  const stopSyntheticAudio = useCallback(() => {
     try {
       if (oscRef.current) {
         oscRef.current.stop();
@@ -67,9 +93,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     } catch {
       // ignore cleanup errors
     }
-  };
+  }, []);
 
   useEffect(() => {
+    if (audioUrl && realAudioRef.current) {
+      if (isPlaying) {
+        realAudioRef.current.play().catch(() => {
+          setIsPlaying(false);
+        });
+      } else {
+        realAudioRef.current.pause();
+      }
+      return;
+    }
+
     let interval: NodeJS.Timeout;
     if (isPlaying) {
       startSyntheticAudio();
@@ -91,9 +128,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       clearInterval(interval);
       stopSyntheticAudio();
     };
-  }, [isPlaying, durationSeconds]);
+  }, [audioUrl, durationSeconds, isPlaying, startSyntheticAudio, stopSyntheticAudio]);
 
   const togglePlay = () => {
+    if (audioUrl && realAudioRef.current) {
+      const nextState = !isPlaying;
+      setIsPlaying(nextState);
+      if (nextState) {
+        realAudioRef.current.currentTime = currentTime > 0 ? currentTime : 0;
+        realAudioRef.current.play().catch(() => setIsPlaying(false));
+      } else {
+        realAudioRef.current.pause();
+      }
+      return;
+    }
+
     if (currentTime >= durationSeconds) {
       setCurrentTime(0);
     }
@@ -101,6 +150,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const restart = () => {
+    if (audioUrl && realAudioRef.current) {
+      realAudioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      setIsPlaying(true);
+      return;
+    }
+
     setCurrentTime(0);
     if (!isPlaying) {
       setIsPlaying(true);
@@ -110,6 +166,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const toggleMute = () => {
     const nextMute = !isMuted;
     setIsMuted(nextMute);
+    if (audioUrl && realAudioRef.current) {
+      realAudioRef.current.muted = nextMute;
+      return;
+    }
     if (gainRef.current && audioContextRef.current) {
       gainRef.current.gain.setValueAtTime(nextMute ? 0 : 0.08, audioContextRef.current.currentTime);
     }
@@ -124,7 +184,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   // 18 waveform bar heights representing speech envelope
   const barHeights = [28, 45, 65, 85, 95, 75, 55, 35, 60, 90, 100, 80, 60, 40, 70, 85, 50, 30];
 
-  const progressPercent = (currentTime / durationSeconds) * 100;
+  const displayDuration = audioUrl ? audioDuration : durationSeconds;
+  const progressPercent = (currentTime / Math.max(displayDuration, 1)) * 100;
 
   if (compact) {
     return (
@@ -171,7 +232,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
         </div>
         <span className="text-xs text-gray-400 font-mono shrink-0">
-          {formatTime(currentTime)} / {formatTime(durationSeconds)}
+          {formatTime(currentTime)} / {formatTime(displayDuration)}
         </span>
       </div>
 
@@ -197,7 +258,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             const rect = e.currentTarget.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const pct = Math.max(0, Math.min(1, clickX / rect.width));
-            setCurrentTime(Math.floor(pct * durationSeconds));
+            setCurrentTime(Math.floor(pct * displayDuration));
           }}
           title="Click to seek"
         >

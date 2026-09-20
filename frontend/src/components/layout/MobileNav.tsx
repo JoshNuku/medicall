@@ -87,22 +87,22 @@ export const MobileNav: React.FC = () => {
                 key={item.name}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   item.active
-                    ? 'bg-emerald-50 text-emerald-900 font-semibold'
-                    : 'text-gray-700 hover:bg-white'
+                    ? 'bg-[#F0F9EB] text-[#1C4D2E] font-semibold border border-[#D5EFC0]'
+                    : 'text-gray-700 hover:bg-[#F6FAF1] border border-transparent'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon
                     className={`w-4 h-4 ${
-                      item.active ? 'text-emerald-700' : 'text-gray-400'
+                      item.active ? 'text-[#55941E]' : 'text-gray-500'
                     }`}
                   />
                   <span>{item.name}</span>
                 </div>
                 {item.badge !== undefined && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-semibold">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#E9F6DC] text-[#447817] font-semibold">
                     {item.badge}
                   </span>
                 )}
@@ -111,12 +111,12 @@ export const MobileNav: React.FC = () => {
           })}
 
           <div className="pt-3 mt-2 border-t border-gray-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-semibold text-xs border border-emerald-200">
-              KM
+            <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-[10px] flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
+              MP
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-900">Kwame Mensah</p>
-              <p className="text-[11px] text-gray-500">Pharmacist</p>
+              <p className="text-xs font-semibold text-gray-900">MediCall Pharmacy</p>
+              <p className="text-[11px] text-gray-500">Pharmacy</p>
             </div>
           </div>
         </div>

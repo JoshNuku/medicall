@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { AudioPlayer } from './AudioPlayer';
 import { useData } from '@/lib/data-context';
-import { Medication } from '@/lib/types';
 import {
   ShieldCheck,
   Mic,
@@ -58,39 +56,212 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   const [recordingState, setRecordingState] = useState<'ready' | 'recording' | 'recorded'>('ready');
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | File | null>(null);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const processedStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const audioFilterRef = useRef<BiquadFilterNode | null>(null);
+  const audioGainRef = useRef<GainNode | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingStartedAtRef = useRef<number | null>(null);
 
   const selectedDosage = dosages.find((d) => d.id === selectedDosageId);
   const selectedFrequency = frequencies.find((f) => f.id === selectedFrequencyId);
   const selectedTiming = timings.find((t) => t.id === selectedTimingId);
 
-  // Live recording simulation
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (recordingState === 'recording') {
+    if (recordingState === 'recording' && recordingStartedAtRef.current) {
       timer = setInterval(() => {
-        setRecordingSeconds((prev) => prev + 1);
-      }, 1000);
+        const elapsed = Math.floor((Date.now() - recordingStartedAtRef.current!) / 1000);
+        setRecordingSeconds(elapsed);
+      }, 250);
     }
     return () => clearInterval(timer);
   }, [recordingState]);
 
-  const handleStartRecording = () => {
-    setRecordingSeconds(0);
-    setRecordingState('recording');
+  React.useEffect(() => {
+    return () => {
+      if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      if (processedStreamRef.current) {
+        processedStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, [recordedAudioUrl]);
+
+  const prepareCleanAudioStream = (inputStream: MediaStream) => {
+    const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) {
+      return inputStream;
+    }
+
+    const context = new AudioCtx();
+    const source = context.createMediaStreamSource(inputStream);
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    const destination = context.createMediaStreamDestination();
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 5500;
+    filter.Q.value = 1;
+
+    gain.gain.value = 1.25;
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(destination);
+
+    audioContextRef.current = context;
+    audioSourceRef.current = source;
+    audioFilterRef.current = filter;
+    audioGainRef.current = gain;
+    processedStreamRef.current = destination.stream;
+
+    return destination.stream;
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      setRecordingError(null);
+      setRecordingSeconds(0);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 44100,
+        },
+      });
+
+      const cleanedStream = prepareCleanAudioStream(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4';
+
+      const recorder = new MediaRecorder(cleanedStream, mimeType
+        ? {
+            mimeType,
+            bitsPerSecond: mimeType.includes('opus') ? 96000 : 128000,
+          }
+        : undefined);
+      audioChunksRef.current = [];
+      mediaRecorderRef.current = recorder;
+      mediaStreamRef.current = stream;
+      recordingStartedAtRef.current = Date.now();
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, {
+          type: mimeType || 'audio/webm',
+        });
+
+        if (recordedAudioUrl) {
+          URL.revokeObjectURL(recordedAudioUrl);
+        }
+
+        const url = URL.createObjectURL(blob);
+        setRecordedAudioBlob(blob);
+        setRecordedAudioUrl(url);
+        setRecordingState('recorded');
+
+        stream.getTracks().forEach((track) => track.stop());
+        if (processedStreamRef.current) {
+          processedStreamRef.current.getTracks().forEach((track) => track.stop());
+        }
+        mediaStreamRef.current = null;
+        processedStreamRef.current = null;
+
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
+        audioContextRef.current = null;
+      };
+
+      recorder.start();
+      setRecordingState('recording');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Microphone access was blocked. Please allow mic access and try again.';
+      setRecordingError(message);
+      setRecordingState('ready');
+    }
   };
 
   const handleStopRecording = () => {
-    setRecordingState('recorded');
-    setRecordedAudioUrl('/audio/simulated_recording.mp3');
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const handleResetRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+    if (processedStreamRef.current) {
+      processedStreamRef.current.getTracks().forEach((track) => track.stop());
+      processedStreamRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (recordedAudioUrl) {
+      URL.revokeObjectURL(recordedAudioUrl);
+    }
+    audioChunksRef.current = [];
+    recordingStartedAtRef.current = null;
+    setRecordingError(null);
     setRecordingState('ready');
     setRecordingSeconds(0);
     setRecordedAudioUrl(null);
+    setRecordedAudioBlob(null);
+  };
+
+  const handleDeleteRecording = () => {
+    handleResetRecording();
+    setRecordedAudioBlob(null);
+  };
+
+  const handleAudioFileSelected = (file: File | null) => {
+    if (!file) return;
+
+    if (recordedAudioUrl) {
+      URL.revokeObjectURL(recordedAudioUrl);
+    }
+
+    const url = URL.createObjectURL(file);
+    setRecordedAudioBlob(file);
+    setRecordedAudioUrl(url);
+    setRecordingError(null);
+    setRecordingState('recorded');
+    setRecordingSeconds(Math.max(1, Math.ceil(file.size / 16000)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,6 +291,18 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           is_chronic: isChronic,
         });
       } else {
+        if (!recordedAudioBlob) {
+          setError('Please record or upload a voice note before saving the medication instructions.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const audioFile = recordedAudioBlob instanceof File
+          ? recordedAudioBlob
+          : new File([recordedAudioBlob], 'recording_voice_note.webm', {
+              type: recordedAudioBlob.type || 'audio/webm',
+            });
+
         await prescribeMedication(patientId, {
           drug_name: drugName.trim(),
           instruction_source: 'recorded',
@@ -129,10 +312,11 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           dosage_label: 'Custom oral dose',
           frequency_label: 'As instructed by pharmacist',
           timing_label: 'Recorded clinical instruction',
-          assembled_twi: 'Voice instruction recorded by Kwame Mensah (Pharmacist).',
+          assembled_twi: 'Voice instruction recorded by pharmacist.',
           schedule_times: scheduleTimes,
           duration_days: isChronic ? 90 : durationDays,
           is_chronic: isChronic,
+          audioFile,
         });
       }
 
@@ -143,8 +327,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
       setError('');
       onSuccess?.(savedDrugName);
       onClose();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to prescribe medication in backend.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to prescribe medication in backend.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -159,10 +344,10 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
+        {(error || recordingError) && (
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+            <span>{error || recordingError}</span>
           </div>
         )}
 
@@ -335,10 +520,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                         type="file"
                         accept="audio/*"
                         className="hidden"
-                        onChange={() => {
-                          setRecordingState('recorded');
-                          setRecordedAudioUrl('/audio/simulated_recording.mp3');
-                        }}
+                        onChange={(event) => handleAudioFileSelected(event.target.files?.[0] ?? null)}
                       />
                     </label>
                   </div>
@@ -385,20 +567,31 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                       <Check className="w-3.5 h-3.5" />
                       Voice note ready
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleResetRecording}
-                      className="text-xs text-gray-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Re-record</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleDeleteRecording}
+                        className="text-xs text-gray-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>Delete</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetRecording}
+                        className="text-xs text-gray-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Re-record</span>
+                      </button>
+                    </div>
                   </div>
 
                   <AudioPlayer
                     title={drugName || 'Custom Instruction'}
                     language="twi"
                     durationSeconds={recordingSeconds > 0 ? recordingSeconds : 14}
+                    audioUrl={recordedAudioUrl || undefined}
                   />
                 </div>
               )}

@@ -87,9 +87,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                     </td>
 
                     <td className="py-3.5 pr-4">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 uppercase tracking-wider text-[10px]">
-                        {patient.preferred_language === 'twi' ? '🇬🇭 Twi' : '🇬🇧 EN'}
-                      </span>
+                      <Badge variant="language" language={patient.preferred_language} size="sm" />
                     </td>
 
                     <td className="py-3.5 pr-4 text-gray-700 text-xs sm:text-sm font-medium">
