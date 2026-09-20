@@ -72,7 +72,7 @@ export default function PatientsPage() {
       {/* Header */}
       <PageHeader
         title="Patients"
-        subtitle="Manage enrolled patients and their medication adherence."
+        subtitle="Voice-call medication adherence monitoring &amp; patient directory"
         actions={
           <Button
             variant="primary"
@@ -85,7 +85,7 @@ export default function PatientsPage() {
       />
 
       {/* Filter and Search Bar */}
-      <div className="bg-white border border-[#EBEAE5] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         {/* Search */}
         <div className="relative w-full sm:w-80">
           <input
@@ -93,73 +93,73 @@ export default function PatientsPage() {
             placeholder="Search by name or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B] transition-all"
           />
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
         </div>
 
         {/* Filter Pills */}
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex items-center gap-1 bg-[#FAF9F6] p-1 rounded-xl border border-gray-200/70 text-xs">
+          <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
             <button
               onClick={() => setLanguageFilter('all')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'all'
                   ? 'bg-white text-gray-900 shadow-xs font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               All Languages
             </button>
             <button
               onClick={() => setLanguageFilter('twi')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'twi'
-                  ? 'bg-white text-gray-900 shadow-xs font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               Twi
             </button>
             <button
               onClick={() => setLanguageFilter('english')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'english'
-                  ? 'bg-white text-gray-900 shadow-xs font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               English
             </button>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#FAF9F6] p-1 rounded-xl border border-gray-200/70 text-xs">
+          <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 statusFilter === 'all'
                   ? 'bg-white text-gray-900 shadow-xs font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               All Status
             </button>
             <button
               onClick={() => setStatusFilter('active')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 statusFilter === 'active'
-                  ? 'bg-white text-emerald-800 shadow-xs font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               Active
             </button>
             <button
               onClick={() => setStatusFilter('attention')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 statusFilter === 'attention'
-                  ? 'bg-white text-amber-800 shadow-xs font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'bg-amber-500 text-white shadow-xs font-semibold'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               Attention
@@ -169,7 +169,7 @@ export default function PatientsPage() {
       </div>
 
       {/* Patient Table (Desktop) */}
-      <div className="bg-white border border-[#EBEAE5] rounded-2xl overflow-hidden hidden sm:block">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl overflow-hidden hidden sm:block shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
@@ -233,11 +233,11 @@ export default function PatientsPage() {
                   return (
                     <tr
                       key={patient.id}
-                      className="hover:bg-[#FAF9F6] transition-colors group cursor-pointer"
+                      className="hover:bg-[#F8F9FA] transition-colors group cursor-pointer"
                     >
                       <td className="py-4 px-5">
                         <Link href={`/patients/${patient.id}`} className="block">
-                          <span className="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors">
+                          <span className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors">
                             {patient.name}
                           </span>
                           <span className="block text-xs text-gray-500 font-normal">
@@ -267,7 +267,7 @@ export default function PatientsPage() {
                       <td className="py-4 px-5 text-right">
                         <Link
                           href={`/patients/${patient.id}`}
-                          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200/60 transition-colors"
+                          className="inline-flex items-center text-xs font-semibold text-[#55941E] hover:text-[#447817] bg-[#F0F9EB] px-3 py-1.5 rounded-lg border border-[#70BF2B]/30 transition-colors"
                         >
                           <span>Manage</span>
                           <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
@@ -299,15 +299,21 @@ export default function PatientsPage() {
         ) : filteredPatients.length === 0 ? (
           <EmptyState
             icon={<Search className="w-6 h-6 text-gray-400" />}
-            title="No patients found"
-            description="Try changing your search terms or filter selection."
+            title="No patients match filters"
+            description="Try adjusting your search query or language/status filters."
+            actionText="Reset filters"
+            onAction={() => {
+              setSearchQuery('');
+              setLanguageFilter('all');
+              setStatusFilter('all');
+            }}
           />
         ) : (
           filteredPatients.map((patient) => (
             <Link
               key={patient.id}
               href={`/patients/${patient.id}`}
-              className="block bg-white border border-[#EBEAE5] rounded-2xl p-4 shadow-xs hover:border-gray-300 transition-colors"
+              className="block bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs hover:border-gray-300 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-base text-gray-900">{patient.name}</span>

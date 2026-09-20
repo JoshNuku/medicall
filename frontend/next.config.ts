@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/backend/:path*',
-        destination: 'http://localhost:3000/:path*',
+        destination: 'http://127.0.0.1:3000/:path*',
       },
       {
         source: '/audio/:path*',
-        destination: 'http://localhost:3000/audio/:path*',
+        destination: 'http://127.0.0.1:3000/audio/:path*',
       },
     ];
   },

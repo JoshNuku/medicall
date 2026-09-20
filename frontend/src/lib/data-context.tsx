@@ -130,7 +130,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('Error fetching backend data:', err);
       setIsBackendOnline(false);
-      setError(err?.message || 'Could not connect to backend at http://localhost:3000');
+      setError(err?.message || 'Could not connect to MediCall backend');
     } finally {
       setIsLoading(false);
     }

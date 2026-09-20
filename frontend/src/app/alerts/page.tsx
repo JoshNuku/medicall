@@ -25,7 +25,7 @@ export default function AlertsPage() {
   const [selectedTab, setSelectedTab] = useState<'open' | 'resolved' | 'cost' | 'side_effects' | 'forgetting'>('open');
   const [resolvingAlert, setResolvingAlert] = useState<EscalationAlert | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [resolvedByName, setResolvedByName] = useState('Kwame Mensah (Pharmacist)');
+  const [resolvedByName, setResolvedByName] = useState('Josh Nuku (Pharmacist)');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resolveError, setResolveError] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -87,15 +87,15 @@ export default function AlertsPage() {
 
       {/* Header */}
       <PageHeader
-        title="Alerts"
-        subtitle="Patients who may need additional support or clinical review."
+        title="Alerts &amp; Escalations"
+        subtitle="Automated voice-call adherence escalations requiring clinician review"
         badge={
           openCount > 0 ? (
             <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
               {openCount} Open
             </span>
           ) : (
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs font-semibold text-[#55941E] bg-[#F0F9EB] border border-[#70BF2B]/30 px-2.5 py-1 rounded-full flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
               All Clear
             </span>
@@ -104,10 +104,10 @@ export default function AlertsPage() {
       />
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 bg-white p-2 rounded-2xl border border-[#EBEAE5] text-xs">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 bg-white p-2 rounded-2xl border border-[#ECECEC] text-xs shadow-xs">
         <button
           onClick={() => setSelectedTab('open')}
-          className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+          className={`px-3.5 py-2 rounded-xl font-medium transition-all ${
             selectedTab === 'open'
               ? 'bg-rose-50 text-rose-800 font-semibold border border-rose-200/80 shadow-xs'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -117,9 +117,9 @@ export default function AlertsPage() {
         </button>
         <button
           onClick={() => setSelectedTab('cost')}
-          className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+          className={`px-3.5 py-2 rounded-xl font-medium transition-all ${
             selectedTab === 'cost'
-              ? 'bg-orange-50 text-orange-900 font-semibold border border-orange-200/80 shadow-xs'
+              ? 'bg-amber-50 text-amber-900 font-semibold border border-amber-200/80 shadow-xs'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -127,7 +127,7 @@ export default function AlertsPage() {
         </button>
         <button
           onClick={() => setSelectedTab('side_effects')}
-          className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+          className={`px-3.5 py-2 rounded-xl font-medium transition-all ${
             selectedTab === 'side_effects'
               ? 'bg-rose-50 text-rose-800 font-semibold border border-rose-200/80 shadow-xs'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -137,9 +137,9 @@ export default function AlertsPage() {
         </button>
         <button
           onClick={() => setSelectedTab('forgetting')}
-          className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+          className={`px-3.5 py-2 rounded-xl font-medium transition-all ${
             selectedTab === 'forgetting'
-              ? 'bg-amber-50 text-amber-900 font-semibold border border-amber-200/80 shadow-xs'
+              ? 'bg-orange-50 text-orange-900 font-semibold border border-orange-200/80 shadow-xs'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -147,9 +147,9 @@ export default function AlertsPage() {
         </button>
         <button
           onClick={() => setSelectedTab('resolved')}
-          className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+          className={`px-3.5 py-2 rounded-xl font-medium transition-all ${
             selectedTab === 'resolved'
-              ? 'bg-emerald-50 text-emerald-900 font-semibold border border-emerald-200/80 shadow-xs'
+              ? 'bg-[#F0F9EB] text-[#55941E] font-semibold border border-[#70BF2B]/30 shadow-xs'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -158,7 +158,7 @@ export default function AlertsPage() {
       </div>
 
       {/* Alerts Table (Desktop) */}
-      <div className="bg-white border border-[#EBEAE5] rounded-2xl overflow-hidden hidden sm:block">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl overflow-hidden hidden sm:block shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
@@ -211,11 +211,11 @@ export default function AlertsPage() {
                   return (
                     <tr
                       key={alert.id}
-                      className="hover:bg-[#FAF9F6] transition-colors group"
+                      className="hover:bg-[#F8F9FA] transition-colors group"
                     >
                       <td className="py-4 px-5">
                         <Link href={`/patients/${alert.patient_id}`} className="block">
-                          <span className="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors">
+                          <span className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors">
                             {alert.patient_name}
                           </span>
                           <span className="block text-xs text-gray-400 font-mono">
@@ -229,7 +229,7 @@ export default function AlertsPage() {
                       <td className="py-4 px-4 text-xs text-gray-700 max-w-md leading-relaxed">
                         {alert.details}
                         {alert.status === 'resolved' && alert.resolution_notes && (
-                          <div className="mt-1 text-[11px] text-emerald-800 bg-emerald-50/80 p-1.5 rounded-lg border border-emerald-200/60">
+                          <div className="mt-1 text-[11px] text-[#447817] bg-[#F0F9EB] p-1.5 rounded-lg border border-[#70BF2B]/30">
                             <strong>Note:</strong> {alert.resolution_notes} &middot; <em>{alert.resolved_by}</em>
                           </div>
                         )}
@@ -245,7 +245,7 @@ export default function AlertsPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="bg-white hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300"
+                            className="bg-white hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 shadow-2xs"
                             onClick={() => handleOpenResolveModal(alert)}
                           >
                             Resolve alert
@@ -272,7 +272,7 @@ export default function AlertsPage() {
           </div>
         ) : filteredAlerts.length === 0 ? (
           <EmptyState
-            icon={<ShieldCheck className="w-6 h-6 text-emerald-600" />}
+            icon={<ShieldCheck className="w-6 h-6 text-[#70BF2B]" />}
             title="No alerts in this category"
             description="All clear! No open escalations found for this filter tab."
           />
@@ -280,7 +280,7 @@ export default function AlertsPage() {
           filteredAlerts.map((alert) => (
             <div
               key={alert.id}
-              className="bg-white border border-[#EBEAE5] rounded-2xl p-4 shadow-xs space-y-3"
+              className="bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs space-y-3"
             >
               <div className="flex items-center justify-between">
                 <Badge variant="alert" alertType={alert.escalation_type} size="sm" />

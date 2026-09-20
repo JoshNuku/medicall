@@ -57,7 +57,7 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
   };
 
   return (
-    <div className="bg-white border border-[#EBEAE5] rounded-2xl p-6">
+    <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs">
       <div className="pb-4 border-b border-gray-100 mb-5">
         <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
           Adherence history & call timeline

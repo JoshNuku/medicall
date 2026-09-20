@@ -6,7 +6,8 @@
  */
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  (typeof window !== 'undefined' ? '/api/backend' : 'http://127.0.0.1:3000');
 
 async function fetchWithRetry(
   url: string,
@@ -182,4 +183,18 @@ export async function fetchTodayCalls() {
   if (!res.ok) throw new Error('Failed to load today calls');
   const data = await res.json();
   return data.calls || [];
+}
+
+// 8. Trigger Instant Demo Call
+export async function triggerCallApi(payload: { patient_id?: number; phone_number?: string }) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/calls/trigger`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to trigger call (HTTP ${res.status})`);
+  }
+  return res.json();
 }

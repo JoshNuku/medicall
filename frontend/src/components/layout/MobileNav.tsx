@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -9,7 +10,6 @@ import {
   AlertTriangle,
   Menu,
   X,
-  Activity,
   Bell,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
@@ -44,16 +44,15 @@ export const MobileNav: React.FC = () => {
   return (
     <header className="md:hidden bg-white border-b border-[#EBEAE5] sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
-            <Activity className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="font-bold text-base text-gray-900 tracking-tight">MediCall</span>
-            <span className="ml-1.5 text-[9px] font-semibold uppercase bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded border border-emerald-200">
-              MVP
-            </span>
-          </div>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image
+            src="/logo.jpg"
+            alt="MediCall"
+            width={120}
+            height={40}
+            className="h-8 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <div className="flex items-center gap-2">

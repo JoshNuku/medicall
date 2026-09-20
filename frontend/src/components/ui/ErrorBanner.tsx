@@ -11,7 +11,7 @@ interface ErrorBannerProps {
 }
 
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({
-  message = 'Unable to connect to MediCall backend at http://localhost:3000.',
+  message = 'Unable to connect to MediCall backend.',
   onRetry,
   isRetrying = false,
 }) => {

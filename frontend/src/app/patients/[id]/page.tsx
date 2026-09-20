@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { AudioPlayer } from '@/components/patients/AudioPlayer';
 import { PrescribeMedicationModal } from '@/components/patients/PrescribeMedicationModal';
+import { TriggerCallModal } from '@/components/patients/TriggerCallModal';
 import { CallTimeline } from '@/components/patients/CallTimeline';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -41,6 +42,7 @@ export default function PatientDetailPage() {
   const logs = getPatientLogs(patientId);
 
   const [isPrescribeOpen, setIsPrescribeOpen] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,11 +133,20 @@ export default function PatientDetailPage() {
             </div>
           </div>
 
-          <div>
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="secondary"
+              icon={<Phone className="w-4 h-4 text-[#70BF2B]" />}
+              onClick={() => setIsCallModalOpen(true)}
+              className="border-[#70BF2B]/40 hover:bg-[#F0F9EB] text-[#55941E]"
+            >
+              Call Patient Now
+            </Button>
             <Button
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setIsPrescribeOpen(true)}
+              className="bg-[#70BF2B] hover:bg-[#62A825] text-white"
             >
               Prescribe medication
             </Button>
@@ -145,55 +156,68 @@ export default function PatientDetailPage() {
 
       {/* Main Patient Summary Cards (3 metrics) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Adherence */}
-        <div className="bg-white border border-[#EBEAE5] rounded-2xl p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Adherence
+        {/* Adherence Hero Card */}
+        <div className="bg-[#70BF2B] text-white rounded-2xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none blur-lg" />
+          <div className="flex items-center justify-between mb-2 relative z-10">
+            <span className="text-xs font-semibold text-white/90 uppercase tracking-wider">
+              Adherence Rate
             </span>
-            <Activity className="w-4 h-4 text-emerald-600" />
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <Activity className="w-4 h-4 text-white stroke-[2.2]" />
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-950 tracking-tight">
-            {patient.adherence_rate}%
+          <div className="relative z-10">
+            <div className="text-3xl font-bold tracking-tight text-white">
+              {patient.adherence_rate}%
+            </div>
+            <p className="text-xs text-white/85 mt-1 font-medium">
+              {patient.adherence_rate >= 80 ? 'Above clinical target (80%)' : 'Needs attention'}
+            </p>
           </div>
-          <p className="text-xs text-emerald-700 mt-1 font-medium">
-            {patient.adherence_rate >= 80 ? 'Above clinical target' : 'Needs attention'}
-          </p>
         </div>
 
         {/* Current Medications */}
-        <div className="bg-white border border-[#EBEAE5] rounded-2xl p-5 shadow-xs">
+        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Current medications
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Current Medications
             </span>
-            <Pill className="w-4 h-4 text-slate-600" />
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              <Pill className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-950 tracking-tight">
-            {medications.length}
+          <div>
+            <div className="text-3xl font-bold text-gray-900 tracking-tight">
+              {medications.length}
+            </div>
+            <p className="text-xs text-gray-500 mt-1 font-normal">
+              Active adherence regimens
+            </p>
           </div>
-          <p className="text-xs text-gray-500 mt-1 font-normal">
-            Active adherence regimens
-          </p>
         </div>
 
         {/* Last Call */}
-        <div className="bg-white border border-[#EBEAE5] rounded-2xl p-5 shadow-xs">
+        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Last call
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Last Call Result
             </span>
-            <Clock className="w-4 h-4 text-slate-600" />
+            <div className="w-8 h-8 rounded-full bg-[#F0F9EB] flex items-center justify-center text-[#70BF2B]">
+              <Clock className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-gray-950 tracking-tight">
-            {patient.last_call_time || 'Today, 08:02'}
-          </div>
-          <div className="mt-1">
-            <Badge
-              variant="outcome"
-              outcome={patient.last_call_outcome || 'confirmed'}
-              size="sm"
-            />
+          <div>
+            <div className="text-2xl font-bold text-gray-900 tracking-tight">
+              {patient.last_call_time || 'Today, 08:02'}
+            </div>
+            <div className="mt-1">
+              <Badge
+                variant="outcome"
+                outcome={patient.last_call_outcome || 'confirmed'}
+                size="sm"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -222,7 +246,7 @@ export default function PatientDetailPage() {
 
         {medications.length === 0 ? (
           <EmptyState
-            icon={<Pill className="w-6 h-6 text-emerald-600" />}
+            icon={<Pill className="w-6 h-6 text-[#70BF2B]" />}
             title="No active medications"
             description="Prescribe a medication regimen with verified Twi templates or recorded audio to start reminder calls."
             actionText="+ Prescribe medication"
@@ -233,7 +257,7 @@ export default function PatientDetailPage() {
             {medications.map((med) => (
               <div
                 key={med.id}
-                className="bg-white border border-[#EBEAE5] rounded-2xl p-6 space-y-5 hover:border-gray-300 transition-colors shadow-xs"
+                className="bg-white border border-[#ECECEC] rounded-2xl p-6 space-y-5 hover:border-gray-300 transition-colors shadow-xs"
               >
                 {/* Medication title + Status + Source badges */}
                 <div className="flex items-start justify-between gap-3">
@@ -305,6 +329,13 @@ export default function PatientDetailPage() {
         }}
         patientId={patient.id}
         patientName={patient.name}
+      />
+
+      {/* Trigger Live Call Modal */}
+      <TriggerCallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        defaultPatientId={patient.id}
       />
     </div>
   );

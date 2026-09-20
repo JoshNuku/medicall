@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/Button';
 import { Language } from '@/lib/types';
 import { UserPlus, Phone, Globe, HeartHandshake } from 'lucide-react';
 
+import { useData } from '@/lib/data-context';
+
 interface EnrollPatientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onEnroll: (data: {
+  onEnroll?: (data: {
     name: string;
     phone_number: string;
     preferred_language: Language;
@@ -22,6 +24,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
   onClose,
   onEnroll,
 }) => {
+  const { enrollPatient } = useData();
   const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('+233 ');
   const [preferredLanguage, setPreferredLanguage] = useState<Language>('twi');
@@ -44,12 +47,18 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
     setError('');
 
     try {
-      await onEnroll({
+      const payload = {
         name: name.trim(),
         phone_number: phoneNumber.trim(),
         preferred_language: preferredLanguage,
         caregiver_phone: caregiverPhone.trim() || undefined,
-      });
+      };
+
+      if (onEnroll) {
+        await onEnroll(payload);
+      } else {
+        await enrollPatient(payload);
+      }
 
       // Reset and close
       setName('');
