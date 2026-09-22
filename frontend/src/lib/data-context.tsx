@@ -30,6 +30,16 @@ interface DataContextType {
     preferred_language: 'twi' | 'english';
     caregiver_phone?: string | null;
   }) => Promise<Patient>;
+  updatePatient: (
+    id: number,
+    fields: Partial<{
+      name: string;
+      phone_number: string;
+      preferred_language: 'twi' | 'english';
+      caregiver_phone?: string | null;
+    }>
+  ) => Promise<Patient>;
+  deletePatient: (id: number) => Promise<void>;
   prescribeMedication: (
     patientId: number,
     medData: {
@@ -46,9 +56,12 @@ interface DataContextType {
       duration_days: number;
       is_chronic?: boolean;
       audioFile?: File | null;
+      language?: 'twi' | 'english';
     }
   ) => Promise<Medication>;
   resolveAlert: (alertId: number, resolvedBy?: string, resolutionNotes?: string) => Promise<void>;
+  updateMedication: (patientId: number, medId: number, fields: { drug_name?: string; schedule_times?: string; duration_days?: number; is_chronic?: boolean }) => Promise<Medication>;
+  deleteMedication: (patientId: number, medId: number) => Promise<void>;
   getPatientById: (id: number) => Patient | undefined;
   getPatientMedications: (patientId: number) => Medication[];
   getPatientLogs: (patientId: number) => CallEvent[];
@@ -124,14 +137,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
 
       // Normalize patients with computed fields
-      const formattedPatients: Patient[] = (patientsRes || []).map((p: any, index: number) => ({
-        ...p,
-        adherence_rate: p.adherence_rate !== undefined ? p.adherence_rate : [92, 84, 76, 71, 88, 95, 89, 79][index % 8] || 85,
-        status: p.status || ([76, 71, 79].includes([92, 84, 76, 71, 88, 95, 89, 79][index % 8]) ? 'attention' : 'active'),
-        current_medication_name: p.current_medication_name || 'Prescribed Regimen',
-        next_call_time: p.next_call_time || '14:00',
-        active_medications_count: p.active_medications_count || 1,
-      }));
+      const formattedPatients: Patient[] = (patientsRes || []).map((p: any) => {
+        const hasCalls = p.total_calls !== undefined && p.total_calls !== null ? Number(p.total_calls) > 0 : Boolean(p.last_call_time);
+        const realRate = p.adherence_rate !== null && p.adherence_rate !== undefined ? Number(p.adherence_rate) : (hasCalls ? 85 : null);
+        return {
+          ...p,
+          adherence_rate: realRate,
+          total_calls: p.total_calls ? Number(p.total_calls) : 0,
+          status: p.status || (realRate !== null && realRate < 80 ? 'attention' : 'active'),
+          current_medication_name: p.current_medication_name || 'Prescribed Regimen',
+          next_call_time: p.next_call_time || '14:00',
+          active_medications_count: p.active_medications_count || 1,
+        };
+      });
 
       // Map human labels for alerts if missing
       const formattedAlerts: EscalationAlert[] = (alertsRes || []).map((a: any) => {
@@ -181,10 +199,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load patient specific medications and logs from real backend
   const loadPatientDetails = useCallback(async (patientId: number) => {
     try {
-      const [meds, logs] = await Promise.all([
+      const [meds, rawLogs] = await Promise.all([
         api.fetchPatientMedications(patientId).catch(() => []),
         api.fetchPatientLogs(patientId).catch(() => []),
       ]);
+
+      const logs = (rawLogs || []).map((l: any, idx: number) => ({
+        ...l,
+        id: l.id || l.call_event_id || idx + 1,
+      }));
 
       setMedications((prev) => ({
         ...prev,
@@ -195,6 +218,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...prev,
         [patientId]: logs,
       }));
+
+      // Update patient summary with latest call event dynamically
+      if (logs && logs.length > 0) {
+        const completed = logs.filter((l: CallEvent) => l.actual_call_time || (l.outcome && l.outcome !== 'pending' && l.outcome !== 'uncalled'));
+        const latestCompleted = completed[0];
+        const confirmed = logs.filter((l: CallEvent) => l.outcome === 'confirmed');
+        const calculatedRate = completed.length > 0 ? Math.round((confirmed.length / completed.length) * 100) : null;
+
+        setPatients((prev) =>
+          prev.map((pat) =>
+            pat.id === patientId
+              ? {
+                  ...pat,
+                  adherence_rate: calculatedRate,
+                  total_calls: logs.length,
+                  last_call_time: latestCompleted
+                    ? (latestCompleted.actual_call_time || latestCompleted.scheduled_time)
+                    : pat.last_call_time,
+                  last_call_outcome: latestCompleted
+                    ? latestCompleted.outcome
+                    : pat.last_call_outcome,
+                }
+              : pat
+          )
+        );
+      }
     } catch (err) {
       console.error(`Error loading details for patient #${patientId}:`, err);
     }
@@ -210,8 +259,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ).length;
 
   const confirmedCallsCount = todayCalls.filter((c) => c.outcome === 'confirmed').length;
-  const averageAdherence = patients.length
-    ? Math.round(patients.reduce((sum, patient) => sum + (patient.adherence_rate || 0), 0) / patients.length)
+  const patientsWithRate = patients.filter((p) => p.adherence_rate !== null && p.adherence_rate !== undefined);
+  const averageAdherence = patientsWithRate.length
+    ? Math.round(patientsWithRate.reduce((sum, patient) => sum + (patient.adherence_rate || 0), 0) / patientsWithRate.length)
     : 0;
 
   const metrics: DashboardMetrics = {
@@ -235,16 +285,49 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const created = await api.createPatient(patientData);
     const newPatient: Patient = {
       ...created,
-      adherence_rate: 100,
+      adherence_rate: null,
+      total_calls: 0,
       active_medications_count: 0,
       status: 'active',
-      current_medication_name: 'Pending prescription',
-      last_call_time: 'Just enrolled',
+      current_medication_name: 'None prescribed',
       next_call_time: 'Pending schedule',
+      last_call_time: undefined,
+      last_call_outcome: 'uncalled',
     };
 
     setPatients((prev) => [newPatient, ...prev]);
     return newPatient;
+  };
+
+  const updatePatientFn = async (
+    id: number,
+    fields: Partial<{
+      name: string;
+      phone_number: string;
+      preferred_language: 'twi' | 'english';
+      caregiver_phone?: string | null;
+    }>
+  ): Promise<Patient> => {
+    const updated = await api.updatePatientApi(id, fields);
+    setPatients((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
+    );
+    return updated;
+  };
+
+  const deletePatientFn = async (id: number): Promise<void> => {
+    await api.deletePatientApi(id);
+    setPatients((prev) => prev.filter((p) => p.id !== id));
+    setMedications((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setPatientLogs((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   // Real backend Prescribe Mutation
@@ -264,6 +347,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       duration_days: number;
       is_chronic?: boolean;
       audioFile?: File | null;
+      language?: 'twi' | 'english';
     }
   ): Promise<Medication> => {
     const created = await api.createMedication(patientId, medData);
@@ -273,6 +357,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       frequency_label: medData.frequency_label,
       timing_label: medData.timing_label,
       assembled_twi: medData.assembled_twi,
+      language: medData.language || created.language || 'twi',
       status: 'active',
     };
 
@@ -321,6 +406,35 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  const updateMedicationFn = async (
+    patientId: number,
+    medId: number,
+    fields: { drug_name?: string; schedule_times?: string; duration_days?: number; is_chronic?: boolean }
+  ): Promise<Medication> => {
+    const updated = await api.updateMedicationApi(patientId, medId, fields);
+    setMedications((prev) => ({
+      ...prev,
+      [patientId]: (prev[patientId] || []).map((m) => (m.id === medId ? { ...m, ...updated } : m)),
+    }));
+    return updated;
+  };
+
+  const deleteMedicationFn = async (patientId: number, medId: number): Promise<void> => {
+    await api.deleteMedicationApi(patientId, medId);
+    setMedications((prev) => ({
+      ...prev,
+      [patientId]: (prev[patientId] || []).filter((m) => m.id !== medId),
+    }));
+    // Update patient medication count
+    setPatients((prev) =>
+      prev.map((p) =>
+        p.id === patientId
+          ? { ...p, active_medications_count: Math.max(0, (p.active_medications_count || 1) - 1) }
+          : p
+      )
+    );
+  };
+
   const getPatientById = (id: number) => {
     return patients.find((p) => p.id === id);
   };
@@ -348,8 +462,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isBackendOnline,
         refetch: loadInitialData,
         enrollPatient,
+        updatePatient: updatePatientFn,
+        deletePatient: deletePatientFn,
         prescribeMedication,
         resolveAlert,
+        updateMedication: updateMedicationFn,
+        deleteMedication: deleteMedicationFn,
         getPatientById,
         getPatientMedications,
         getPatientLogs,

@@ -1,26 +1,50 @@
-const { getPatientByPhoneNumber } = require('../db/queries/patients');
+const { getPatientByPhoneNumber, getPatientById } = require('../db/queries/patients');
 const { getMedicationsByPatientId } = require('../db/queries/medications');
 const { createCallEvent } = require('../db/queries/callEvents');
-const { buildVoiceResponse, buildPlay, buildSay } = require('../utils/xmlBuilder');
+const { createEscalation } = require('../db/queries/escalations');
+const { buildVoiceResponse, buildSay, buildGetDigits } = require('../utils/xmlBuilder');
 
 const handleInboundCall = (callerNumber, baseUrl) => {
   const patient = callerNumber ? getPatientByPhoneNumber(callerNumber) : null;
 
   if (!patient) {
     return buildVoiceResponse(
-      buildSay('Welcome to your pharmacy helpline. Your phone number is not registered in our system. Please contact your pharmacy. Goodbye.')
+      buildSay('Welcome to MediCall prescription helpline. Your phone number is not registered in our system. Please contact your pharmacy. Goodbye.')
     );
   }
 
   const medications = getMedicationsByPatientId(patient.id);
-  const activeMed = medications.length > 0 ? medications[0] : null;
 
-  if (!activeMed || !activeMed.audio_url) {
+  if (!medications || medications.length === 0) {
     return buildVoiceResponse(
-      buildSay('You have no active medication instructions at this time. Thank you.')
+      buildSay('Welcome to MediCall. You have no active medication instructions on file at this time. Thank you.')
     );
   }
 
+  const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
+
+  // If patient has multiple medications, provide IVR menu to choose which one to hear or stay on line
+  if (medications.length > 1) {
+    const medChoices = medications
+      .map((m, idx) => (isEnglish ? `Press ${idx + 1} for ${m.drug_name}.` : `Mia ${idx + 1} ma ${m.drug_name}.`))
+      .join(' ');
+
+    const promptText = isEnglish
+      ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Or stay on the line to hear all instructions. Press 9 to repeat, or Press 0 to speak with your pharmacist.`
+      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Anaa tena so na tie ne nyinaa. Mia nkron sɛ wobɛtie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.`;
+
+    const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}`;
+    const digitsXml = buildGetDigits({
+      numDigits: 1,
+      timeout: 12,
+      callbackUrl,
+      sayText: promptText
+    });
+    return buildVoiceResponse(digitsXml);
+  }
+
+  // Single active medication: Play instruction immediately followed by keypress trailer
+  const activeMed = medications[0];
   const today = new Date().toISOString().split('T')[0];
   createCallEvent({
     patient_id: patient.id,
@@ -42,9 +66,83 @@ const handleInboundCall = (callerNumber, baseUrl) => {
     }
   }
 
-  return buildVoiceResponse(buildPlay(fullAudioUrl));
+  const trailerText = isEnglish
+    ? 'Press 9 to hear this instruction again, or Press 0 to speak with your pharmacist.'
+    : 'Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.';
+
+  const digitsXml = buildGetDigits({
+    numDigits: 1,
+    timeout: 10,
+    callbackUrl: `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${activeMed.id}`,
+    playUrl: fullAudioUrl,
+    sayText: trailerText
+  });
+  return buildVoiceResponse(digitsXml);
+};
+
+const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
+  const patient = patientId ? getPatientById(patientId) : null;
+  if (!patient) return buildVoiceResponse(buildSay('Thank you. Goodbye.'));
+
+  const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
+
+  // Key 0: Request pharmacist help
+  if (dtmfDigits === '0') {
+    createEscalation({
+      patient_id: patient.id,
+      escalation_type: 'patient_requested_help'
+    });
+    return buildVoiceResponse(
+      buildSay(
+        isEnglish
+          ? 'Your pharmacist has been notified and will call you back shortly. Thank you for using MediCall. Goodbye.'
+          : 'Yɛabɔ wo duruyɛfoɔ amanneɛ na ɔbɛfrɛ wo ntɛm ara. Medaase firi MediCall. Nante yie.'
+      )
+    );
+  }
+
+  const medications = getMedicationsByPatientId(patient.id);
+
+  // Key 9: Repeat menu
+  if (dtmfDigits === '9') {
+    return handleInboundCall(patient.phone_number, baseUrl);
+  }
+
+  // Key 1..N: Selected specific medication
+  const index = parseInt(dtmfDigits, 10) - 1;
+  const chosenMed = (index >= 0 && index < medications.length)
+    ? medications[index]
+    : (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
+
+  if (!chosenMed) {
+    return handleInboundCall(patient.phone_number, baseUrl);
+  }
+
+  let fullAudioUrl = chosenMed.audio_url;
+  if (fullAudioUrl) {
+    if (fullAudioUrl.includes('localhost:3000')) {
+      fullAudioUrl = fullAudioUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
+    } else if (!fullAudioUrl.startsWith('http://') && !fullAudioUrl.startsWith('https://')) {
+      fullAudioUrl = `${baseUrl}${fullAudioUrl.startsWith('/') ? '' : '/'}${fullAudioUrl}`;
+    }
+  }
+
+  const trailerText = isEnglish
+    ? `You just heard instructions for ${chosenMed.drug_name}. Press 9 to hear this again, or Press 0 to speak with your pharmacist.`
+    : `Woatie wo nnuro ${chosenMed.drug_name} ho akwankyerɛ. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.`;
+
+  const digitsXml = buildGetDigits({
+    numDigits: 1,
+    timeout: 10,
+    callbackUrl: `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`,
+    playUrl: fullAudioUrl,
+    sayText: trailerText
+  });
+  return buildVoiceResponse(digitsXml);
 };
 
 module.exports = {
-  handleInboundCall
+  handleInboundCall,
+  handleInboundSelect
 };
+

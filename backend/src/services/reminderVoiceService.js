@@ -6,7 +6,7 @@ const { createDiagnosticResponse } = require('../db/queries/diagnosticResponses'
 const { addConversationMessage } = require('../db/queries/agentConversations');
 const { passResponseToAgent } = require('./agent');
 const { handleUniversalKeys } = require('./voiceUniversalHandler');
-const { buildVoiceResponse, buildGetDigits, buildSay } = require('../utils/xmlBuilder');
+const { buildVoiceResponse, buildGetDigits, buildSay, buildPlay } = require('../utils/xmlBuilder');
 
 const generateReminderXml = (callEventId, audioUrl, baseUrl, sayText = null) => {
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId || ''}`;
@@ -52,7 +52,9 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId}`;
 
   const patient = getPatientById(callEvent.patient_id);
-  const isEnglish = patient && (patient.preferred_language || '').toLowerCase() === 'english';
+  const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
+  const isEnglish = medLang ? medLang === 'english' : (patient && (patient.preferred_language || '').toLowerCase() === 'english');
+  const isTwi = !isEnglish;
   let replaySayText = null;
 
   if (isEnglish && medication?.instruction_source !== 'recorded') {
@@ -81,8 +83,7 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
 
   if (isAiAgentEnabled) {
     // --- AI AGENT MODE: Instant Neutral Acknowledgment + Autonomous LLM Triage ---
-    const patient = getPatientById(callEvent.patient_id);
-    const isTwi = patient && patient.preferred_language === 'twi';
+    // isTwi already computed from medication language
 
     if (dtmfDigits === '1') {
       outcome = CALL_OUTCOMES.CONFIRMED;

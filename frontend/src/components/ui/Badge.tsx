@@ -37,6 +37,8 @@ export const Badge: React.FC<BadgeProps> = ({
       not_taken: { icon: X, label: 'Not taken', shell: 'bg-amber-50 text-amber-700 border-amber-200' },
       no_answer: { icon: PhoneOff, label: 'No answer', shell: 'bg-rose-50 text-rose-700 border-rose-200' },
       answered_no_keypress: { icon: Minus, label: 'No keypress', shell: 'bg-slate-100 text-slate-700 border-slate-200' },
+      pending: { icon: Minus, label: 'In progress', shell: 'bg-blue-50 text-blue-700 border-blue-200' },
+      uncalled: { icon: Minus, label: 'Awaiting call', shell: 'bg-gray-100 text-gray-600 border-gray-200' },
     }[outcome];
 
     if (!config) return null;

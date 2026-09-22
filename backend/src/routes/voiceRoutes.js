@@ -31,6 +31,20 @@ const { getPatientByPhoneNumber } = require('../db/queries/patients');
 const handleReminderCall = (req, res, next) => {
   try {
     if (req.body.isActive === '0' || req.body.status === 'Completed') {
+      const destPhone = req.body.destinationNumber;
+      const callerPhone = req.body.callerNumber;
+      const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
+      const targetPhone = callerPhone && callerPhone !== atNumber ? callerPhone : destPhone;
+      const patient = getPatientByPhoneNumber(targetPhone) || (destPhone ? getPatientByPhoneNumber(destPhone) : null);
+      if (patient) {
+        const { getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
+        const pending = getLatestPendingCallEventForPatient(patient.id);
+        if (pending && !pending.outcome) {
+          const isNotAnswered = req.body.status === 'NotAnswered' || req.body.callSessionState === 'NotAnswered' || req.body.hangupCause === 'USER_BUSY' || req.body.hangupCause === 'NO_ANSWER';
+          const outcome = isNotAnswered ? 'no_answer' : 'answered_no_keypress';
+          updateCallOutcome(pending.id, outcome, new Date().toISOString());
+        }
+      }
       res.set('Content-Type', 'text/xml');
       return res.status(200).send('<Response/>');
     }
@@ -41,46 +55,77 @@ const handleReminderCall = (req, res, next) => {
 
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
+    const { getLatestPendingCallEventForPatient } = require('../db/queries/callEvents');
+
     if (!callEvent) {
-      const patient = (callerPhone && getPatientByPhoneNumber(callerPhone)) || (destPhone && getPatientByPhoneNumber(destPhone));
+      // In outbound reminder calls from Africa's Talking, destinationNumber is the patient's phone!
+      const targetPhone = destPhone || callerPhone;
+      const patient = getPatientByPhoneNumber(targetPhone) || (callerPhone ? getPatientByPhoneNumber(callerPhone) : null);
+
       if (patient) {
-        const meds = getMedicationsByPatientId(patient.id);
-        if (meds.length > 0) {
-          medication = meds[0];
-          callEvent = createCallEvent({
-            patient_id: patient.id,
-            medication_id: medication.id,
-            scheduled_time: new Date().toISOString(),
-            call_type: 'reminder',
-            attempt_number: 1,
-            dose_date: new Date().toISOString().split('T')[0]
-          });
+        // First check if a pending callEvent was already registered when outbound call was dispatched
+        const pendingEvent = getLatestPendingCallEventForPatient(patient.id);
+        if (pendingEvent) {
+          callEvent = pendingEvent;
           callEventId = callEvent.id;
+          medication = getMedicationById(callEvent.medication_id);
+        } else {
+          const meds = getMedicationsByPatientId(patient.id);
+          if (meds.length > 0) {
+            medication = meds[0];
+            callEvent = createCallEvent({
+              patient_id: patient.id,
+              medication_id: medication.id,
+              scheduled_time: new Date().toISOString(),
+              actual_call_time: new Date().toISOString(),
+              call_type: 'reminder',
+              attempt_number: 1,
+              dose_date: new Date().toISOString().split('T')[0]
+            });
+            callEventId = callEvent.id;
+          }
         }
       }
+    }
+
+    if (callEvent && !callEvent.actual_call_time) {
+      const db = require('../db/connection');
+      db.prepare('UPDATE call_events SET actual_call_time = ? WHERE id = ?').run(new Date().toISOString(), callEvent.id);
     }
 
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const { getPatientById } = require('../db/queries/patients');
     const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
-    const isEnglish = patientObj && (patientObj.preferred_language || '').toLowerCase() === 'english';
+    const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
+    const isEnglish = medLang
+      ? medLang === 'english'
+      : (patientObj && (patientObj.preferred_language || '').toLowerCase() === 'english');
+
+    const isAiAgentEnabled = process.env.ENABLE_AI_AGENT === 'true';
+    const medName = medication ? medication.drug_name : 'your medication';
 
     let audioUrl = null;
     let sayText = null;
 
-    if (medication && medication.instruction_source === 'recorded' && medication.audio_url) {
-      console.log(`🎙️ [VOICE ROUTE]: Serving Pharmacist Custom Voice Note (${medication.audio_url})`);
-      audioUrl = medication.audio_url;
-    } else if (isEnglish) {
+    if (isEnglish) {
       const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
       const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
-      sayText = (latestMsg && latestMsg.content)
-        ? latestMsg.content
-        : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press number one to confirm you are taking it now. Press number two for side effects. Press number three for cost issues. Press number four for an earlier reminder.`;
-      console.log(`🗣️ [VOICE ROUTE]: Serving Dynamic English <Say> prompt:\n   "${sayText}"`);
+      if (isAiAgentEnabled) {
+        sayText = (latestMsg && latestMsg.content)
+          ? latestMsg.content
+          : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you are taking it now. Press 2 for side effects. Press 3 for cost issues. Press 4 for an earlier reminder. Press 9 to repeat, or Press 0 for your pharmacist.`;
+      } else {
+        sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you have taken your medication. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`;
+      }
+      console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
     } else {
-      audioUrl = medication && medication.audio_url ? medication.audio_url : `${baseUrl}/audio/default-reminder.mp3`;
-      console.log(`🔊 [VOICE ROUTE]: Serving Asante Twi <Play> Audio (${audioUrl})`);
+      // For Twi reminder calls (including recorded medications), use the crisp template reminder audio
+      audioUrl = `${baseUrl}/audio/default-reminder.mp3`;
+      if (medication && medication.instruction_source === 'recorded') {
+        console.log(`🎙️ [VOICE ROUTE]: Medication #${medication.id} has custom recorded audio. Using standard template reminder for outbound call; custom recording will be played on inbound callback.`);
+      } else {
+        console.log(`🔊 [VOICE ROUTE]: Serving Asante Twi template reminder audio (${audioUrl})`);
+      }
     }
 
     const xml = generateReminderXml(callEventId, audioUrl, baseUrl, sayText);

@@ -77,6 +77,40 @@ export async function createPatient(payload: {
   return data.patient;
 }
 
+export async function updatePatientApi(
+  id: number,
+  payload: {
+    name?: string;
+    phone_number?: string;
+    preferred_language?: 'twi' | 'english';
+    caregiver_phone?: string | null;
+  }
+) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/patients/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to update patient #${id} (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  return data.patient;
+}
+
+export async function deletePatientApi(id: number) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/patients/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to delete patient #${id} (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  return data;
+}
+
 // 3. Medications API
 export async function fetchPatientMedications(patientId: number) {
   const res = await fetchWithRetry(`${API_BASE_URL}/patients/${patientId}/medications`);
@@ -97,6 +131,7 @@ export async function createMedication(
     duration_days: number;
     is_chronic?: boolean;
     audioFile?: File | null;
+    language?: 'twi' | 'english';
   }
 ) {
   let body: BodyInit;
@@ -109,6 +144,7 @@ export async function createMedication(
     formData.append('schedule_times', payload.schedule_times);
     formData.append('duration_days', String(payload.duration_days));
     formData.append('is_chronic', String(payload.is_chronic ? 1 : 0));
+    if (payload.language) formData.append('language', payload.language);
     formData.append('audio', payload.audioFile);
     body = formData;
   } else {
@@ -121,6 +157,7 @@ export async function createMedication(
       schedule_times: payload.schedule_times,
       duration_days: payload.duration_days,
       is_chronic: payload.is_chronic ? 1 : 0,
+      language: payload.language || 'twi',
     });
     headers = { 'Content-Type': 'application/json' };
   }
@@ -137,6 +174,40 @@ export async function createMedication(
   }
   const data = await res.json();
   return data.medication;
+}
+
+export async function updateMedicationApi(
+  patientId: number,
+  medId: number,
+  payload: {
+    drug_name?: string;
+    schedule_times?: string;
+    duration_days?: number;
+    is_chronic?: boolean;
+  }
+) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/patients/${patientId}/medications/${medId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to update medication (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  return data.medication;
+}
+
+export async function deleteMedicationApi(patientId: number, medId: number) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/patients/${patientId}/medications/${medId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to delete medication (HTTP ${res.status})`);
+  }
+  return res.json();
 }
 
 // 4. Logs API

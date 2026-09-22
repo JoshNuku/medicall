@@ -64,10 +64,20 @@ const getTodayCallEvents = () => {
   `).all();
 };
 
+const getLatestPendingCallEventForPatient = (patientId) => {
+  return db.prepare(`
+    SELECT * FROM call_events
+    WHERE patient_id = ? AND (outcome IS NULL OR outcome = 'pending')
+    ORDER BY scheduled_time DESC
+    LIMIT 1
+  `).get(patientId);
+};
+
 module.exports = {
   createCallEvent,
   updateCallOutcome,
   getCallEventById,
   getRecentCallEventsForMedication,
-  getTodayCallEvents
+  getTodayCallEvents,
+  getLatestPendingCallEventForPatient
 };

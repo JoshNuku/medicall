@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { handleInboundCall } = require('../services/inboundVoiceService');
+const { handleInboundCall, handleInboundSelect } = require('../services/inboundVoiceService');
 
 /**
  * @openapi
@@ -8,24 +8,7 @@ const { handleInboundCall } = require('../services/inboundVoiceService');
  *   post:
  *     tags: [Voice Webhooks]
  *     summary: Inbound relisten call webhook
- *     description: Identifies calling patient by phone number and plays back their active medication audio.
- *     requestBody:
- *       content:
- *         application/x-www-form-urlencoded:
- *           schema:
- *             type: object
- *             properties:
- *               callerNumber:
- *                 type: string
- *                 example: "+233546007121"
- *     responses:
- *       200:
- *         description: Africa's Talking XML response with Play tag
- *         content:
- *           text/xml:
- *             schema:
- *               type: string
- *               example: "<Response><Play url='http://.../audio/khaya_twi.mp3'/></Response>"
+ *     description: Identifies calling patient by phone number and plays back active medication audio or IVR choice.
  */
 router.post('/inbound', (req, res, next) => {
   try {
@@ -40,4 +23,27 @@ router.post('/inbound', (req, res, next) => {
   }
 });
 
+/**
+ * @openapi
+ * /voice/inbound/select:
+ *   post:
+ *     tags: [Voice Webhooks]
+ *     summary: Inbound medication selection or help keypress callback
+ */
+router.post('/inbound/select', (req, res, next) => {
+  try {
+    const patientId = req.query.patientId || req.body.patientId;
+    const medId = req.query.medId || req.body.medId;
+    const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    const xml = handleInboundSelect(patientId, dtmfDigits, baseUrl, medId);
+    res.set('Content-Type', 'text/xml');
+    res.status(200).send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
+

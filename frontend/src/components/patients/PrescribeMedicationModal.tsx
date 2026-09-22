@@ -24,6 +24,7 @@ interface PrescribeMedicationModalProps {
   onSuccess?: (drugName: string) => void;
   patientId: number;
   patientName: string;
+  patientLanguage?: 'twi' | 'english';
 }
 
 export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> = ({
@@ -32,10 +33,23 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   onSuccess,
   patientId,
   patientName,
+  patientLanguage = 'twi',
 }) => {
   const { templates, prescribeMedication } = useData();
 
   const [mode, setMode] = useState<'template' | 'recorded'>('template');
+  const isPatientEnglish = (patientLanguage || '').toLowerCase() === 'english';
+  const [language, setLanguage] = useState<'twi' | 'english'>(isPatientEnglish ? 'english' : 'twi');
+  const hasInitializedLangRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isOpen && !hasInitializedLangRef.current) {
+      setLanguage(isPatientEnglish ? 'english' : (patientLanguage || 'twi'));
+      hasInitializedLangRef.current = true;
+    } else if (!isOpen) {
+      hasInitializedLangRef.current = false;
+    }
+  }, [isOpen, patientLanguage, isPatientEnglish]);
 
   // Shared fields
   const [drugName, setDrugName] = useState('');
@@ -91,21 +105,27 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   const selectedFrequency = frequencies.find((f) => f.id === selectedFrequencyId);
   const selectedTiming = timings.find((t) => t.id === selectedTimingId);
 
-  // Auto-assembled authentic Twi prompt
-  const autoAssembledTwi = React.useMemo(() => {
+  // Auto-assembled prompt with medication name (English or authentic Twi)
+  const autoAssembledPrompt = React.useMemo(() => {
     if (!selectedDosage || !selectedFrequency || !selectedTiming) return '';
-    return `${selectedDosage.text_twi}, ${selectedFrequency.text_twi}, ${selectedTiming.text_twi}.`;
-  }, [selectedDosage, selectedFrequency, selectedTiming]);
+    const cleanDrug = drugName.trim();
+    if (language === 'english') {
+      const prefix = cleanDrug ? `Take your ${cleanDrug}: ` : 'Take ';
+      return `${prefix}${selectedDosage.label_english}, ${selectedFrequency.label_english}, ${selectedTiming.label_english}.`;
+    }
+    const prefix = cleanDrug ? `Fa wo nnuro ${cleanDrug}: ` : '';
+    return `${prefix}${selectedDosage.text_twi}, ${selectedFrequency.text_twi}, ${selectedTiming.text_twi}.`;
+  }, [selectedDosage, selectedFrequency, selectedTiming, language, drugName]);
 
-  const [twiPrompt, setTwiPrompt] = useState<string>('');
-  const [isTwiManuallyEdited, setIsTwiManuallyEdited] = useState<boolean>(false);
+  const [instructionPrompt, setInstructionPrompt] = useState<string>('');
+  const [isPromptManuallyEdited, setIsPromptManuallyEdited] = useState<boolean>(false);
 
   // Synchronize unless clinician manually edited it
   React.useEffect(() => {
-    if (!isTwiManuallyEdited) {
-      setTwiPrompt(autoAssembledTwi);
+    if (!isPromptManuallyEdited) {
+      setInstructionPrompt(autoAssembledPrompt);
     }
-  }, [autoAssembledTwi, isTwiManuallyEdited]);
+  }, [autoAssembledPrompt, isPromptManuallyEdited]);
 
   // Recorded Mode states: 'ready' | 'recording' | 'recorded'
   const [recordingState, setRecordingState] = useState<'ready' | 'recording' | 'recorded'>('ready');
@@ -325,10 +345,14 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
     setIsSubmitting(true);
     setError('');
 
+    const effectiveLanguage: 'twi' | 'english' = language;
+    const cleanDrug = drugName.trim();
+    const promptToSave = instructionPrompt.trim() || autoAssembledPrompt;
+
     try {
       if (mode === 'template') {
         await prescribeMedication(patientId, {
-          drug_name: drugName.trim(),
+          drug_name: cleanDrug,
           instruction_source: 'template',
           dosage_template_id: selectedDosageId,
           frequency_template_id: selectedFrequencyId,
@@ -336,10 +360,11 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           dosage_label: selectedDosage?.label_english,
           frequency_label: selectedFrequency?.label_english,
           timing_label: selectedTiming?.label_english,
-          assembled_twi: twiPrompt.trim() || autoAssembledTwi,
+          assembled_twi: promptToSave,
           schedule_times: scheduleTimes,
           duration_days: isChronic ? 90 : durationDays,
           is_chronic: isChronic,
+          language: effectiveLanguage,
         });
       } else {
         if (!recordedAudioBlob) {
@@ -355,7 +380,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           });
 
         await prescribeMedication(patientId, {
-          drug_name: drugName.trim(),
+          drug_name: cleanDrug,
           instruction_source: 'recorded',
           dosage_template_id: null,
           frequency_template_id: null,
@@ -363,11 +388,12 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           dosage_label: 'Custom oral dose',
           frequency_label: 'As instructed by pharmacist',
           timing_label: 'Recorded clinical instruction',
-          assembled_twi: 'Voice instruction recorded by pharmacist.',
+          assembled_twi: effectiveLanguage === 'english' ? 'Voice instruction recorded in English.' : 'Voice instruction recorded by pharmacist.',
           schedule_times: scheduleTimes,
           duration_days: isChronic ? 90 : durationDays,
           is_chronic: isChronic,
           audioFile,
+          language: effectiveLanguage,
         });
       }
 
@@ -401,6 +427,43 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
             <span>{error || recordingError}</span>
           </div>
         )}
+
+        {/* Prescription Voice Language Selector */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+            Voice Instruction Language *
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setLanguage('twi');
+                setIsPromptManuallyEdited(false);
+              }}
+              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                language === 'twi'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] shadow-xs'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span>Twi (Akan)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLanguage('english');
+                setIsPromptManuallyEdited(false);
+              }}
+              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                language === 'english'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] shadow-xs'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span>English</span>
+            </button>
+          </div>
+        </div>
 
         {/* Strict Two-Mode Switcher */}
         <div className="bg-[#FAF9F6] p-1.5 rounded-2xl border border-gray-200/80 grid grid-cols-2 gap-2">
@@ -509,18 +572,18 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               </div>
             </div>
 
-            {/* Assembled Asante Twi Voice Prompt */}
+            {/* Assembled Voice Prompt */}
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-gray-700">
-                  Voice Instructions (Asante Twi)
+                  Voice Instructions ({language === 'english' ? 'English' : 'Asante Twi'})
                 </label>
-                {isTwiManuallyEdited && (
+                {isPromptManuallyEdited && (
                   <button
                     type="button"
                     onClick={() => {
-                      setIsTwiManuallyEdited(false);
-                      setTwiPrompt(autoAssembledTwi);
+                      setIsPromptManuallyEdited(false);
+                      setInstructionPrompt(autoAssembledPrompt);
                     }}
                     className="text-xs font-medium text-[#55941E] hover:underline flex items-center gap-1 cursor-pointer"
                   >
@@ -531,22 +594,22 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               </div>
 
               <textarea
-                value={twiPrompt}
+                value={instructionPrompt}
                 onChange={(e) => {
-                  setTwiPrompt(e.target.value);
-                  setIsTwiManuallyEdited(true);
+                  setInstructionPrompt(e.target.value);
+                  setIsPromptManuallyEdited(true);
                 }}
                 rows={2}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-[#F8F9FA] text-sm text-gray-900 leading-relaxed focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all resize-none"
-                placeholder="Assembled Twi instructions..."
+                placeholder={language === 'english' ? 'Assembled English instructions...' : 'Assembled Twi instructions...'}
               />
 
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-0.5">
-                <span>
-                  {selectedDosage?.label_english} &middot; {selectedFrequency?.label_english} &middot; {selectedTiming?.label_english}
+              <div className="pt-1.5 flex items-center justify-between text-xs text-gray-500">
+                <span className="font-mono text-[11px] text-gray-400">
+                  Keypad menu (1=Confirm &middot; 2=Side effects &middot; 3=Cost &middot; 4=Shift &middot; 0=Help)
                 </span>
-                <span className="text-gray-400 text-[11px]">
-                  Keypad: 1 = Taken &middot; 2 = Missed
+                <span className="text-[11px] text-gray-400">
+                  Appended automatically
                 </span>
               </div>
             </div>
@@ -556,10 +619,15 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         {/* MODE 2: PHARMACIST RECORDED */}
         {mode === 'recorded' && (
           <div className="space-y-4 animate-in fade-in">
-            <div className="p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl flex items-start gap-2.5">
-              <Mic className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-              <p className="text-xs text-purple-900 leading-relaxed">
-                <strong>Direct Voice Recording:</strong> Record or upload custom instructions spoken.
+            <div className="p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl space-y-1">
+              <div className="flex items-center gap-2">
+                <Mic className="w-4 h-4 text-purple-700 shrink-0" />
+                <span className="text-xs font-semibold text-purple-950">
+                  Custom Voice Instruction ({language === 'english' ? 'English' : 'Asante Twi'})
+                </span>
+              </div>
+              <p className="text-xs text-purple-800 leading-relaxed pl-6">
+                Record only the dosage and timing for <strong>{drugName.trim() || 'this medication'}</strong>. The automated patient keypad choices (Confirm, Side effects, Cost, Shift, Help) are automatically appended by the system.
               </p>
             </div>
 
@@ -571,9 +639,11 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                     <Mic className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900">Record Twi Instruction</h4>
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Record {language === 'english' ? 'English' : 'Twi'} Instruction
+                    </h4>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Speak clearly into the microphone in Akan/Twi.
+                      Speak clearly into the microphone in {language === 'english' ? 'English' : 'Akan/Twi'}.
                     </p>
                   </div>
                   <div className="flex items-center justify-center gap-3 pt-2">
@@ -661,11 +731,25 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                   </div>
 
                   <AudioPlayer
-                    title={drugName || 'Custom Instruction'}
-                    language="twi"
+                    title={drugName || 'Custom Clinical Instruction'}
+                    language={language}
                     durationSeconds={recordingSeconds > 0 ? recordingSeconds : 14}
                     audioUrl={recordedAudioUrl || undefined}
+                    appendKeypressTrailer={true}
                   />
+
+                  {/* Automated Keypress Menu Attachment Indicator */}
+                  <div className="p-3 bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      <span className="font-semibold text-gray-800">IVR Keypad Menu Automatically Attached</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-gray-500">
+                      {language === 'english'
+                        ? 'Key 9: Repeat · Key 0: Pharmacist'
+                        : 'Mia 9: Tie bio · Mia 0: Duruyɛfoɔ'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

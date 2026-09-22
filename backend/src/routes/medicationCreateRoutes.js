@@ -46,7 +46,7 @@ const { registerMedication } = require('../services/medicationService');
 router.post('/', upload.single('audio'), async (req, res, next) => {
   try {
     const patientId = parseInt(req.params.id, 10);
-    const { drug_name, instruction_source, dosage_template_id, frequency_template_id, timing_template_id, schedule_times, duration_days, is_chronic } = req.body;
+    const { drug_name, instruction_source, dosage_template_id, frequency_template_id, timing_template_id, schedule_times, duration_days, is_chronic, language } = req.body;
 
     if (!drug_name || !instruction_source || !schedule_times) {
       return res.status(400).json({ error: 'drug_name, instruction_source, and schedule_times are required', status: 400 });
@@ -63,7 +63,8 @@ router.post('/', upload.single('audio'), async (req, res, next) => {
       scheduleTimes: schedule_times,
       durationDays: duration_days,
       isChronic: is_chronic === 'true' || is_chronic === true || is_chronic === 1,
-      audioFileUrl
+      audioFileUrl,
+      language
     });
 
     res.status(201).json({ medication });

@@ -1,21 +1,24 @@
-'use client';
-
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Patient } from '@/lib/types';
+import { Patient, Medication } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
-import { ChevronRight, ArrowRight, Phone, Plus } from 'lucide-react';
+import { ChevronRight, ArrowRight, Phone, Plus, Volume2 } from 'lucide-react';
 import { TriggerCallModal } from '@/components/patients/TriggerCallModal';
 import { PrescribeMedicationModal } from '@/components/patients/PrescribeMedicationModal';
+import { Modal } from '@/components/ui/Modal';
+import { AudioPlayer } from '@/components/patients/AudioPlayer';
+import { useData } from '@/lib/data-context';
 
 interface RecentPatientsProps {
   patients: Patient[];
 }
 
 export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
+  const { getPatientMedications, loadPatientDetails } = useData();
   const [activeCallPatientId, setActiveCallPatientId] = useState<number | undefined>(undefined);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [activePrescribePatient, setActivePrescribePatient] = useState<Patient | null>(null);
+  const [audioPreviewPatient, setAudioPreviewPatient] = useState<Patient | null>(null);
 
   const displayPatients = patients.slice(0, 6);
 
@@ -97,15 +100,19 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                     <td className="py-3.5 pr-4">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-xs text-gray-900 w-8">
-                          {patient.adherence_rate}%
+                          {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : '--'}
                         </span>
                         <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
-                            }`}
-                            style={{ width: `${patient.adherence_rate}%` }}
-                          />
+                          {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? (
+                            <div
+                              className={`h-full rounded-full ${
+                                patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
+                              }`}
+                              style={{ width: `${patient.adherence_rate}%` }}
+                            />
+                          ) : (
+                            <div className="h-full rounded-full bg-gray-200 w-0" />
+                          )}
                         </div>
                       </div>
                     </td>
@@ -116,6 +123,19 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
 
                     <td className="py-3.5 text-right">
                       <div className="inline-flex items-center gap-1.5">
+                        {/* Audio Preview Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            loadPatientDetails(patient.id);
+                            setAudioPreviewPatient(patient);
+                          }}
+                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
+                          title="Preview dose reminder & prescription audio"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+
                         {/* Instant Call Button */}
                         <button
                           onClick={(e) => {
@@ -180,7 +200,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
               </div>
 
               <div className="flex items-center justify-between text-xs text-gray-600 pt-2 border-t border-gray-200/50">
-                <span>Adherence: <strong className="text-gray-900">{patient.adherence_rate}%</strong></span>
+                <span>Adherence: <strong className="text-gray-900">{patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : 'New'}</strong></span>
                 <span className="font-semibold text-[10px] uppercase bg-gray-200 px-1.5 py-0.5 rounded">
                   {patient.preferred_language}
                 </span>
@@ -222,6 +242,109 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
           patientId={activePrescribePatient.id}
           patientName={activePrescribePatient.name}
         />
+      )}
+
+      {/* Quick Audio Preview Modal (Dose Reminder vs Full Prescription) */}
+      {audioPreviewPatient && (
+        <Modal
+          isOpen={true}
+          onClose={() => setAudioPreviewPatient(null)}
+          title={`Audio tracks for ${audioPreviewPatient.name}`}
+          description={`Listen to the outbound daily reminder prompt and full prescription audio (${audioPreviewPatient.preferred_language === 'english' ? 'English' : 'Asante Twi'}).`}
+          maxWidth="lg"
+        >
+          <div className="space-y-6 pt-2">
+            {(() => {
+              const meds = getPatientMedications(audioPreviewPatient.id);
+              if (!meds || meds.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    No active medications found for {audioPreviewPatient.name}. Prescribe a medication to configure voice audio.
+                  </div>
+                );
+              }
+
+              return meds.map((med) => {
+                const isMedEnglish =
+                  med.language === 'english' ||
+                  Boolean(med.audio_url?.includes('_en')) ||
+                  Boolean(med.audio_url?.includes('default-reminder-en'));
+                const medLangLabel = isMedEnglish ? 'English' : 'Twi';
+
+                return (
+                  <div key={med.id} className="p-4 rounded-2xl border border-gray-200 bg-white space-y-4 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-sm tracking-tight">{med.drug_name}</h4>
+                        <p className="text-xs text-gray-500 font-medium">
+                          {med.dosage_label || '1 tablet'} &middot; {med.frequency_label || 'Twice daily'} &middot; {med.timing_label || 'After meals'}
+                        </p>
+                      </div>
+                      <Badge variant="status" status="active" size="sm" />
+                    </div>
+
+                    {/* Track 1: Dose Reminder */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-gray-700 uppercase tracking-wider">
+                          1. Daily Dose Reminder Audio
+                        </span>
+                        <span className="text-gray-400 font-medium">Outbound automated call</span>
+                      </div>
+                      <AudioPlayer
+                        title={`${med.drug_name} · Dose Reminder (${medLangLabel})`}
+                        language={isMedEnglish ? 'english' : 'twi'}
+                        durationSeconds={12}
+                        spokenText={
+                          isMedEnglish
+                            ? `Hello ${audioPreviewPatient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
+                            : `Meda wo akye ${audioPreviewPatient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`
+                        }
+                        audioUrl={
+                          isMedEnglish
+                            ? '/audio/default-reminder-en.mp3'
+                            : '/audio/default-reminder.mp3'
+                        }
+                      />
+                    </div>
+
+                    {/* Track 2: Full Prescription */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-[#447817] uppercase tracking-wider">
+                          2. Full Prescription Audio
+                        </span>
+                        <span className="font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded border border-[#70BF2B]/30 font-mono">
+                          Inbound callback (0308048104)
+                        </span>
+                      </div>
+                      <AudioPlayer
+                        title={
+                          med.instruction_source === 'recorded'
+                            ? `${med.drug_name} · Pharmacist Custom Recording (${medLangLabel})`
+                            : `${med.drug_name} · Full Clinical Prescription (${medLangLabel})`
+                        }
+                        language={isMedEnglish ? 'english' : 'twi'}
+                        durationSeconds={med.instruction_source === 'recorded' ? 24 : 18}
+                        spokenText={
+                          med.instruction_source === 'recorded'
+                            ? undefined
+                            : isMedEnglish
+                            ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'} ${med.frequency_label || 'twice daily'} ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. For questions or side effects, press 0 anytime to reach your pharmacist.`
+                            : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Sɛ worete nka bɔne bi a, mia 0 na kasa kyerɛ wo duruyɛfoɔ.`
+                        }
+                        audioUrl={
+                          med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3')
+                        }
+                        appendKeypressTrailer={med.instruction_source === 'recorded'}
+                      />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </Modal>
       )}
     </>
   );

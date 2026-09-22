@@ -17,6 +17,10 @@ db.pragma = (sql) => db.exec(`PRAGMA ${sql};`);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+try {
+  db.exec("ALTER TABLE medications ADD COLUMN language TEXT DEFAULT 'twi';");
+} catch (_) {}
+
 db.transaction = (fn) => (...args) => {
   db.exec('BEGIN');
   try {

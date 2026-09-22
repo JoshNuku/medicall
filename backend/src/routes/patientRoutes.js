@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllPatients, getPatientById } = require('../db/queries/patients');
+const { getAllPatients, getPatientById, updatePatient, deletePatient } = require('../db/queries/patients');
 
 /**
  * @openapi
@@ -70,4 +70,90 @@ router.get('/:id', (req, res, next) => {
   }
 });
 
+/**
+ * @openapi
+ * /patients/{id}:
+ *   put:
+ *     tags: [Patients]
+ *     summary: Update patient profile
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone_number:
+ *                 type: string
+ *               preferred_language:
+ *                 type: string
+ *                 enum: [twi, english]
+ *               caregiver_phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Updated patient
+ *       404:
+ *         description: Patient not found
+ */
+router.put('/:id', (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = getPatientById(id);
+    if (!existing) return res.status(404).json({ error: 'Patient not found', status: 404 });
+
+    const { name, phone_number, preferred_language, caregiver_phone, consent_given } = req.body;
+    const updated = updatePatient(id, {
+      name,
+      phone_number,
+      preferred_language,
+      caregiver_phone,
+      consent_given
+    });
+
+    res.json({ patient: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /patients/{id}:
+ *   delete:
+ *     tags: [Patients]
+ *     summary: Delete a patient and associated records
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Patient deleted successfully
+ *       404:
+ *         description: Patient not found
+ */
+router.delete('/:id', (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = getPatientById(id);
+    if (!existing) return res.status(404).json({ error: 'Patient not found', status: 404 });
+
+    const deleted = deletePatient(id);
+    res.json({ success: true, message: `Patient ${deleted.name} deleted successfully`, patient: deleted });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
+

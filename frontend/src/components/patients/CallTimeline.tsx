@@ -73,18 +73,23 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
         </div>
       ) : (
         <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200/80">
-          {logs.map((item) => {
-            const dateStr = new Date(item.scheduled_time).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-            });
-            const timeStr = new Date(item.scheduled_time).toLocaleTimeString('en-GB', {
-              hour: '2-digit',
-              minute: '2-digit',
-            });
+          {logs.map((item, index) => {
+            const key = item.id || item.call_event_id || `log-${index}-${item.scheduled_time || ''}`;
+            const dateStr = item.scheduled_time
+              ? new Date(item.scheduled_time).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                })
+              : 'Today';
+            const timeStr = item.scheduled_time
+              ? new Date(item.scheduled_time).toLocaleTimeString('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '--:--';
 
             return (
-              <div key={item.id} className="relative group">
+              <div key={key} className="relative group">
                 {/* Timeline Dot */}
                 <div className="absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-white border-2 border-emerald-600 group-hover:scale-125 transition-transform" />
 

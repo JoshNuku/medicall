@@ -1,5 +1,6 @@
 const { getTemplateById } = require('../db/queries/templates');
 const { createMedication } = require('../db/queries/medications');
+const { getPatientById } = require('../db/queries/patients');
 const { synthesizeTwiSpeech } = require('./khayaService');
 
 const registerMedication = async ({
@@ -12,27 +13,45 @@ const registerMedication = async ({
   scheduleTimes,
   durationDays,
   isChronic,
-  audioFileUrl
+  audioFileUrl,
+  language
 }) => {
   let finalAudioUrl = audioFileUrl;
+
+  const patient = patientId ? getPatientById(patientId) : null;
+  // If pharmacist explicitly selected language during prescription, respect that choice; otherwise fall back to patient's preferred language
+  const selectedLang = (language || (patient && patient.preferred_language) || 'twi').toLowerCase();
+  const isEnglish = selectedLang === 'english';
 
   if (instructionSource === 'template') {
     const dosage = dosageTemplateId ? getTemplateById(dosageTemplateId) : null;
     const freq = frequencyTemplateId ? getTemplateById(frequencyTemplateId) : null;
     const timing = timingTemplateId ? getTemplateById(timingTemplateId) : null;
 
-    // Assemble verified phrases (never translate raw English)
-    const twiPhrases = [
-      dosage ? dosage.text_twi : '',
-      freq ? freq.text_twi : '',
-      timing ? timing.text_twi : ''
-    ].filter(Boolean);
+    if (isEnglish) {
+      const drugLower = (drugName || '').toLowerCase();
+      if (drugLower.includes('lisinopril')) {
+        finalAudioUrl = '/audio/lisinopril_en.mp3';
+      } else if (drugLower.includes('metformin')) {
+        finalAudioUrl = '/audio/metformin_en.mp3';
+      } else {
+        finalAudioUrl = '/audio/default-reminder-en.mp3';
+      }
+    } else {
+      const twiPhrases = [
+        dosage ? dosage.text_twi : '',
+        freq ? freq.text_twi : '',
+        timing ? timing.text_twi : ''
+      ].filter(Boolean);
 
-    const assembledTwiText = twiPhrases.join('. ');
+      const assembledTwiText = `Fa wo nnuro ${drugName}. ${twiPhrases.join('. ')}`;
 
-    // Attempt Khaya TTS synthesis, or fallback to relative template audio
-    const synthesizedUrl = await synthesizeTwiSpeech(assembledTwiText);
-    finalAudioUrl = synthesizedUrl || (dosage && dosage.audio_url) || '/audio/test_twi.mp3';
+      // Attempt Khaya TTS synthesis, or fallback to relative template audio
+      const synthesizedUrl = await synthesizeTwiSpeech(assembledTwiText);
+      finalAudioUrl = synthesizedUrl || (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';
+    }
+  } else if (!finalAudioUrl) {
+    finalAudioUrl = isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3';
   }
 
   return createMedication({
@@ -45,7 +64,8 @@ const registerMedication = async ({
     audio_url: finalAudioUrl,
     schedule_times: scheduleTimes,
     duration_days: parseInt(durationDays, 10) || 7,
-    is_chronic: isChronic ? 1 : 0
+    is_chronic: isChronic ? 1 : 0,
+    language: isEnglish ? 'english' : 'twi'
   });
 };
 

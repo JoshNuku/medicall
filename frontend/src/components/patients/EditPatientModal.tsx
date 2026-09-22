@@ -1,41 +1,53 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Language } from '@/lib/types';
-import { UserPlus, Phone, Globe, HeartHandshake } from 'lucide-react';
-
+import { Language, Patient } from '@/lib/types';
+import { Phone, HeartHandshake, Check, AlertCircle } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 
-interface EnrollPatientModalProps {
+interface EditPatientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onEnroll?: (data: {
-    name: string;
-    phone_number: string;
-    preferred_language: Language;
-    caregiver_phone?: string;
-  }) => Promise<any> | any;
+  patient: Patient | null;
+  onSuccess?: (updated: Patient) => void;
 }
 
-export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
+export const EditPatientModal: React.FC<EditPatientModalProps> = ({
   isOpen,
   onClose,
-  onEnroll,
+  patient,
+  onSuccess,
 }) => {
-  const router = useRouter();
-  const { enrollPatient } = useData();
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('+233 ');
-  const [preferredLanguage, setPreferredLanguage] = useState<Language>('twi');
-  const [caregiverPhone, setCaregiverPhone] = useState('');
+  const { updatePatient } = useData();
+
+  const [name, setName] = useState(patient?.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(patient?.phone_number || '');
+  const [preferredLanguage, setPreferredLanguage] = useState<Language>((patient?.preferred_language as Language) || 'twi');
+  const [caregiverPhone, setCaregiverPhone] = useState(patient?.caregiver_phone || '');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const prevPatientIdRef = React.useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isOpen && patient && prevPatientIdRef.current !== patient.id) {
+      setName(patient.name || '');
+      setPhoneNumber(patient.phone_number || '');
+      setPreferredLanguage((patient.preferred_language as Language) || 'twi');
+      setCaregiverPhone(patient.caregiver_phone || '');
+      setError('');
+      prevPatientIdRef.current = patient.id;
+    } else if (!isOpen) {
+      prevPatientIdRef.current = null;
+    }
+  }, [isOpen, patient?.id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!patient) return;
+
     if (!name.trim()) {
       setError('Patient name is required.');
       return;
@@ -49,49 +61,37 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
     setError('');
 
     try {
-      const payload = {
+      const updated = await updatePatient(patient.id, {
         name: name.trim(),
         phone_number: phoneNumber.trim(),
         preferred_language: preferredLanguage,
-        caregiver_phone: caregiverPhone.trim() || undefined,
-      };
+        caregiver_phone: caregiverPhone.trim() || null,
+      });
 
-      let createdPatient: any = null;
-      if (onEnroll) {
-        createdPatient = await onEnroll(payload);
-      } else {
-        createdPatient = await enrollPatient(payload);
-      }
-
-      // Reset and close
-      setName('');
-      setPhoneNumber('+233 ');
-      setPreferredLanguage('twi');
-      setCaregiverPhone('');
-      setError('');
+      onSuccess?.(updated);
       onClose();
-
-      if (createdPatient?.id) {
-        router.push(`/patients/${createdPatient.id}?enrolled=true`);
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to enroll patient in backend.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update patient profile.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!patient) return null;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Enroll new patient"
-      description="Register a patient into the automated voice adherence system."
+      title="Edit patient profile"
+      description={`Update adherence details and contact information for ${patient.name}.`}
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         {error && (
-          <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200">
-            {error}
+          <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -106,7 +106,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
             placeholder="e.g. Kwame Mensah"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B] transition-all"
           />
         </div>
 
@@ -122,7 +122,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               placeholder="+233 24 000 0000"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono transition-all"
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B] font-mono transition-all"
             />
             <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
@@ -173,12 +173,12 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               placeholder="+233 50 123 4567"
               value={caregiverPhone}
               onChange={(e) => setCaregiverPhone(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono transition-all"
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B] font-mono transition-all"
             />
             <HeartHandshake className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
           <p className="text-[11px] text-gray-400 mt-1">
-            Receives SMS notifications if the patient misses repeated reminder calls.
+            Receives SMS alerts if the patient misses repeated scheduled reminder calls.
           </p>
         </div>
 
@@ -191,9 +191,10 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
             type="submit"
             variant="primary"
             disabled={isSubmitting}
-            icon={<UserPlus className="w-4 h-4" />}
+            icon={<Check className="w-4 h-4" />}
+            className="bg-[#70BF2B] hover:bg-[#62A825] text-white"
           >
-            {isSubmitting ? 'Enrolling patient...' : 'Enroll patient'}
+            {isSubmitting ? 'Saving changes...' : 'Save changes'}
           </Button>
         </div>
       </form>

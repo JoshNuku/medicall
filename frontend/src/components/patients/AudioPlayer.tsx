@@ -10,6 +10,8 @@ interface AudioPlayerProps {
   durationSeconds?: number;
   audioUrl?: string;
   compact?: boolean;
+  spokenText?: string;
+  appendKeypressTrailer?: boolean;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -18,8 +20,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   durationSeconds = 18,
   audioUrl,
   compact = false,
+  spokenText,
+  appendKeypressTrailer = false,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(durationSeconds);
   const [isMuted, setIsMuted] = useState(false);
@@ -29,10 +34,50 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const gainRef = useRef<GainNode | null>(null);
   const realAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    if (!audioUrl) return;
+  // Remap audio URL if pharmacist chose English but legacy/default audio was Twi
+  const effectiveAudioUrl = React.useMemo(() => {
+    if (language === 'english') {
+      if (!audioUrl || audioUrl.includes('twi') || audioUrl.includes('default-reminder.mp3')) {
+        return '/audio/default-reminder-en.mp3';
+      }
+    }
+    return audioUrl || (language === 'english' ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3');
+  }, [audioUrl, language]);
 
-    const audio = new Audio(audioUrl);
+  const playKeypressTrailer = useCallback(() => {
+    setIsPlayingTrailer(true);
+    const trailerMsg = language === 'english'
+      ? 'Press 9 to hear this instruction again, or Press 0 to speak with your pharmacist.'
+      : 'Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.';
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(trailerMsg);
+      utterance.lang = language === 'english' ? 'en-US' : 'en-GB';
+      utterance.rate = playbackSpeed;
+      utterance.onend = () => {
+        setIsPlaying(false);
+        setIsPlayingTrailer(false);
+        setCurrentTime(0);
+      };
+      utterance.onerror = () => {
+        setIsPlaying(false);
+        setIsPlayingTrailer(false);
+      };
+      window.speechSynthesis.speak(utterance);
+    } else {
+      setTimeout(() => {
+        setIsPlaying(false);
+        setIsPlayingTrailer(false);
+        setCurrentTime(0);
+      }, 3500);
+    }
+  }, [language, playbackSpeed]);
+
+  useEffect(() => {
+    if (!effectiveAudioUrl) return;
+
+    const audio = new Audio(effectiveAudioUrl);
     realAudioRef.current = audio;
     audio.muted = isMuted;
     audio.playbackRate = playbackSpeed;
@@ -44,8 +89,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       setCurrentTime(audio.currentTime);
     };
     audio.onended = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
+      if (appendKeypressTrailer) {
+        playKeypressTrailer();
+      } else {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      }
     };
 
     return () => {
@@ -53,7 +102,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audio.src = '';
       realAudioRef.current = null;
     };
-  }, [audioUrl, durationSeconds, isMuted, playbackSpeed]);
+  }, [effectiveAudioUrl, durationSeconds, isMuted, playbackSpeed, appendKeypressTrailer, playKeypressTrailer]);
 
   const startSyntheticAudio = useCallback(() => {
     try {
@@ -97,9 +146,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, []);
 
+  const isSpeechSynthesis = language === 'english' && Boolean(spokenText) && typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  // Ensure HTML5 audio is NEVER played if speech synthesis is active
   useEffect(() => {
-    if (audioUrl && realAudioRef.current) {
+    if (isSpeechSynthesis) {
+      if (realAudioRef.current) {
+        realAudioRef.current.pause();
+        realAudioRef.current.currentTime = 0;
+      }
+      return;
+    }
+
+    if (effectiveAudioUrl && realAudioRef.current) {
       if (isPlaying) {
+        // Ensure speech synthesis is cancelled when real audio plays
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
         realAudioRef.current.play().catch(() => {
           setIsPlaying(false);
         });
@@ -130,18 +194,87 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       clearInterval(interval);
       stopSyntheticAudio();
     };
-  }, [audioUrl, durationSeconds, isPlaying, startSyntheticAudio, stopSyntheticAudio]);
+  }, [isSpeechSynthesis, effectiveAudioUrl, durationSeconds, isPlaying, startSyntheticAudio, stopSyntheticAudio]);
+
+  useEffect(() => {
+    if (isSpeechSynthesis && isPlaying) {
+      const interval = setInterval(() => {
+        setCurrentTime((t) => t + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isSpeechSynthesis, isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const playerIdRef = useRef<string>(Math.random().toString(36).substring(7));
+
+  useEffect(() => {
+    const handleOtherPlay = (e: Event) => {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      if (customEvent.detail?.id !== playerIdRef.current) {
+        setIsPlaying(false);
+        if (realAudioRef.current) {
+          realAudioRef.current.pause();
+        }
+      }
+    };
+    window.addEventListener('medicall-audio-play', handleOtherPlay);
+    return () => window.removeEventListener('medicall-audio-play', handleOtherPlay);
+  }, []);
 
   const togglePlay = () => {
-    if (audioUrl && realAudioRef.current) {
+    if (isSpeechSynthesis) {
+      if (isPlaying) {
+        window.speechSynthesis.cancel();
+        setIsPlaying(false);
+      } else {
+        // Halt any other playing audio on the page
+        window.dispatchEvent(new CustomEvent('medicall-audio-play', { detail: { id: playerIdRef.current } }));
+        window.speechSynthesis.cancel();
+        if (realAudioRef.current) {
+          realAudioRef.current.pause();
+          realAudioRef.current.currentTime = 0;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(spokenText!);
+        utterance.lang = 'en-US';
+        utterance.rate = playbackSpeed;
+        utterance.onend = () => {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        };
+        utterance.onerror = () => {
+          setIsPlaying(false);
+        };
+        const estDuration = Math.max(6, Math.ceil(spokenText!.split(' ').length / 2.5));
+        setAudioDuration(estDuration);
+        setIsPlaying(true);
+        window.speechSynthesis.speak(utterance);
+      }
+      return;
+    }
+
+    if (effectiveAudioUrl && realAudioRef.current) {
       const nextState = !isPlaying;
-      setIsPlaying(nextState);
       if (nextState) {
+        // Halt any other playing audio on the page
+        window.dispatchEvent(new CustomEvent('medicall-audio-play', { detail: { id: playerIdRef.current } }));
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
         realAudioRef.current.currentTime = currentTime > 0 ? currentTime : 0;
         realAudioRef.current.play().catch(() => setIsPlaying(false));
       } else {
         realAudioRef.current.pause();
       }
+      setIsPlaying(nextState);
       return;
     }
 
@@ -152,10 +285,35 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const restart = () => {
-    if (audioUrl && realAudioRef.current) {
+    if (isSpeechSynthesis) {
+      window.dispatchEvent(new CustomEvent('medicall-audio-play', { detail: { id: playerIdRef.current } }));
+      window.speechSynthesis.cancel();
+      if (realAudioRef.current) {
+        realAudioRef.current.pause();
+        realAudioRef.current.currentTime = 0;
+      }
+      setCurrentTime(0);
+      const utterance = new SpeechSynthesisUtterance(spokenText!);
+      utterance.lang = 'en-US';
+      utterance.rate = playbackSpeed;
+      utterance.onend = () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      };
+      setIsPlaying(true);
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+
+    if (effectiveAudioUrl && realAudioRef.current) {
+      window.dispatchEvent(new CustomEvent('medicall-audio-play', { detail: { id: playerIdRef.current } }));
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       realAudioRef.current.currentTime = 0;
       setCurrentTime(0);
       setIsPlaying(true);
+      realAudioRef.current.play().catch(() => setIsPlaying(false));
       return;
     }
 
@@ -249,6 +407,15 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div className="flex items-center gap-2 truncate">
           <Badge variant="language" language={language} />
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
+          {isPlayingTrailer ? (
+            <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-2 py-0.5 rounded-md animate-pulse shrink-0">
+              Playing Keypress Menu...
+            </span>
+          ) : appendKeypressTrailer ? (
+            <span className="text-[10px] text-gray-500 bg-gray-100 font-mono px-1.5 py-0.5 rounded border border-gray-200 shrink-0">
+              Keypad trailer attached
+            </span>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <button

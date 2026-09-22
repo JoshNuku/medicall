@@ -12,7 +12,8 @@ export interface Patient {
   enrolled_at: string;
   consent_given: boolean | number;
   // Computed / summary fields for UI convenience
-  adherence_rate: number;
+  adherence_rate: number | null;
+  total_calls?: number;
   active_medications_count: number;
   current_medication_name?: string;
   next_call_time?: string;
@@ -50,18 +51,20 @@ export interface Medication {
   schedule_times: string; // Comma separated e.g. "08:00,20:00"
   duration_days: number;
   is_chronic: boolean;
+  language?: 'twi' | 'english';
   created_at: string;
   status: 'active' | 'completed' | 'paused';
 }
 
 export type CallType = 'reminder' | 'retry' | 'relisten' | 'diagnostic';
 
-export type CallOutcome = 'confirmed' | 'not_taken' | 'no_answer' | 'answered_no_keypress';
+export type CallOutcome = 'confirmed' | 'not_taken' | 'no_answer' | 'answered_no_keypress' | 'pending' | 'uncalled';
 
 export type DiagnosticReason = 'cost' | 'side_effects' | 'forgot' | 'other';
 
 export interface CallEvent {
   id: number;
+  call_event_id?: number;
   patient_id: number;
   patient_name: string;
   medication_id: number;

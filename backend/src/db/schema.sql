@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS medications (
   schedule_times TEXT NOT NULL,
   duration_days INTEGER NOT NULL,
   is_chronic INTEGER NOT NULL DEFAULT 0,
+  language TEXT NOT NULL DEFAULT 'twi',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

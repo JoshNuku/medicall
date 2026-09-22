@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+backend/public/audio/recording_1790081581688_47b14a.webm
+backend/public/audio/recording_1790082248636_1ntzui.webm
