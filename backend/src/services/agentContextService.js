@@ -82,7 +82,7 @@ CRITICAL VOICE & PHONETIC RULES:
 - Keep the response strictly to 2 sentences total:
   * Sentence 1: Greet ${patient.name} warmly and give their tailored reminder incorporating their specific dosage (${dosageLabel}) and meal timing (${timingLabel}) with an encouraging note.
   * Sentence 2: MUST ALWAYS be EXACTLY verbatim:
-    "Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, and press number four for an earlier reminder."
+    "Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, press number four for an earlier reminder, or press number six to hear this again."
 - NEVER alter or omit any of the keypad choices.
 
 PATIENT CLINICAL CONTEXT:

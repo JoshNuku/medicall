@@ -51,15 +51,26 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   const audioUrl = medication ? medication.audio_url : null;
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId}`;
 
-  // Check universal keys (9: repeat, 0: help)
+  const patient = getPatientById(callEvent.patient_id);
+  const isEnglish = patient && (patient.preferred_language || '').toLowerCase() === 'english';
+  let replaySayText = null;
+
+  if (isEnglish && medication?.instruction_source !== 'recorded') {
+    const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
+    const latestMsg = patient ? getLatestAssistantMessage(patient.id) : null;
+    replaySayText = latestMsg?.content || `Hello ${patient ? patient.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, press number four for an earlier reminder, or press number six to hear this again.`;
+  }
+
+  // Check universal keys (6/9: repeat, 0: help)
   const universalResponse = handleUniversalKeys(dtmfDigits, {
     patientId: callEvent.patient_id,
     replayUrl: audioUrl,
+    replaySayText,
     replayCallbackUrl: callbackUrl
   });
 
   if (universalResponse) {
-    console.log(`✓ Universal key processed: ${dtmfDigits}`);
+    console.log(`✓ Universal key processed: ${dtmfDigits} (Replaying instruction)`);
     return universalResponse;
   }
 

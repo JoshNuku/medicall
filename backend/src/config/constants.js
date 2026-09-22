@@ -5,7 +5,8 @@ const RETRY_NO_ANSWER_MINUTES = parseInt(process.env.RETRY_NO_ANSWER_MINUTES || 
 const COLLISION_BUFFER_MINUTES = parseInt(process.env.COLLISION_BUFFER_MINUTES || '60', 10);
 
 const UNIVERSAL_KEYS = {
-  REPEAT: '9',
+  REPEAT: '6',
+  REPEAT_ALT: '9',
   REQUEST_HELP: '0'
 };
 

@@ -49,10 +49,14 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
       .replace(/\b3\b/g, 'three')
       .replace(/\b4\b/g, 'four')
       .replace(/\b5\b/g, 'five')
+      .replace(/\b6\b/g, 'six')
+      .replace(/\b9\b/g, 'nine')
       .replace(/press one/gi, 'press number one')
       .replace(/press two/gi, 'press number two')
       .replace(/press three/gi, 'press number three')
-      .replace(/press four/gi, 'press number four');
+      .replace(/press four/gi, 'press number four')
+      .replace(/press six/gi, 'press number six')
+      .replace(/press nine/gi, 'press number nine');
 
     console.log(`   ✓ Agent Generated English:\n     "${englishText}"`);
 

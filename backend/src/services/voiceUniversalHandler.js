@@ -9,14 +9,16 @@ const { buildVoiceResponse, buildSay, buildGetDigits } = require('../utils/xmlBu
 const handleUniversalKeys = (digit, callContext = {}) => {
   const { patientId, replayUrl, replayCallbackUrl } = callContext;
 
-  if (digit === UNIVERSAL_KEYS.REPEAT) {
-    // 9 = Repeat current audio instruction / prompt
+  if (digit === UNIVERSAL_KEYS.REPEAT || digit === UNIVERSAL_KEYS.REPEAT_ALT) {
+    // 6 or 9 = Repeat current audio instruction / prompt
+    const { replaySayText } = callContext;
     const getDigitsXml = buildGetDigits({
       numDigits: 1,
-      timeout: 10,
+      timeout: 12,
       finishOnKey: '#',
       callbackUrl: replayCallbackUrl,
-      playUrl: replayUrl
+      playUrl: replaySayText ? null : replayUrl,
+      sayText: replaySayText || null
     });
     return buildVoiceResponse(getDigitsXml);
   }
