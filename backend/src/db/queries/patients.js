@@ -1,11 +1,14 @@
 const db = require('../connection');
+const normalizePhone = (p) => (p ? String(p).replace(/[\s\-\(\)]/g, '') : '');
 
 const createPatient = ({ phone_number, name, preferred_language = 'twi', caregiver_phone = null, consent_given = 1 }) => {
+  const cleanPhone = normalizePhone(phone_number);
+  const cleanCaregiver = caregiver_phone ? normalizePhone(caregiver_phone) : null;
   const stmt = db.prepare(`
     INSERT INTO patients (phone_number, name, preferred_language, caregiver_phone, consent_given)
     VALUES (?, ?, ?, ?, ?)
   `);
-  const info = stmt.run(phone_number, name, preferred_language, caregiver_phone, consent_given ? 1 : 0);
+  const info = stmt.run(cleanPhone, name, preferred_language, cleanCaregiver, consent_given ? 1 : 0);
   return getPatientById(info.lastInsertRowid);
 };
 
@@ -18,7 +21,17 @@ const getPatientById = (id) => {
 };
 
 const getPatientByPhoneNumber = (phoneNumber) => {
-  return db.prepare('SELECT * FROM patients WHERE phone_number = ?').get(phoneNumber);
+  if (!phoneNumber) return null;
+  const clean = normalizePhone(phoneNumber);
+  const digitsOnly = clean.replace(/\D/g, '');
+
+  const stmt = db.prepare(`
+    SELECT * FROM patients 
+    WHERE REPLACE(REPLACE(REPLACE(phone_number, ' ', ''), '-', ''), '+', '') = ?
+       OR phone_number = ?
+       OR phone_number = ?
+  `);
+  return stmt.get(digitsOnly, clean, phoneNumber);
 };
 
 const updateCaregiverNotifiedAt = (patientId, timestamp = new Date().toISOString()) => {

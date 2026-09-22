@@ -30,6 +30,11 @@ const { getPatientByPhoneNumber } = require('../db/queries/patients');
  */
 const handleReminderCall = (req, res, next) => {
   try {
+    if (req.body.isActive === '0' || req.body.status === 'Completed') {
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send('<Response/>');
+    }
+
     let callEventId = req.query.callEventId || req.body.callEventId;
     let callEvent = callEventId ? getCallEventById(callEventId) : null;
     let medication = callEvent ? getMedicationById(callEvent.medication_id) : null;
@@ -64,12 +69,18 @@ const handleReminderCall = (req, res, next) => {
     let sayText = null;
 
     if (medication && medication.instruction_source === 'recorded' && medication.audio_url) {
+      console.log(`🎙️ [VOICE ROUTE]: Serving Pharmacist Custom Voice Note (${medication.audio_url})`);
       audioUrl = medication.audio_url;
     } else if (isEnglish) {
-      sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your pharmacy calling with a reminder to take your ${medication ? medication.drug_name : 'medication'}. Have you taken your dose? Press 1 if you have taken it, or press 2 if not taken.`;
+      const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
+      const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
+      sayText = (latestMsg && latestMsg.content)
+        ? latestMsg.content
+        : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press number one to confirm you are taking it now. Press number two for side effects. Press number three for cost issues. Press number four for an earlier reminder.`;
+      console.log(`🗣️ [VOICE ROUTE]: Serving Dynamic English <Say> prompt:\n   "${sayText}"`);
     } else {
-      // Default Asante Twi Outbound Reminder Prompt
-      audioUrl = `${baseUrl}/audio/twi_outbound_reminder.mp3`;
+      audioUrl = medication && medication.audio_url ? medication.audio_url : `${baseUrl}/audio/default-reminder.mp3`;
+      console.log(`🔊 [VOICE ROUTE]: Serving Asante Twi <Play> Audio (${audioUrl})`);
     }
 
     const xml = generateReminderXml(callEventId, audioUrl, baseUrl, sayText);

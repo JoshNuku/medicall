@@ -48,6 +48,10 @@ export default function PatientDetailPage() {
   useEffect(() => {
     if (patientId) {
       loadPatientDetails(patientId);
+      const interval = setInterval(() => {
+        loadPatientDetails(patientId);
+      }, 4000);
+      return () => clearInterval(interval);
     }
   }, [patientId, loadPatientDetails]);
 

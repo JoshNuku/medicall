@@ -105,13 +105,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return averaged;
   }, []);
 
-  const loadInitialData = useCallback(async () => {
-    setIsLoading(true);
+  const loadInitialData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
-      // 1. Verify health
-      await api.checkBackendHealth();
-      setIsBackendOnline(true);
+      // 1. Verify health on initial non-silent load
+      if (!silent) {
+        await api.checkBackendHealth();
+        setIsBackendOnline(true);
+      }
 
       // 2. Fetch all real data in parallel from Express backend
       const [patientsRes, alertsRes, callsRes, templatesRes] = await Promise.all([
@@ -161,12 +163,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsBackendOnline(false);
       setError(err?.message || 'Could not connect to MediCall backend');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadInitialData();
+    loadInitialData(false);
+
+    // Auto-poll every 4 seconds in the background so alerts & calls appear dynamically
+    const interval = setInterval(() => {
+      loadInitialData(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [loadInitialData]);
 
   // Load patient specific medications and logs from real backend

@@ -78,14 +78,31 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       resetCaregiverNotifiedAt(callEvent.patient_id);
       responseMessage = isTwi
         ? 'Medaase. Yɛagye atom sɛ woafa wo nnuro no. Yɛma wo apɔmuden!'
-        : 'Thank you for confirming your medication. Stay healthy!';
+        : `Thank you for confirming your medication, ${patient ? patient.name : 'there'}! Stay healthy and have a wonderful day.`;
       console.log('✓ [AI Mode] Dose Confirmed Taken');
-    } else if (['2', '3', '4'].includes(dtmfDigits)) {
+    } else if (dtmfDigits === '2') {
+      outcome = CALL_OUTCOMES.NOT_TAKEN;
+      responseMessage = isTwi
+        ? "Medaase sɛ woaka akyerɛ yɛn. Yɛde nsunsuansoɔ no reto dɔkota no anim ntɛm ara."
+        : 'Thank you for letting us know. Your safety is our top priority—we are alerting your healthcare team right now to check on these side effects.';
+      console.log('✓ [AI Mode] Key 2: Side Effects reported. Immediate tailored voice returned.');
+    } else if (dtmfDigits === '3') {
+      outcome = CALL_OUTCOMES.NOT_TAKEN;
+      responseMessage = isTwi
+        ? "Medaase sɛ woaka ho asɛm. Yɛde bɛto aduruyɛfoɔ no anim sɛnea wɔbɛboa wo."
+        : 'Thank you for letting us know. We understand medication costs can be challenging—we are alerting your pharmacist to review options for you.';
+      console.log('✓ [AI Mode] Key 3: Cost Barrier reported. Immediate tailored voice returned.');
+    } else if (dtmfDigits === '4') {
+      outcome = CALL_OUTCOMES.NOT_TAKEN;
+      responseMessage = isTwi
+        ? "Ɛnyɛ hwee koraa! Yɛbɛsakra bere no na yɛakae wo ntɛm ɔkyena."
+        : 'No problem at all! We will adjust your schedule to give you an earlier reminder tomorrow.';
+      console.log('✓ [AI Mode] Key 4: Schedule shift requested. Immediate tailored voice returned.');
+    } else {
       outcome = CALL_OUTCOMES.NOT_TAKEN;
       responseMessage = isTwi
         ? "Medaase. Y'agye wo mmuae no ato hɔ. Yɛma wo apɔmuden!"
         : 'Thank you. Your response has been recorded. Stay healthy!';
-      console.log(`✓ [AI Mode] Keypress ${dtmfDigits} acknowledged neutrally to caller.`);
     }
 
     // 1. Seed Conversation Memory
@@ -106,20 +123,22 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       content: responseMessage
     });
 
-    // 2. Dispatch to Groq Healthcare AI Triage Agent in the background
-    console.log('🤖 Passing interaction context to Groq Autonomous AI Triage Agent...');
-    passResponseToAgent({
-      patientId: callEvent.patient_id,
-      medicationId: medication.id,
-      dtmfDigits,
-      callEventId: callEvent.id
-    })
-      .then(result => {
-        console.log('✓ [Groq AI Triage Decision Completed]:', result?.content || 'Tools executed successfully');
+    // 2. Execute Groq Agent Tools Asynchronously in Background (Non-blocking)
+    setImmediate(() => {
+      console.log('\n🤖 [BACKGROUND AGENT TRIAGE]: Executing clinical tools for Key', dtmfDigits, '...');
+      passResponseToAgent({
+        patientId: callEvent.patient_id,
+        medicationId: medication.id,
+        dtmfDigits,
+        callEventId: callEvent.id
       })
-      .catch(err => {
-        console.error('❌ [Groq AI Triage Error]:', err.message);
-      });
+        .then(result => {
+          console.log('✓ [Groq Agent Background Triage Completed]:', result?.content || 'Tools executed successfully');
+        })
+        .catch(err => {
+          console.error('❌ [Groq Agent Background Error]:', err.message);
+        });
+    });
 
   } else {
     // --- CLASSIC JOSH FALLBACK / PHARMACIST RECORDED AUDIO MODE ---

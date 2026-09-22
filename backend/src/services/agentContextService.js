@@ -3,6 +3,23 @@ const { getMedicationsByPatientId, getMedicationById } = require('../db/queries/
 const { getRecentCallEventsForMedication } = require('../db/queries/callEvents');
 const { getDiagnosticResponsesByPatientId } = require('../db/queries/diagnosticResponses');
 const { getConversationHistory } = require('../db/queries/agentConversations');
+const { getTemplateById } = require('../db/queries/templates');
+
+const spellOutNumberWords = (text) => {
+  if (!text) return '';
+  return String(text)
+    .replace(/\b1\b/g, 'one')
+    .replace(/\b2\b/g, 'two')
+    .replace(/\b3\b/g, 'three')
+    .replace(/\b4\b/g, 'four')
+    .replace(/\b5\b/g, 'five')
+    .replace(/\b10\b/g, 'ten')
+    .replace(/\b15\b/g, 'fifteen')
+    .replace(/\b500mg\b/gi, 'five hundred milligrams')
+    .replace(/\b250mg\b/gi, 'two hundred and fifty milligrams')
+    .replace(/\b1000mg\b/gi, 'one thousand milligrams')
+    .replace(/\b1g\b/gi, 'one gram');
+};
 
 const getPatientFullContext = (patientId, medicationId = null) => {
   const patient = getPatientById(patientId);
@@ -17,31 +34,69 @@ const getPatientFullContext = (patientId, medicationId = null) => {
   const diagnosticHistory = getDiagnosticResponsesByPatientId(patientId).slice(0, 5);
   const conversationHistory = getConversationHistory(patientId, 10);
 
-  return { patient, medications, primaryMed, recentCalls, diagnosticHistory, conversationHistory };
+  let dosageLabel = 'prescribed dose';
+  let frequencyLabel = 'as directed';
+  let timingLabel = 'with a glass of water';
+
+  if (primaryMed) {
+    if (primaryMed.dosage_template_id) {
+      const t = getTemplateById(primaryMed.dosage_template_id);
+      if (t && t.label_english) dosageLabel = t.label_english;
+    }
+    if (primaryMed.frequency_template_id) {
+      const t = getTemplateById(primaryMed.frequency_template_id);
+      if (t && t.label_english) frequencyLabel = t.label_english;
+    }
+    if (primaryMed.timing_template_id) {
+      const t = getTemplateById(primaryMed.timing_template_id);
+      if (t && t.label_english) timingLabel = t.label_english;
+    }
+  }
+
+  return {
+    patient,
+    medications,
+    primaryMed,
+    dosageLabel: spellOutNumberWords(dosageLabel),
+    frequencyLabel: spellOutNumberWords(frequencyLabel),
+    timingLabel: spellOutNumberWords(timingLabel),
+    recentCalls,
+    diagnosticHistory,
+    conversationHistory
+  };
 };
 
 const buildSystemPrompt = (context) => {
-  const { patient, primaryMed, recentCalls, diagnosticHistory } = context;
+  const { patient, primaryMed, dosageLabel, frequencyLabel, timingLabel, recentCalls, diagnosticHistory } = context;
   const missedCalls = recentCalls.filter(c => ['not_taken', 'no_answer', 'answered_no_keypress'].includes(c.outcome));
   const recentReasons = diagnosticHistory.map(d => d.reason).join(', ') || 'none';
+  const drugNameWords = spellOutNumberWords(primaryMed ? primaryMed.drug_name : 'prescribed medication');
 
-  return `You are MediCall, an empathetic, warm, and delightfully friendly AI health companion with a light, cheerful touch of Ghanaian warmth and witty humor.
-Your goal is to make the patient smile, feel cared for, and stay adherent to their medication.
+  return `You are MediCall, an empathetic, caring, and delightfully warm AI health companion with a light touch of Ghanaian cheer and encouragement.
+Your goal is to make the patient smile, feel supported, and remember to take their medication accurately.
 
-CRITICAL VOICE & OUTPUT RULES:
-- Respond ONLY in clear, natural English suitable for high-quality voice synthesis.
+CRITICAL VOICE & PHONETIC RULES:
+- Respond ONLY in clear, natural English suitable for high-quality voice synthesis and Ghanaian translation.
+- ALWAYS SPELL OUT ALL NUMBERS AS WORDS (e.g. write "one tablet", "two capsules", "five hundred milligrams", "number one", "number two"). NEVER output raw numeric digits like 1, 2, 3.
 - Output ONLY plain text (NO quotes, NO asterisks, NO markdown).
-- Keep it concise (strictly 2 to 3 sentences maximum) so the phone call is snappy and pleasant.
-- ALWAYS spell out numbers as words with punctuation for clear pacing: "Press number one to confirm you are taking it now. Press number two for side effects. Press number three for cost issues. Press number four for an earlier reminder." (Never use raw digits like 1, 2, 3, 4).
+- Keep the response strictly to 2 sentences total:
+  * Sentence 1: Greet ${patient.name} warmly and give their tailored reminder incorporating their specific dosage (${dosageLabel}) and meal timing (${timingLabel}) with an encouraging note.
+  * Sentence 2: MUST ALWAYS be EXACTLY verbatim:
+    "Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, and press number four for an earlier reminder."
+- NEVER alter or omit any of the keypad choices.
 
-PATIENT CONTEXT:
-- Name: ${patient.name}
-- Medication: ${primaryMed ? primaryMed.drug_name : 'Prescription'}
-- Recent Misses: ${missedCalls.length} | Past Barrier: ${recentReasons}
+PATIENT CLINICAL CONTEXT:
+- Patient Name: ${patient.name}
+- Medication: ${drugNameWords}
+- Dosage: ${dosageLabel}
+- Meal / Timing Instruction: ${timingLabel}
+- Schedule Frequency: ${frequencyLabel}
+- Regimen: ${primaryMed?.is_chronic ? 'Ongoing chronic care' : 'Treatment regimen'}
+- Recent Misses: ${missedCalls.length} | Past Reported Barriers: ${recentReasons}
 
 STYLE INSTRUCTIONS:
-- If on track (0 misses): Be cheerful, energetic, and encouraging with a fun personal greeting.
-- If they missed recently: Add a gentle, lighthearted, caring nudge (e.g., reminding them that health is wealth and the medicine works best inside them, not in the bottle!).`;
+- On track (0 misses): Celebrate their consistency warmly and remind them to take their ${dosageLabel} ${timingLabel}.
+- If missed recently: Give a gentle, caring encouragement that good health is wealth and taking their ${drugNameWords} ${timingLabel} will keep them feeling strong.`;
 };
 
 module.exports = { getPatientFullContext, buildSystemPrompt };

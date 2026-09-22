@@ -4,6 +4,7 @@ const { getTodayCallEvents, createCallEvent } = require('../db/queries/callEvent
 const { getPatientById, getPatientByPhoneNumber } = require('../db/queries/patients');
 const { getMedicationsByPatientId } = require('../db/queries/medications');
 const { makeOutboundCall } = require('../services/africasTalkingService');
+const { preGenerateReminderAudio } = require('../services/reminderPipelineService');
 
 /**
  * @openapi
@@ -56,10 +57,50 @@ router.post('/trigger', async (req, res, next) => {
       return res.status(400).json({ error: 'Phone number or valid patient ID is required' });
     }
 
+    const patientLang = (patient?.preferred_language || 'english').toUpperCase();
+    console.log(`\n======================================================`);
+    console.log(`🚀 [FRONTEND TRIGGER]: Live Outbound Call Requested`);
+    console.log(`   Patient: ${patient ? patient.name : 'Custom Phone'} (${targetPhone})`);
+    console.log(`   Language Mode: [${patientLang}]`);
+    console.log(`======================================================`);
+
+    const { createMedication } = require('../db/queries/medications');
     let medicationId = null;
     if (patient) {
       const meds = getMedicationsByPatientId(patient.id);
-      if (meds.length > 0) medicationId = meds[0].id;
+      if (meds.length > 0) {
+        medicationId = meds[0].id;
+      } else {
+        console.log(`ℹ️ [MEDICATION REGIMEN]: Patient #${patient.id} had no meds enrolled. Auto-creating baseline regimen...`);
+        const newMed = createMedication({
+          patient_id: patient.id,
+          drug_name: 'Amoxicillin 500mg',
+          instruction_source: 'template',
+          audio_url: '/audio/default-reminder.mp3',
+          schedule_times: '08:00, 20:00',
+          duration_days: 7,
+          is_chronic: 0
+        });
+        medicationId = newMed.id;
+      }
+    }
+
+    // Pre-generate AI reminder audio (English via LLM or Twi via Khaya TTS)
+    if (patient && medicationId) {
+      try {
+        console.log(`\n🤖 [AI PIPELINE]: Generating personalized message for Patient #${patient.id}...`);
+        const audioResult = await preGenerateReminderAudio({
+          patientId: patient.id,
+          medicationId: medicationId,
+          speakerId: 'female'
+        });
+        if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          const db = require('../db/connection');
+          db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioResult, medicationId);
+        }
+      } catch (genErr) {
+        console.warn('⚠️ [Call Trigger] AI Audio pre-generation notice:', genErr.message);
+      }
     }
 
     const callEvent = createCallEvent({
@@ -71,7 +112,11 @@ router.post('/trigger', async (req, res, next) => {
       dose_date: new Date().toISOString().split('T')[0]
     });
 
+    console.log(`\n📞 [TELEPHONY]: Dialing ${targetPhone} via Africa's Talking...`);
     const callResult = await makeOutboundCall(targetPhone);
+    console.log(`✓ [TELEPHONY RESULT]:`, JSON.stringify(callResult, null, 2));
+    console.log(`======================================================\n`);
+
     res.json({
       status: 'success',
       callEvent,

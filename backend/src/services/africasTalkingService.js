@@ -34,11 +34,12 @@ const makeOutboundCall = async (toPhoneNumber, fromPhoneNumber = process.env.AT_
       });
       return { status: 'success', data: response };
     } catch (err) {
-      console.error(`[Africa's Talking] Outbound call attempt ${attempt}/${retries} failed:`, err.message);
+      const errDetail = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      console.error(`[Africa's Talking] Outbound call attempt ${attempt}/${retries} failed:`, errDetail);
       if (attempt < retries) {
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
-        return { status: 'failed', error: err.message };
+        return { status: 'failed', error: errDetail };
       }
     }
   }

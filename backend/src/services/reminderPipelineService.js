@@ -31,28 +31,47 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     const lang = (patient ? patient.preferred_language : 'twi').toLowerCase();
 
     // Step A: Groq LLM generates English text with context
+    console.log(`   [Step 1/3] 🧠 Groq AI Agent generating personalized reminder...`);
     const englishRaw = await generateReminderMessage({ patientId, medicationId });
     if (!englishRaw) return medication.audio_url;
 
-    // Normalize any digits to full words with pauses for clear pacing
+    // Normalize any digits to full spoken words for smooth Khaya AI translation & pronunciation
     const englishText = englishRaw
-      .replace(/\b1\b/g, 'number one')
-      .replace(/\b2\b/g, 'number two')
-      .replace(/\b3\b/g, 'number three')
-      .replace(/\b4\b/g, 'number four');
+      .replace(/\b500mg\b/gi, 'five hundred milligrams')
+      .replace(/\b250mg\b/gi, 'two hundred and fifty milligrams')
+      .replace(/\b1000mg\b/gi, 'one thousand milligrams')
+      .replace(/\b1\s*tablet\b/gi, 'one tablet')
+      .replace(/\b2\s*tablets\b/gi, 'two tablets')
+      .replace(/\b1\s*capsule\b/gi, 'one capsule')
+      .replace(/\b2\s*capsules\b/gi, 'two capsules')
+      .replace(/\b1\b/g, 'one')
+      .replace(/\b2\b/g, 'two')
+      .replace(/\b3\b/g, 'three')
+      .replace(/\b4\b/g, 'four')
+      .replace(/\b5\b/g, 'five')
+      .replace(/press one/gi, 'press number one')
+      .replace(/press two/gi, 'press number two')
+      .replace(/press three/gi, 'press number three')
+      .replace(/press four/gi, 'press number four');
+
+    console.log(`   ✓ Agent Generated English:\n     "${englishText}"`);
 
     // Step B: If English -> No Khaya needed! Return null audio so Africa's Talking speaks English via <Say>
     if (lang === 'english' || lang === 'en') {
-      console.log(`[English Reminder Generated for Patient ${patientId}]: "${englishText}"`);
+      console.log(`   ✓ Telephony Mode: Real-time <Say> TTS engine (0 latency).`);
       return { isEnglish: true, text: englishText };
     }
 
     // Step C: If Twi -> Translate to Twi and synthesize via Khaya AI Neural TTS
+    console.log(`   [Step 2/3] 🌐 Translating English to Asante Twi via Khaya AI NLP...`);
     const translated = await translateEnglishToTwi(englishText);
     const finalTwiText = translated || englishText;
+    console.log(`   ✓ Twi Translation:\n     "${finalTwiText}"`);
 
+    console.log(`   [Step 3/3] 🎙️ Synthesizing Twi Speech via Khaya Neural TTS...`);
     const filename = `reminder_patient_${patientId}_med_${medicationId}_${Date.now()}.mp3`;
     const audioUrl = await synthesizeTwiSpeech(finalTwiText, filename, speakerId);
+    console.log(`   ✓ Audio file ready: ${audioUrl}`);
 
     return audioUrl || medication.audio_url;
   } catch (err) {

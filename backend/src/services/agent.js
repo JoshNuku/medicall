@@ -48,7 +48,7 @@ const generateReminderMessage = async ({ patientId, medicationId, model = DEFAUL
   const systemPrompt = context ? buildSystemPrompt(context) : null;
   const prompt = 'Generate the warm phone reminder voice message for the upcoming dose in plain English.';
 
-  const response = await agent({ prompt, model, patientId, systemPrompt, tools: [], temperature: 0.8 });
+  const response = await agent({ prompt, model, patientId, systemPrompt, tools: [], temperature: 0.3 });
   return response.content;
 };
 

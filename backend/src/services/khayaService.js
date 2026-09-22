@@ -123,12 +123,14 @@ const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'female
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    
-    // Save raw audio from Khaya
-    fs.writeFileSync(tempRawPath, Buffer.from(arrayBuffer));
+    const audioBuffer = Buffer.from(arrayBuffer);
 
-    // Slow down speed slightly (0.88x) for patient comprehension
-    await adjustAudioTempo(tempRawPath, finalFilePath, tempo);
+    if (ffmpeg) {
+      fs.writeFileSync(tempRawPath, audioBuffer);
+      await adjustAudioTempo(tempRawPath, finalFilePath, tempo);
+    } else {
+      fs.writeFileSync(finalFilePath, audioBuffer);
+    }
 
     return `/audio/${outputName}`;
   } catch (err) {
