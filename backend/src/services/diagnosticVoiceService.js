@@ -71,8 +71,9 @@ const processDiagnosticConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   const ackAudio = isTwi
     ? `${baseUrl}/audio/twi_diagnostic_ack.mp3`
     : `${baseUrl}/audio/en_diagnostic_ack.mp3`;
-
-  return buildVoiceResponse(buildPlay(ackAudio));
+  const playPart = buildPlay(ackAudio);
+  const closingPart = buildSay('Thank you for your feedback. MediCall is here to support you. Goodbye.');
+  return buildVoiceResponse(`${playPart}\n${closingPart}`);
 };
 
 module.exports = {

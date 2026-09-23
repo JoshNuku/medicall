@@ -195,7 +195,9 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     : (enAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'en_confirmed.mp3' : 'en_invalid_key.mp3'));
 
   console.log(`🔊 [DTMF RESPONSE]: Playing ${isTwiCaller ? 'Twi' : 'English'} keypress audio: ${selectedFile} (Key: ${dtmfDigits})`);
-  return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${selectedFile}`));
+  const playPart = buildPlay(`${baseUrl}/audio/${selectedFile}`);
+  const closingPart = buildSay('Thank you for using MediCall. Stay healthy and goodbye.');
+  return buildVoiceResponse(`${playPart}\n${closingPart}`);
 };
 
 module.exports = {

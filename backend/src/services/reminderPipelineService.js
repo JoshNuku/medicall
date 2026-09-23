@@ -60,10 +60,18 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
 
     console.log(`   ✓ Agent Generated English:\n     "${englishText}"`);
 
-    // Step B: If English -> No Khaya needed! Return null audio so Africa's Talking speaks English via <Say>
+    // Step B: If English -> Synthesize English speech MP3 so telephony streams identical audio to dashboard
     if (lang === 'english' || lang === 'en') {
-      console.log(`   ✓ Telephony Mode: Real-time <Say> TTS engine (0 latency).`);
-      return { isEnglish: true, text: englishText };
+      console.log(`   [Step 2/2] 🎙️ Synthesizing English Reminder Audio file...`);
+      const filename = `reminder_patient_${patientId}_med_${medicationId}_${Date.now()}.mp3`;
+      const audioUrl = await synthesizeEnglishSpeech(englishText, filename);
+      console.log(`   ✓ English reminder audio ready: ${audioUrl}`);
+      const resolvedAudio = audioUrl || '/audio/default-reminder-en.mp3';
+      const db = require('../db/connection');
+      try {
+        await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [resolvedAudio, medicationId]);
+      } catch (_) {}
+      return resolvedAudio;
     }
 
     // Step C: If Twi -> Translate to Twi and synthesize via Khaya AI Neural TTS
@@ -289,5 +297,6 @@ module.exports = {
   preGenerateReminderAudio,
   generateFullPrescriptionAudio,
   generateDiagnosticAudio,
+  synthesizeEnglishSpeech,
   cleanupOldAudioFiles
 };

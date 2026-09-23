@@ -47,14 +47,11 @@ const handleReminderCall = async (req, res, next) => {
     // Inbound call auto-detection: If someone is dialing our helpline number
     const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
     if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
-      const patient = callerPhone ? await getPatientByPhoneNumber(callerPhone) : null;
-      const pendingEvent = patient ? await getLatestPendingCallEventForPatient(patient.id) : null;
-      if (!pendingEvent) {
-        const { handleInboundCall } = require('../services/inboundVoiceService');
-        const xml = await handleInboundCall(callerPhone, baseUrl);
-        res.set('Content-Type', 'text/xml');
-        return res.status(200).send(xml);
-      }
+      console.log(`\n📞 [INBOUND HELPLINE CALL]: Incoming call from ${callerPhone} to MediCall Helpline (${destPhone})`);
+      const { handleInboundCall } = require('../services/inboundVoiceService');
+      const xml = await handleInboundCall(callerPhone, baseUrl);
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send(xml);
     }
 
     if (!callEvent) {
@@ -112,31 +109,17 @@ const handleReminderCall = async (req, res, next) => {
     const medName = medication ? medication.drug_name : 'your medication';
 
     let audioUrl = null;
-    let sayText = null;
+    const candidateAudio = callEvent?.audio_url || medication?.reminder_audio_url || (medication?.instruction_source === 'recorded' ? medication.audio_url : null);
 
-    if (isEnglish) {
-      const latestMsg = patientObj ? await getLatestAssistantMessage(patientObj.id) : null;
-      if (isAiAgentEnabled) {
-        sayText = (latestMsg && latestMsg.content)
-          ? latestMsg.content
-          : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you are taking it now. Press 2 for side effects. Press 3 for cost issues. Press 4 for an earlier reminder. Press 9 to repeat, or Press 0 for your pharmacist.`;
-      } else {
-        sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you have taken your medication. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`;
-      }
-      console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
+    if (candidateAudio) {
+      audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
+      console.log(`🔊 [VOICE ROUTE]: Serving high-fidelity reminder audio track (${audioUrl}) for Patient #${patientObj?.id || 'unknown'} [${isEnglish ? 'English' : 'Twi'}]`);
     } else {
-      // For Twi reminder calls: use pre-generated reminder audio from callEvent or medication, or fallback to default
-      const candidateAudio = callEvent?.audio_url || medication?.reminder_audio_url || (medication?.instruction_source === 'recorded' ? medication.audio_url : null);
-      if (candidateAudio) {
-        audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
-        console.log(`🔊 [VOICE ROUTE]: Serving personalized Asante Twi reminder audio (${audioUrl})`);
-      } else {
-        audioUrl = `${baseUrl}/audio/default-reminder.mp3`;
-        console.log(`🔊 [VOICE ROUTE]: Serving default Asante Twi template reminder audio (${audioUrl})`);
-      }
+      audioUrl = isEnglish ? `${baseUrl}/audio/default-reminder-en.mp3` : `${baseUrl}/audio/default-reminder.mp3`;
+      console.log(`🔊 [VOICE ROUTE]: Serving default fallback reminder audio (${audioUrl}) [${isEnglish ? 'English' : 'Twi'}]`);
     }
 
-    const xml = generateReminderXml(callEventId, audioUrl, baseUrl, sayText);
+    const xml = generateReminderXml(callEventId, audioUrl, baseUrl, null);
     res.set('Content-Type', 'text/xml');
     return res.status(200).send(xml);
   } catch (err) {

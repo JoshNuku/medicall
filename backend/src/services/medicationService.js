@@ -74,7 +74,17 @@ const registerMedication = async ({
           speakerId: 'female'
         });
 
-        console.log(`✓ [BACKGROUND AUDIO TASK]: Both audio tracks prepared for Patient #${patientId} (Med #${createdMed.id}).`);
+        // Pre-cache inbound multi-med menu if patient has multiple medications
+        const { getMedicationsByPatientId } = require('../db/queries/medications');
+        const allMeds = await getMedicationsByPatientId(patientId);
+        if (allMeds && allMeds.length > 1) {
+          const { getOrGenerateInboundMenuAudio } = require('./inboundVoiceService');
+          const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+          console.log(`🎙️ [BACKGROUND AUDIO TASK]: Pre-caching multi-med inbound menu for Patient #${patientId}...`);
+          await getOrGenerateInboundMenuAudio({ patient, medications: allMeds, baseUrl, isEnglish });
+        }
+
+        console.log(`✓ [BACKGROUND AUDIO TASK]: Audio tracks prepared for Patient #${patientId} (Med #${createdMed.id}).`);
       } catch (bgErr) {
         console.warn('⚠️ [Background Audio Task Notice]:', bgErr.message);
       }

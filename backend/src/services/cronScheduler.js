@@ -14,60 +14,31 @@ const getHhMmWithOffset = (now = new Date(), offsetMinutes = 0) => {
 
 const runSchedulerCycle = async (now = new Date()) => {
   const currentHhMm = getHhMmWithOffset(now, 0);
-  const upcoming10MinHhMm = getHhMmWithOffset(now, 10);
   const todayDate = now.toISOString().split('T')[0];
   const medications = await getAllActiveMedications();
 
-  // 1. Pre-generate AI reminder audio 10 mins before call to avoid telephony latency
-  if (process.env.ENABLE_AI_AGENT === 'true') {
-    for (const med of medications) {
-      if (med.instruction_source === 'recorded') continue;
-      const times = (med.schedule_times || '').split(',').map(t => t.trim());
-      if (times.includes(upcoming10MinHhMm)) {
-        try {
-          console.log(`🤖 [CRON PRE-GEN 10M]: Pre-generating reminder audio for Patient #${med.patient_id} (Med #${med.id})...`);
-          const audioResult = await preGenerateReminderAudio({
-            patientId: med.patient_id,
-            medicationId: med.id,
-            speakerId: 'female'
-          });
-          if (audioResult && typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
-            await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
-            med.reminder_audio_url = audioResult;
-          }
-        } catch (err) {
-          console.error(`[Pre-Gen Error Med ${med.id}]:`, err.message);
-        }
-      }
-    }
-  }
-
-  // 2. Trigger calls at the exact scheduled time
+  // Trigger calls at the exact scheduled time
   for (const med of medications) {
     const times = (med.schedule_times || '').split(',').map(t => t.trim());
     if (!times.includes(currentHhMm)) continue;
 
     if (await hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
 
-    // Ensure reminder audio / agent message is generated if not already done 10 mins prior
-    if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded') {
-      const isEnglish = (med.language || '').toLowerCase() === 'english';
-      const needsGen = isEnglish || !med.reminder_audio_url;
-      if (needsGen) {
-        try {
-          console.log(`🤖 [CRON CALL-TIME AGENT]: Generating reminder audio for Patient #${med.patient_id} (Med #${med.id})...`);
-          const audioResult = await preGenerateReminderAudio({
-            patientId: med.patient_id,
-            medicationId: med.id,
-            speakerId: 'female'
-          });
-          if (audioResult && typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
-            await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
-            med.reminder_audio_url = audioResult;
-          }
-        } catch (genErr) {
-          console.warn(`⚠️ [Call Time Audio Notice Med ${med.id}]:`, genErr.message);
+    // Ensure reminder audio exists; only generate once if missing
+    if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded' && !med.reminder_audio_url) {
+      try {
+        console.log(`🤖 [CRON]: Initializing missing reminder audio for Patient #${med.patient_id} (Med #${med.id})...`);
+        const audioResult = await preGenerateReminderAudio({
+          patientId: med.patient_id,
+          medicationId: med.id,
+          speakerId: 'female'
+        });
+        if (audioResult && typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
+          await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
+          med.reminder_audio_url = audioResult;
         }
+      } catch (genErr) {
+        console.warn(`⚠️ [Call Time Audio Notice Med ${med.id}]:`, genErr.message);
       }
     }
 

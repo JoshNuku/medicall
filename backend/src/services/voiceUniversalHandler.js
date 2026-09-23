@@ -1,6 +1,6 @@
 const { UNIVERSAL_KEYS, ESCALATION_TYPES } = require('../config/constants');
 const { createEscalation } = require('../db/queries/escalations');
-const { buildVoiceResponse, buildSay, buildGetDigits } = require('../utils/xmlBuilder');
+const { buildVoiceResponse, buildSay, buildPlay, buildGetDigits } = require('../utils/xmlBuilder');
 
 /**
  * Handles universal digits (9=repeat, 0=request help).

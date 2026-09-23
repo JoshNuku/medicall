@@ -12,11 +12,16 @@ const buildVoiceResponse = (childrenXml) => {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n${childrenXml}\n</Response>`;
 };
 
-const buildGetDigits = ({ numDigits = 1, timeout = 10, finishOnKey = null, callbackUrl, playUrl, sayText }) => {
+const buildGetDigits = ({ numDigits = 1, timeout = 10, finishOnKey = null, callbackUrl, playUrl, playUrls, sayText }) => {
   const parts = [];
-  if (playUrl) {
+  if (Array.isArray(playUrls) && playUrls.length > 0) {
+    for (const u of playUrls) {
+      if (u) parts.push(`    <Play url="${escapeXml(u)}"/>`);
+    }
+  } else if (playUrl) {
     parts.push(`    <Play url="${escapeXml(playUrl)}"/>`);
-  } else if (sayText) {
+  }
+  if (sayText) {
     parts.push(`    <Say>${escapeXml(sayText)}</Say>`);
   }
 

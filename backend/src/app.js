@@ -70,8 +70,27 @@ app.use('/voice', voiceWebhookLimiter, voiceRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceInboundRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceDiagnosticRoutes);
 
+// Also mount voice routes at root for callbacks configured without '/voice' prefix
+app.use('/', voiceWebhookLimiter, voiceInboundRoutes);
+
 // Fallback: If Africa's Talking dashboard callback is configured at root '/'
-app.post('/', voiceWebhookLimiter, (req, res, next) => {
+app.all('/', voiceWebhookLimiter, async (req, res, next) => {
+  // If request contains patientId, it's an inbound helpline selection callback
+  if (req.query?.patientId || req.body?.patientId) {
+    try {
+      const { handleInboundSelect } = require('./services/inboundVoiceService');
+      const patientId = req.query?.patientId || req.body?.patientId;
+      const medId = req.query?.medId || req.body?.medId;
+      const dtmfDigits = req.body?.dtmfDigits !== undefined ? req.body.dtmfDigits : req.query?.dtmfDigits;
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const xml = await handleInboundSelect(patientId, dtmfDigits, baseUrl, medId);
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send(xml);
+    } catch (inboundErr) {
+      return next(inboundErr);
+    }
+  }
+
   if (req.body && (req.body.dtmfDigits !== undefined || req.query.dtmfDigits !== undefined)) {
     return handleReminderConfirm(req, res, next);
   }

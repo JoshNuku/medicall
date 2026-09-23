@@ -113,15 +113,22 @@ router.post('/trigger', async (req, res, next) => {
     if (patient && medicationId) {
       try {
         if (call_type === 'reminder') {
-          console.log(`\n🤖 [AI PIPELINE]: Generating personalized reminder for Patient #${patient.id}...`);
-          const audioResult = await preGenerateReminderAudio({
-            patientId: patient.id,
-            medicationId: medicationId,
-            speakerId: 'female'
-          });
-          if (typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
-            generatedCallAudio = audioResult;
-            await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, medicationId]);
+          const { getMedicationById } = require('../db/queries/medications');
+          const med = await getMedicationById(medicationId);
+          if (med && med.reminder_audio_url) {
+            generatedCallAudio = med.reminder_audio_url;
+            console.log(`\n✓ [AUDIO PARITY]: Using existing reminder audio track for Patient #${patient.id}: ${generatedCallAudio}`);
+          } else {
+            console.log(`\n🤖 [AI PIPELINE]: Initializing reminder audio for Patient #${patient.id}...`);
+            const audioResult = await preGenerateReminderAudio({
+              patientId: patient.id,
+              medicationId: medicationId,
+              speakerId: 'female'
+            });
+            if (typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
+              generatedCallAudio = audioResult;
+              await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, medicationId]);
+            }
           }
         } else if (call_type === 'diagnostic') {
           console.log(`\n🩺 [DIAGNOSTIC PIPELINE]: Synthesizing AI diagnostic audio evaluation for Patient #${patient.id}...`);
