@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useData } from '@/lib/data-context';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -144,16 +144,7 @@ export default function PatientDetailPage() {
   const lastCallTimeDisplay = rawLastCallTime ? formatLastCallTime(rawLastCallTime) : 'No calls yet';
   const lastCallOutcomeDisplay = completedLog?.outcome || (rawLastCallTime && patient?.last_call_outcome ? patient.last_call_outcome : 'uncalled');
 
-  const searchParams = useSearchParams();
 
-  useEffect(() => {
-    if (searchParams.get('enrolled') === 'true') {
-      toast.info(
-        'Patient Enrolled',
-        `Patient ${patient ? patient.name : 'profile'} enrolled successfully! Prescribe their first medication regimen below.`
-      );
-    }
-  }, [searchParams, patient?.name, toast]);
 
   useEffect(() => {
     if (patientId) {

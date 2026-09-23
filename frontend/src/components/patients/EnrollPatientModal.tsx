@@ -71,7 +71,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
 
       toast.success(
         'Patient Enrolled',
-        `${createdPatient?.name || name} was enrolled successfully into MediCall.`
+        `Patient ${createdPatient?.name || name} enrolled successfully! Prescribe their first medication regimen below.`
       );
 
       // Reset and close
