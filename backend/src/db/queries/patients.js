@@ -25,26 +25,22 @@ const getAllPatients = () => {
       latest_call.actual_call_time AS last_call_time,
       latest_call.scheduled_time AS last_scheduled_time,
       latest_call.outcome AS last_call_outcome,
-      stats.total_calls,
-      stats.confirmed_calls,
+      COALESCE(stats.total_calls, 0) AS total_calls,
+      COALESCE(stats.confirmed_calls, 0) AS confirmed_calls,
       stats.adherence_rate
     FROM patients p
-    LEFT JOIN (
-      SELECT ce1.patient_id, ce1.actual_call_time, ce1.scheduled_time, ce1.outcome
-      FROM call_events ce1
-      JOIN (
-        SELECT patient_id, MAX(COALESCE(actual_call_time, scheduled_time)) as max_time
-        FROM call_events
-        WHERE outcome IS NOT NULL OR actual_call_time IS NOT NULL
-        GROUP BY patient_id
-      ) ce2 ON ce1.patient_id = ce2.patient_id AND (ce1.actual_call_time = ce2.max_time OR ce1.scheduled_time = ce2.max_time)
-    ) latest_call ON p.id = latest_call.patient_id
+    LEFT JOIN call_events latest_call ON latest_call.id = (
+      SELECT id FROM call_events 
+      WHERE patient_id = p.id AND (outcome IS NOT NULL OR actual_call_time IS NOT NULL)
+      ORDER BY COALESCE(actual_call_time, scheduled_time) DESC, id DESC 
+      LIMIT 1
+    )
     LEFT JOIN (
       SELECT 
         patient_id,
-        COUNT(CASE WHEN outcome IS NOT NULL THEN 1 END) AS total_calls,
+        COUNT(CASE WHEN outcome IN ('confirmed', 'not_taken', 'no_answer', 'answered_no_keypress') THEN 1 END) AS total_calls,
         COUNT(CASE WHEN outcome = 'confirmed' THEN 1 END) AS confirmed_calls,
-        ROUND(CAST(COUNT(CASE WHEN outcome = 'confirmed' THEN 1 END) AS FLOAT) * 100.0 / NULLIF(COUNT(CASE WHEN outcome IS NOT NULL THEN 1 END), 0)) AS adherence_rate
+        ROUND(CAST(COUNT(CASE WHEN outcome = 'confirmed' THEN 1 END) AS FLOAT) * 100.0 / NULLIF(COUNT(CASE WHEN outcome IN ('confirmed', 'not_taken', 'no_answer', 'answered_no_keypress') THEN 1 END), 0)) AS adherence_rate
       FROM call_events
       GROUP BY patient_id
     ) stats ON p.id = stats.patient_id
@@ -59,26 +55,22 @@ const getPatientById = (id) => {
       latest_call.actual_call_time AS last_call_time,
       latest_call.scheduled_time AS last_scheduled_time,
       latest_call.outcome AS last_call_outcome,
-      stats.total_calls,
-      stats.confirmed_calls,
+      COALESCE(stats.total_calls, 0) AS total_calls,
+      COALESCE(stats.confirmed_calls, 0) AS confirmed_calls,
       stats.adherence_rate
     FROM patients p
-    LEFT JOIN (
-      SELECT ce1.patient_id, ce1.actual_call_time, ce1.scheduled_time, ce1.outcome
-      FROM call_events ce1
-      JOIN (
-        SELECT patient_id, MAX(COALESCE(actual_call_time, scheduled_time)) as max_time
-        FROM call_events
-        WHERE outcome IS NOT NULL OR actual_call_time IS NOT NULL
-        GROUP BY patient_id
-      ) ce2 ON ce1.patient_id = ce2.patient_id AND (ce1.actual_call_time = ce2.max_time OR ce1.scheduled_time = ce2.max_time)
-    ) latest_call ON p.id = latest_call.patient_id
+    LEFT JOIN call_events latest_call ON latest_call.id = (
+      SELECT id FROM call_events 
+      WHERE patient_id = p.id AND (outcome IS NOT NULL OR actual_call_time IS NOT NULL)
+      ORDER BY COALESCE(actual_call_time, scheduled_time) DESC, id DESC 
+      LIMIT 1
+    )
     LEFT JOIN (
       SELECT 
         patient_id,
-        COUNT(CASE WHEN outcome IS NOT NULL THEN 1 END) AS total_calls,
+        COUNT(CASE WHEN outcome IN ('confirmed', 'not_taken', 'no_answer', 'answered_no_keypress') THEN 1 END) AS total_calls,
         COUNT(CASE WHEN outcome = 'confirmed' THEN 1 END) AS confirmed_calls,
-        ROUND(CAST(COUNT(CASE WHEN outcome = 'confirmed' THEN 1 END) AS FLOAT) * 100.0 / NULLIF(COUNT(CASE WHEN outcome IS NOT NULL THEN 1 END), 0)) AS adherence_rate
+        ROUND(CAST(COUNT(CASE WHEN outcome = 'confirmed' THEN 1 END) AS FLOAT) * 100.0 / NULLIF(COUNT(CASE WHEN outcome IN ('confirmed', 'not_taken', 'no_answer', 'answered_no_keypress') THEN 1 END), 0)) AS adherence_rate
       FROM call_events
       GROUP BY patient_id
     ) stats ON p.id = stats.patient_id

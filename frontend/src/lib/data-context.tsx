@@ -171,7 +171,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const safeCalls = callsRes || [];
       const safeHistory = buildDerivedAdherenceHistory(formattedPatients, safeCalls);
 
-      setPatients(formattedPatients);
+      setPatients((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(formattedPatients)) return prev;
+        return formattedPatients;
+      });
       setAlerts(formattedAlerts);
       setTodayCalls(safeCalls);
       setAdherenceHistory(safeHistory);
@@ -179,19 +182,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('Error fetching backend data:', err);
       setIsBackendOnline(false);
-      setError(err?.message || 'Could not connect to MediCall backend');
+      if (!silent) {
+        setError(err?.message || 'Could not connect to MediCall backend');
+      }
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, []);
+  }, [buildDerivedAdherenceHistory]);
 
   useEffect(() => {
     loadInitialData(false);
 
-    // Auto-poll every 4 seconds in the background so alerts & calls appear dynamically
+    // Auto-poll every 6 seconds in the background so alerts & calls appear dynamically without UI jitter
     const interval = setInterval(() => {
       loadInitialData(true);
-    }, 4000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [loadInitialData]);
@@ -199,9 +204,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load patient specific medications and logs from real backend
   const loadPatientDetails = useCallback(async (patientId: number) => {
     try {
-      const [meds, rawLogs] = await Promise.all([
+      const [meds, rawLogs, freshPat] = await Promise.all([
         api.fetchPatientMedications(patientId).catch(() => []),
         api.fetchPatientLogs(patientId).catch(() => []),
+        api.fetchPatientDetail(patientId).catch(() => null),
       ]);
 
       const logs = (rawLogs || []).map((l: any, idx: number) => ({
@@ -209,40 +215,46 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: l.id || l.call_event_id || idx + 1,
       }));
 
-      setMedications((prev) => ({
-        ...prev,
-        [patientId]: meds,
-      }));
+      setMedications((prev) => {
+        const current = prev[patientId];
+        if (JSON.stringify(current) === JSON.stringify(meds)) return prev;
+        return { ...prev, [patientId]: meds };
+      });
 
-      setPatientLogs((prev) => ({
-        ...prev,
-        [patientId]: logs,
-      }));
+      setPatientLogs((prev) => {
+        const current = prev[patientId];
+        if (JSON.stringify(current) === JSON.stringify(logs)) return prev;
+        return { ...prev, [patientId]: logs };
+      });
 
-      // Update patient summary with latest call event dynamically
-      if (logs && logs.length > 0) {
-        const completed = logs.filter((l: CallEvent) => l.actual_call_time || (l.outcome && l.outcome !== 'pending' && l.outcome !== 'uncalled'));
-        const latestCompleted = completed[0];
-        const confirmed = logs.filter((l: CallEvent) => l.outcome === 'confirmed');
-        const calculatedRate = completed.length > 0 ? Math.round((confirmed.length / completed.length) * 100) : null;
+      // Synchronize authoritative backend patient stats without conflicting calculations
+      if (freshPat) {
+        setPatients((prev) => {
+          const idx = prev.findIndex((p) => p.id === patientId);
+          if (idx === -1) return prev;
+          const current = prev[idx];
+          const hasChanged =
+            current.adherence_rate !== freshPat.adherence_rate ||
+            current.total_calls !== freshPat.total_calls ||
+            current.last_call_time !== freshPat.last_call_time ||
+            current.last_call_outcome !== freshPat.last_call_outcome;
 
-        setPatients((prev) =>
-          prev.map((pat) =>
-            pat.id === patientId
-              ? {
-                  ...pat,
-                  adherence_rate: calculatedRate,
-                  total_calls: logs.length,
-                  last_call_time: latestCompleted
-                    ? (latestCompleted.actual_call_time || latestCompleted.scheduled_time)
-                    : pat.last_call_time,
-                  last_call_outcome: latestCompleted
-                    ? latestCompleted.outcome
-                    : pat.last_call_outcome,
-                }
-              : pat
-          )
-        );
+          if (!hasChanged) return prev;
+
+          const updated = [...prev];
+          const realRate = freshPat.adherence_rate !== null && freshPat.adherence_rate !== undefined
+            ? Number(freshPat.adherence_rate)
+            : current.adherence_rate;
+
+          updated[idx] = {
+            ...current,
+            ...freshPat,
+            adherence_rate: realRate,
+            total_calls: freshPat.total_calls ? Number(freshPat.total_calls) : current.total_calls,
+            status: freshPat.status || (realRate !== null && realRate < 80 ? 'attention' : 'active'),
+          };
+          return updated;
+        });
       }
     } catch (err) {
       console.error(`Error loading details for patient #${patientId}:`, err);

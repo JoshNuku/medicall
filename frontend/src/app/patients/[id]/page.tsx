@@ -202,7 +202,7 @@ export default function PatientDetailPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-8">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg border border-gray-700 flex items-center gap-2 animate-in slide-in-from-bottom-3">
@@ -304,28 +304,36 @@ export default function PatientDetailPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Adherence Hero Card */}
         <div
-          className={`rounded-2xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between ${
+          className={`rounded-2xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-colors ${
             patient.adherence_rate !== null
               ? patient.adherence_rate >= 80
                 ? 'bg-[#70BF2B] text-white'
-                : 'bg-amber-600 text-white'
-              : 'bg-white border border-[#ECECEC]'
+                : 'bg-[#FFF9F2] border border-[#F6D8B8] text-gray-900'
+              : 'bg-white border border-[#ECECEC] text-gray-900'
           }`}
         >
-          {patient.adherence_rate !== null && (
+          {patient.adherence_rate !== null && patient.adherence_rate >= 80 && (
             <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none blur-lg" />
           )}
           <div className="flex items-center justify-between mb-2 relative z-10">
             <span
               className={`text-xs font-semibold uppercase tracking-wider ${
-                patient.adherence_rate !== null ? 'text-white/90' : 'text-gray-400'
+                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                  ? 'text-white/90'
+                  : patient.adherence_rate !== null
+                  ? 'text-amber-800'
+                  : 'text-gray-400'
               }`}
             >
               Adherence Rate
             </span>
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                patient.adherence_rate !== null ? 'bg-white/20 text-white' : 'bg-[#F0F9EB] text-[#70BF2B]'
+                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                  ? 'bg-white/20 text-white'
+                  : patient.adherence_rate !== null
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-[#F0F9EB] text-[#70BF2B]'
               }`}
             >
               <Activity className="w-4 h-4 stroke-[2.2]" />
@@ -334,14 +342,22 @@ export default function PatientDetailPage() {
           <div className="relative z-10">
             <div
               className={`text-3xl font-bold tracking-tight ${
-                patient.adherence_rate !== null ? 'text-white' : 'text-gray-900'
+                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                  ? 'text-white'
+                  : patient.adherence_rate !== null
+                  ? 'text-amber-950'
+                  : 'text-gray-900'
               }`}
             >
               {patient.adherence_rate !== null ? `${patient.adherence_rate}%` : '--'}
             </div>
             <p
               className={`text-xs mt-1 font-medium ${
-                patient.adherence_rate !== null ? 'text-white/85' : 'text-gray-500'
+                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                  ? 'text-white/85'
+                  : patient.adherence_rate !== null
+                  ? 'text-amber-800 font-semibold flex items-center gap-1.5'
+                  : 'text-gray-500'
               }`}
             >
               {patient.adherence_rate !== null
