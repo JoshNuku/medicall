@@ -1,0 +1,96 @@
+const db = require('../connection');
+
+const createCallEvent = ({
+  patient_id,
+  medication_id,
+  scheduled_time,
+  actual_call_time = null,
+  call_type,
+  outcome = null,
+  attempt_number = 1,
+  dose_date,
+  audio_url = null
+}) => {
+  const stmt = db.prepare(`
+    INSERT INTO call_events (
+      patient_id, medication_id, scheduled_time, actual_call_time,
+      call_type, outcome, attempt_number, dose_date, audio_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const info = stmt.run(
+    patient_id,
+    medication_id,
+    scheduled_time,
+    actual_call_time,
+    call_type,
+    outcome,
+    attempt_number,
+    dose_date,
+    audio_url
+  );
+
+  return getCallEventById(info.lastInsertRowid);
+};
+
+const updateCallAudioUrl = (id, audio_url) => {
+  const stmt = db.prepare(`
+    UPDATE call_events
+    SET audio_url = ?
+    WHERE id = ?
+  `);
+  stmt.run(audio_url, id);
+  return getCallEventById(id);
+};
+
+const updateCallOutcome = (id, outcome, actual_call_time = new Date().toISOString()) => {
+  const stmt = db.prepare(`
+    UPDATE call_events
+    SET outcome = ?, actual_call_time = ?
+    WHERE id = ?
+  `);
+  stmt.run(outcome, actual_call_time, id);
+  return getCallEventById(id);
+};
+
+const getCallEventById = (id) => {
+  return db.prepare('SELECT * FROM call_events WHERE id = ?').get(id);
+};
+
+const getRecentCallEventsForMedication = (medicationId, limit = 10) => {
+  return db.prepare(`
+    SELECT * FROM call_events
+    WHERE medication_id = ?
+    ORDER BY scheduled_time DESC
+    LIMIT ?
+  `).all(medicationId, limit);
+};
+
+const getTodayCallEvents = () => {
+  return db.prepare(`
+    SELECT ce.*, p.name AS patient_name, p.phone_number AS patient_phone, m.drug_name
+    FROM call_events ce
+    JOIN patients p ON ce.patient_id = p.id
+    JOIN medications m ON ce.medication_id = m.id
+    ORDER BY ce.scheduled_time DESC
+  `).all();
+};
+
+const getLatestPendingCallEventForPatient = (patientId) => {
+  return db.prepare(`
+    SELECT * FROM call_events
+    WHERE patient_id = ? AND (outcome IS NULL OR outcome = 'pending')
+    ORDER BY scheduled_time DESC
+    LIMIT 1
+  `).get(patientId);
+};
+
+module.exports = {
+  createCallEvent,
+  updateCallAudioUrl,
+  updateCallOutcome,
+  getCallEventById,
+  getRecentCallEventsForMedication,
+  getTodayCallEvents,
+  getLatestPendingCallEventForPatient
+};
