@@ -119,7 +119,7 @@ router.post('/trigger', async (req, res, next) => {
             medicationId: medicationId,
             speakerId: 'female'
           });
-          if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          if (typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
             generatedCallAudio = audioResult;
             await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, medicationId]);
           }
@@ -130,7 +130,7 @@ router.post('/trigger', async (req, res, next) => {
             medicationId: medicationId,
             speakerId: 'female'
           });
-          if (typeof diagAudio === 'string' && diagAudio.startsWith('/audio/')) {
+          if (typeof diagAudio === 'string' && (diagAudio.startsWith('/audio/') || diagAudio.startsWith('http://') || diagAudio.startsWith('https://'))) {
             generatedCallAudio = diagAudio;
             console.log(`   ✓ Diagnostic audio generated and attached: ${generatedCallAudio}`);
           }
@@ -161,6 +161,15 @@ router.post('/trigger', async (req, res, next) => {
     const callResult = await makeOutboundCall(targetPhone);
     console.log(`✓ [TELEPHONY RESULT]:`, JSON.stringify(callResult, null, 2));
     console.log(`======================================================\n`);
+
+    if (callResult?.status === 'failed') {
+      return res.status(502).json({
+        status: 'failed',
+        error: callResult.error || 'Telephony carrier rejected outbound call',
+        callEvent,
+        result: callResult
+      });
+    }
 
     res.json({
       status: 'success',

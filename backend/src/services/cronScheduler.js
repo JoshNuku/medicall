@@ -31,7 +31,7 @@ const runSchedulerCycle = async (now = new Date()) => {
             medicationId: med.id,
             speakerId: 'female'
           });
-          if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          if (audioResult && typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
             await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
             med.reminder_audio_url = audioResult;
           }
@@ -61,7 +61,7 @@ const runSchedulerCycle = async (now = new Date()) => {
             medicationId: med.id,
             speakerId: 'female'
           });
-          if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          if (audioResult && typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
             await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
             med.reminder_audio_url = audioResult;
           }

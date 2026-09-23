@@ -12,13 +12,22 @@ const API_BASE_URL =
 async function fetchWithRetry(
   url: string,
   options: RequestInit = {},
-  retries = 1,
+  retries?: number,
+  timeoutMs?: number,
   backoff = 400
 ): Promise<Response> {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+  const isMutation = Boolean(options.method && options.method.toUpperCase() !== 'GET');
+  const effectiveRetries = retries !== undefined ? retries : (isMutation ? 0 : 1);
+  const effectiveTimeout = timeoutMs !== undefined ? timeoutMs : (isMutation ? 30000 : 10000);
 
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, effectiveTimeout);
+
+  try {
     const res = await fetch(url, {
       ...options,
       signal: options.signal || controller.signal,
@@ -31,9 +40,13 @@ async function fetchWithRetry(
     clearTimeout(timeoutId);
     return res;
   } catch (err: unknown) {
-    if (retries > 0) {
+    clearTimeout(timeoutId);
+    if (timedOut) {
+      throw new Error(`Request timed out after ${effectiveTimeout / 1000}s. Server may still be processing in the background.`);
+    }
+    if (effectiveRetries > 0) {
       await new Promise((resolve) => setTimeout(resolve, backoff));
-      return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
+      return fetchWithRetry(url, options, effectiveRetries - 1, effectiveTimeout, backoff * 1.5);
     }
     throw err;
   }

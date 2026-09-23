@@ -47,14 +47,24 @@ const makeOutboundCall = async (toPhoneNumber, fromPhoneNumber = process.env.AT_
 
   console.log(`📞 [Africa's Talking] Initiating outbound call to: ${cleanDestination.join(', ')}`);
 
+  const clientRequestId = `call_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await voiceClient.call({
         callFrom: fromPhoneNumber,
-        callTo: cleanDestination
+        callTo: cleanDestination,
+        clientRequestId
       });
       const firstEntry = response?.entries?.[0];
       console.log(`✓ [Africa's Talking] Call dispatched:`, JSON.stringify(firstEntry || response));
+
+      if (firstEntry && firstEntry.status !== 'Queued' && firstEntry.status !== 'Success') {
+        const errMsg = firstEntry.errorMessage || `Carrier dispatch status: ${firstEntry.status}`;
+        console.warn(`⚠️ [Africa's Talking] Carrier rejected outbound call:`, errMsg);
+        return { status: 'failed', error: errMsg, entry: firstEntry };
+      }
+
       return { status: 'success', data: response, entry: firstEntry };
     } catch (err) {
       const errDetail = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
