@@ -96,7 +96,7 @@ const getLatestPendingCallEventForPatient = async (patientId) => {
   const res = await db.query(`
     SELECT * FROM call_events
     WHERE patient_id = $1 AND (outcome IS NULL OR outcome = 'pending')
-    ORDER BY scheduled_time DESC
+    ORDER BY id DESC
     LIMIT 1
   `, [patientId]);
   return res.rows[0] || null;

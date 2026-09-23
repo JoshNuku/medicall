@@ -44,8 +44,11 @@ const handleReminderCall = async (req, res, next) => {
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
-    // Inbound call auto-detection: If someone is dialing our helpline number
-    const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
+    // Inbound call auto-detection: ONLY when direction is Inbound, or caller dials our number from outside (and NOT an outbound call)
+    const isDirectionInbound = req.body.direction === 'Inbound';
+    const isOutboundCall = req.body.direction === 'Outbound';
+    const isCallToOurNumber = isDirectionInbound || (!isOutboundCall && destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', ''))));
+
     if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
       console.log(`\n📞 [INBOUND HELPLINE CALL]: Incoming call from ${callerPhone} to MediCall Helpline (${destPhone})`);
       const { handleInboundCall } = require('../services/inboundVoiceService');
@@ -55,9 +58,9 @@ const handleReminderCall = async (req, res, next) => {
     }
 
     if (!callEvent) {
-      // In outbound reminder calls from Africa's Talking, destinationNumber is the patient's phone!
-      const targetPhone = destPhone || callerPhone;
-      const patient = (targetPhone ? await getPatientByPhoneNumber(targetPhone) : null) || (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null);
+      // In outbound reminder calls from Africa's Talking, patient phone may be callerNumber or destinationNumber
+      const targetPhone = (callerPhone && callerPhone !== atNumber) ? callerPhone : (destPhone && destPhone !== atNumber ? destPhone : destPhone || callerPhone);
+      const patient = (targetPhone ? await getPatientByPhoneNumber(targetPhone) : null) || (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null) || (destPhone ? await getPatientByPhoneNumber(destPhone) : null);
 
       if (patient) {
         // First check if a pending callEvent was already registered when outbound call was dispatched
@@ -98,7 +101,11 @@ const handleReminderCall = async (req, res, next) => {
     // Branch directly to Diagnostic IVR if this is a diagnostic call
     if (callEvent && callEvent.call_type === 'diagnostic') {
       const { generateDiagnosticXml } = require('../services/diagnosticVoiceService');
-      const audioToPlay = callEvent.audio_url || (isEnglish ? '/audio/english_diagnostic_reason.mp3' : '/audio/twi_diagnostic_reason.mp3');
+      const { getStaticAudioUrl } = require('../services/cloudinaryService');
+      const defaultDiagnostic = isEnglish
+        ? getStaticAudioUrl('english_diagnostic_reason', '/audio/english_diagnostic_reason.mp3', baseUrl)
+        : getStaticAudioUrl('twi_diagnostic_reason', '/audio/twi_diagnostic_reason.mp3', baseUrl);
+      const audioToPlay = callEvent.audio_url || defaultDiagnostic;
       console.log(`🩺 [VOICE ROUTE]: Serving Diagnostic IVR audio (${audioToPlay}) for Patient #${patientObj?.id || 'unknown'}`);
       const xml = generateDiagnosticXml(callEventId, baseUrl, !isEnglish, null, audioToPlay);
       res.set('Content-Type', 'text/xml');
@@ -115,7 +122,10 @@ const handleReminderCall = async (req, res, next) => {
       audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
       console.log(`🔊 [VOICE ROUTE]: Serving high-fidelity reminder audio track (${audioUrl}) for Patient #${patientObj?.id || 'unknown'} [${isEnglish ? 'English' : 'Twi'}]`);
     } else {
-      audioUrl = isEnglish ? `${baseUrl}/audio/default-reminder-en.mp3` : `${baseUrl}/audio/default-reminder.mp3`;
+      const { getStaticAudioUrl } = require('../services/cloudinaryService');
+      audioUrl = isEnglish
+        ? getStaticAudioUrl('default_reminder_en', '/audio/default-reminder-en.mp3', baseUrl)
+        : getStaticAudioUrl('default_reminder', '/audio/default-reminder.mp3', baseUrl);
       console.log(`🔊 [VOICE ROUTE]: Serving default fallback reminder audio (${audioUrl}) [${isEnglish ? 'English' : 'Twi'}]`);
     }
 

@@ -13,20 +13,23 @@ const buildVoiceResponse = (childrenXml) => {
 };
 
 const buildGetDigits = ({ numDigits = 1, timeout = 10, finishOnKey = null, callbackUrl, playUrl, playUrls, sayText }) => {
-  const parts = [];
+  const plays = [];
   if (Array.isArray(playUrls) && playUrls.length > 0) {
     for (const u of playUrls) {
-      if (u) parts.push(`    <Play url="${escapeXml(u)}"/>`);
+      if (u) plays.push(`  <Play url="${escapeXml(u)}"/>`);
     }
   } else if (playUrl) {
-    parts.push(`    <Play url="${escapeXml(playUrl)}"/>`);
-  }
-  if (sayText) {
-    parts.push(`    <Say>${escapeXml(sayText)}</Say>`);
+    plays.push(`  <Play url="${escapeXml(playUrl)}"/>`);
   }
 
+  const say = sayText ? `    <Say>${escapeXml(sayText)}</Say>\n` : '';
   const finishAttr = finishOnKey ? ` finishOnKey="${escapeXml(finishOnKey)}"` : '';
-  return `  <GetDigits numDigits="${numDigits}" timeout="${timeout}"${finishAttr} callbackUrl="${escapeXml(callbackUrl)}">\n${parts.join('\n')}\n  </GetDigits>`;
+  const getDigitsTag = `  <GetDigits numDigits="${numDigits}" timeout="${timeout}"${finishAttr} callbackUrl="${escapeXml(callbackUrl)}">\n${say}  </GetDigits>`;
+
+  if (plays.length > 0) {
+    return `${plays.join('\n')}\n${getDigitsTag}`;
+  }
+  return getDigitsTag;
 };
 
 const buildPlay = (url) => {
