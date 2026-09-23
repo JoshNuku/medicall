@@ -169,14 +169,31 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   await updateCallOutcome(callEventId, outcome);
 
   const patientForAudio = await getPatientById(callEvent.patient_id);
-  const isTwiCaller = patientForAudio && (patientForAudio.preferred_language || '').toLowerCase() !== 'english';
+  const medForAudio = await getMedicationById(callEvent.medication_id);
+  const isTwiCaller = (medForAudio?.language ? medForAudio.language !== 'english' : (patientForAudio && (patientForAudio.preferred_language || '').toLowerCase() !== 'english'));
 
-  if (isTwiCaller) {
-    const audioFile = outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_not_taken_ack.mp3';
-    return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${audioFile}`));
-  }
+  const twiAudioMap = {
+    '1': 'twi_confirmed.mp3',
+    '2': 'twi_side_effects.mp3',
+    '3': 'twi_cost_barrier.mp3',
+    '4': 'twi_early_reminder.mp3',
+    '0': 'twi_pharmacist_alert.mp3',
+  };
 
-  return buildVoiceResponse(buildSay(responseMessage));
+  const enAudioMap = {
+    '1': 'en_confirmed.mp3',
+    '2': 'en_side_effects.mp3',
+    '3': 'en_cost_barrier.mp3',
+    '4': 'en_early_reminder.mp3',
+    '0': 'en_pharmacist_alert.mp3',
+  };
+
+  const selectedFile = isTwiCaller
+    ? (twiAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_not_taken_ack.mp3'))
+    : (enAudioMap[dtmfDigits] || 'en_confirmed.mp3');
+
+  console.log(`🔊 [DTMF RESPONSE]: Playing ${isTwiCaller ? 'Twi' : 'English'} keypress audio: ${selectedFile} (Key: ${dtmfDigits})`);
+  return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${selectedFile}`));
 };
 
 module.exports = {

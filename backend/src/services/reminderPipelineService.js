@@ -20,9 +20,9 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     return medication.audio_url;
   }
 
-  // 2. If AI agent is switched off in .env -> fallback to static template
+  // 2. If AI agent is switched off in .env -> fallback to static reminder template
   if (!isAiEnabled) {
-    return medication.audio_url || '/audio/default-reminder.mp3';
+    return medication.reminder_audio_url || '/audio/default-reminder.mp3';
   }
 
   // 3. AI Agent dynamic generation (English -> Twi -> Neural TTS)
@@ -33,7 +33,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     // Step A: Groq LLM generates English text with context
     console.log(`   [Step 1/3] 🧠 Groq AI Agent generating personalized reminder...`);
     const englishRaw = await generateReminderMessage({ patientId, medicationId });
-    if (!englishRaw) return medication.audio_url;
+    if (!englishRaw) return medication.reminder_audio_url || '/audio/default-reminder.mp3';
 
     // Normalize any digits to full spoken words for smooth Khaya AI translation & pronunciation
     const englishText = englishRaw
@@ -77,18 +77,18 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     const audioUrl = await synthesizeTwiSpeech(finalTwiText, filename, speakerId);
     console.log(`   ✓ Audio file ready: ${audioUrl}`);
 
-    const resolvedAudio = audioUrl || medication.reminder_audio_url || medication.audio_url;
-    if (resolvedAudio && typeof resolvedAudio === 'string') {
+    const resolvedAudio = audioUrl || medication.reminder_audio_url || '/audio/default-reminder.mp3';
+    if (audioUrl && typeof audioUrl === 'string') {
       const db = require('../db/connection');
       try {
-        await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [resolvedAudio, medicationId]);
+        await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioUrl, medicationId]);
       } catch (_) {}
     }
 
     return resolvedAudio;
   } catch (err) {
     console.error('[Reminder Pre-Generation Error]:', err.message);
-    return medication.reminder_audio_url || medication.audio_url || '/audio/default-reminder.mp3';
+    return medication.reminder_audio_url || '/audio/default-reminder.mp3';
   }
 };
 

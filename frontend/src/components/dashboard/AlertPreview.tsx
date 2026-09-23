@@ -6,13 +6,14 @@ import { EscalationAlert } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight, Check, AlertTriangle } from 'lucide-react';
 import { useData } from '@/lib/data-context';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface AlertPreviewProps {
   alerts: EscalationAlert[];
 }
 
 export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
-  const { resolveAlert } = useData();
+  const { resolveAlert, isLoading } = useData();
   const [resolvingId, setResolvingId] = useState<number | null>(null);
 
   const openAlerts = alerts.filter((a) => a.status === 'open').slice(0, 3);
@@ -51,7 +52,24 @@ export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
         </Link>
       </div>
 
-      {openAlerts.length === 0 ? (
+      {isLoading && openAlerts.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-[#FAF9F6] border border-gray-200/80 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <Skeleton className="w-20 h-5 rounded-full" />
+                <Skeleton className="w-12 h-3 rounded" />
+              </div>
+              <Skeleton className="w-32 h-4 rounded" />
+              <Skeleton className="w-full h-8 rounded" />
+              <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between">
+                <Skeleton className="w-20 h-3 rounded" />
+                <Skeleton className="w-16 h-6 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : openAlerts.length === 0 ? (
         <div className="py-8 text-center text-xs text-gray-400">
           <p>No unresolved clinical alerts right now. All patients adherent.</p>
         </div>

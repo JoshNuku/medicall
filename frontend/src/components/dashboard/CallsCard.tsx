@@ -6,6 +6,8 @@ import { CallEvent } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
 import { Phone, ChevronDown, Clock, ArrowUpRight } from 'lucide-react';
 import { TriggerCallModal } from '@/components/patients/TriggerCallModal';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useData } from '@/lib/data-context';
 
 interface CallsCardProps {
   calls: CallEvent[];
@@ -14,6 +16,7 @@ interface CallsCardProps {
 type CallRange = 'today' | '7d' | '30d';
 
 export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
+  const { isLoading } = useData();
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<number | undefined>(undefined);
   const [range, setRange] = useState<CallRange>('today');
@@ -60,7 +63,22 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
             </div>
           </div>
 
-          {displayCalls.length === 0 ? (
+          {isLoading && displayCalls.length === 0 ? (
+            <div className="space-y-3 py-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between gap-3 py-2">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-10 h-4 rounded" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="w-28 h-4 rounded" />
+                      <Skeleton className="w-20 h-3 rounded" />
+                    </div>
+                  </div>
+                  <Skeleton className="w-16 h-6 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : displayCalls.length === 0 ? (
             <div className="py-10 text-center text-sm text-gray-500">
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#F8F9FA] text-gray-400 flex items-center justify-center">
                 <Clock className="w-6 h-6" />
@@ -85,7 +103,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
                     className="py-3 flex items-center justify-between gap-3 hover:bg-[#F8F9FA] -mx-2 px-2 rounded-xl transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-xs font-mono font-medium text-gray-400 w-12 shrink-0">{timeFormatted}</span>
+                      <span suppressHydrationWarning className="text-xs font-mono font-medium text-gray-400 w-12 shrink-0">{timeFormatted}</span>
                       <div className="min-w-0">
                         <Link
                           href={`/patients/${call.patient_id}`}

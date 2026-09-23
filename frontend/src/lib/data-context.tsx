@@ -11,14 +11,6 @@ import {
   InstructionTemplate,
 } from './types';
 import * as api from './api';
-import {
-  MOCK_PATIENTS,
-  MOCK_TEMPLATES,
-  MOCK_MEDICATIONS,
-  MOCK_CALL_LOGS,
-  MOCK_ALERTS,
-  MOCK_TODAY_CALLS,
-} from './mock-data';
 
 interface DataContextType {
   patients: Patient[];
@@ -84,15 +76,15 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS);
-  const [medications, setMedications] = useState<Record<number, Medication[]>>(MOCK_MEDICATIONS);
-  const [patientLogs, setPatientLogs] = useState<Record<number, CallEvent[]>>(MOCK_CALL_LOGS);
-  const [todayCalls, setTodayCalls] = useState<CallEvent[]>(MOCK_TODAY_CALLS);
-  const [allCalls, setAllCalls] = useState<CallEvent[]>(MOCK_TODAY_CALLS);
-  const [alerts, setAlerts] = useState<EscalationAlert[]>(MOCK_ALERTS);
-  const [templates, setTemplates] = useState<InstructionTemplate[]>(MOCK_TEMPLATES);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [medications, setMedications] = useState<Record<number, Medication[]>>({});
+  const [patientLogs, setPatientLogs] = useState<Record<number, CallEvent[]>>({});
+  const [todayCalls, setTodayCalls] = useState<CallEvent[]>([]);
+  const [allCalls, setAllCalls] = useState<CallEvent[]>([]);
+  const [alerts, setAlerts] = useState<EscalationAlert[]>([]);
+  const [templates, setTemplates] = useState<InstructionTemplate[]>([]);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isBackendOnline, setIsBackendOnline] = useState(true);
 
@@ -141,14 +133,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsBackendOnline(online);
 
       if (!online) {
-        // Graceful offline fallback: ensure UI has rich data from mock repository
-        setPatients((prev) => (prev.length ? prev : MOCK_PATIENTS));
-        setAlerts((prev) => (prev.length ? prev : MOCK_ALERTS));
-        setTodayCalls((prev) => (prev.length ? prev : MOCK_TODAY_CALLS));
-        setAllCalls((prev) => (prev.length ? prev : MOCK_TODAY_CALLS));
-        setTemplates((prev) => (prev.length ? prev : MOCK_TEMPLATES));
-        setAdherenceHistory((prev) => (prev.length ? prev : buildDerivedAdherenceHistory(MOCK_PATIENTS, MOCK_TODAY_CALLS)));
-        setError(null);
+        setError('Cannot connect to MediCall backend server. Please verify the server is running.');
         return;
       }
 
@@ -217,14 +202,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setError(null);
     } catch (err: any) {
-      console.warn('Backend connection notice (gracefully handled):', err?.message);
+      console.warn('Backend connection notice:', err?.message);
       setIsBackendOnline(false);
-      setPatients((prev) => (prev.length ? prev : MOCK_PATIENTS));
-      setAlerts((prev) => (prev.length ? prev : MOCK_ALERTS));
-      setTodayCalls((prev) => (prev.length ? prev : MOCK_TODAY_CALLS));
-      setAllCalls((prev) => (prev.length ? prev : MOCK_TODAY_CALLS));
-      setTemplates((prev) => (prev.length ? prev : MOCK_TEMPLATES));
-      setError(null);
+      setError('Cannot connect to MediCall backend server. Please verify the server is running.');
     } finally {
       if (!silent) setIsLoading(false);
     }
@@ -241,7 +221,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [loadInitialData]);
 
-  // Load patient specific medications and logs from real backend or mock repository
+  // Load patient specific medications and logs from real backend
   const loadPatientDetails = useCallback(async (patientId: number) => {
     try {
       const [meds, rawLogs, freshPat] = await Promise.all([
@@ -250,8 +230,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         api.fetchPatientDetail(patientId),
       ]);
 
-      const effectiveMeds = meds !== null ? meds : (MOCK_MEDICATIONS[patientId] || []);
-      const effectiveLogs = (rawLogs !== null ? rawLogs : (MOCK_CALL_LOGS[patientId] || [])).map((l: any, idx: number) => ({
+      const effectiveMeds = meds || [];
+      const effectiveLogs = (rawLogs || []).map((l: any, idx: number) => ({
         ...l,
         id: l.id || l.call_event_id || idx + 1,
       }));

@@ -2,23 +2,28 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Patient, Medication } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
-import { ChevronRight, ArrowRight, Phone, Plus, Volume2 } from 'lucide-react';
+import { ChevronRight, ArrowRight, Phone, Plus, Volume2, Users } from 'lucide-react';
 import { TriggerCallModal } from '@/components/patients/TriggerCallModal';
 import { PrescribeMedicationModal } from '@/components/patients/PrescribeMedicationModal';
 import { Modal } from '@/components/ui/Modal';
 import { AudioPlayer } from '@/components/patients/AudioPlayer';
 import { useData } from '@/lib/data-context';
+import { TableRowSkeleton, Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { UserPlus } from 'lucide-react';
+import { EnrollPatientModal } from '@/components/patients/EnrollPatientModal';
 
 interface RecentPatientsProps {
   patients: Patient[];
 }
 
 export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
-  const { getPatientMedications, loadPatientDetails } = useData();
+  const { getPatientMedications, loadPatientDetails, isLoading } = useData();
   const [activeCallPatientId, setActiveCallPatientId] = useState<number | undefined>(undefined);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [activePrescribePatient, setActivePrescribePatient] = useState<Patient | null>(null);
   const [audioPreviewPatient, setAudioPreviewPatient] = useState<Patient | null>(null);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [dashboardAudioTrackByMed, setDashboardAudioTrackByMed] = useState<Record<number, 'prescription' | 'reminder'>>({});
 
   const displayPatients = patients.slice(0, 6);
@@ -58,176 +63,217 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {displayPatients.map((patient) => {
-                const initials = patient.name
-                  .split(' ')
-                  .map((n) => n[0])
-                  .join('')
-                  .substring(0, 2)
-                  .toUpperCase();
+              {isLoading ? (
+                <>
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                </>
+              ) : displayPatients.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6">
+                    <EmptyState
+                      icon={<Users className="w-6 h-6 text-emerald-600" />}
+                      title="No patients enrolled yet"
+                      description="Enroll your first patient to begin automated voice-call adherence monitoring."
+                      actionText="+ Enroll Patient"
+                      onAction={() => setIsEnrollModalOpen(true)}
+                    />
+                  </td>
+                </tr>
+              ) : (
+                displayPatients.map((patient) => {
+                  const initials = patient.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase();
 
-                return (
-                  <tr
-                    key={patient.id}
-                    className="hover:bg-[#F8F9FA] transition-colors group cursor-pointer"
-                  >
-                    <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-[#F0F9EB] group-hover:text-[#55941E] transition-colors">
-                          {initials}
+                  return (
+                    <tr
+                      key={patient.id}
+                      className="hover:bg-[#F8F9FA] transition-colors group cursor-pointer"
+                    >
+                      <td className="py-3.5 pr-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-[#F0F9EB] group-hover:text-[#55941E] transition-colors">
+                            {initials}
+                          </div>
+                          <div>
+                            <Link
+                              href={`/patients/${patient.id}`}
+                              className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors block text-sm"
+                            >
+                              {patient.name}
+                            </Link>
+                            <span className="block text-[11px] text-gray-400 font-mono">
+                              {patient.phone_number}
+                            </span>
+                          </div>
                         </div>
-                        <div>
+                      </td>
+
+                      <td className="py-3.5 pr-4">
+                        <Badge variant="language" language={patient.preferred_language} size="sm" />
+                      </td>
+
+                      <td className="py-3.5 pr-4 text-gray-700 text-xs sm:text-sm font-medium">
+                        {patient.current_medication_name || 'Prescribed Regimen'}
+                      </td>
+
+                      <td className="py-3.5 pr-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-gray-900 w-8">
+                            {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : '--'}
+                          </span>
+                          <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                            {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? (
+                              <div
+                                className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
+                                  }`}
+                                style={{ width: `${patient.adherence_rate}%` }}
+                              />
+                            ) : (
+                              <div className="h-full rounded-full bg-gray-200 w-0" />
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 pr-4">
+                        <Badge variant="status" status={patient.status} size="sm" />
+                      </td>
+
+                      <td className="py-3.5 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          {/* Audio Preview Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadPatientDetails(patient.id);
+                              setAudioPreviewPatient(patient);
+                            }}
+                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
+                            title="Preview dose reminder & prescription audio"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Instant Call Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveCallPatientId(patient.id);
+                              setIsCallModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
+                            title="Trigger live call"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Prescribe Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActivePrescribePatient(patient);
+                            }}
+                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-500 transition-colors"
+                            title="Prescribe medication"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* View Profile */}
                           <Link
                             href={`/patients/${patient.id}`}
-                            className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors block text-sm"
+                            className="p-1.5 text-gray-400 hover:text-gray-900 transition-colors inline-block"
                           >
-                            {patient.name}
+                            <ChevronRight className="w-4 h-4" />
                           </Link>
-                          <span className="block text-[11px] text-gray-400 font-mono">
-                            {patient.phone_number}
-                          </span>
                         </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 pr-4">
-                      <Badge variant="language" language={patient.preferred_language} size="sm" />
-                    </td>
-
-                    <td className="py-3.5 pr-4 text-gray-700 text-xs sm:text-sm font-medium">
-                      {patient.current_medication_name || 'Prescribed Regimen'}
-                    </td>
-
-                    <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-gray-900 w-8">
-                          {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : '--'}
-                        </span>
-                        <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                          {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? (
-                            <div
-                              className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
-                                }`}
-                              style={{ width: `${patient.adherence_rate}%` }}
-                            />
-                          ) : (
-                            <div className="h-full rounded-full bg-gray-200 w-0" />
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 pr-4">
-                      <Badge variant="status" status={patient.status} size="sm" />
-                    </td>
-
-                    <td className="py-3.5 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        {/* Audio Preview Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            loadPatientDetails(patient.id);
-                            setAudioPreviewPatient(patient);
-                          }}
-                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
-                          title="Preview dose reminder & prescription audio"
-                        >
-                          <Volume2 className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Instant Call Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveCallPatientId(patient.id);
-                            setIsCallModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
-                          title="Trigger live call"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Prescribe Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActivePrescribePatient(patient);
-                          }}
-                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-500 transition-colors"
-                          title="Prescribe medication"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* View Profile */}
-                        <Link
-                          href={`/patients/${patient.id}`}
-                          className="p-1.5 text-gray-400 hover:text-gray-900 transition-colors inline-block"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile View */}
         <div className="sm:hidden space-y-3">
-          {displayPatients.map((patient) => (
-            <div
-              key={patient.id}
-              className="p-4 rounded-xl border border-gray-100 bg-[#FAF9F6] space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <Link
-                    href={`/patients/${patient.id}`}
-                    className="font-semibold text-sm text-gray-900 hover:text-[#55941E]"
-                  >
-                    {patient.name}
-                  </Link>
-                  <span className="block text-xs text-gray-400 font-mono">
-                    {patient.phone_number}
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
+            </div>
+          ) : displayPatients.length === 0 ? (
+            <EmptyState
+              icon={<Users className="w-6 h-6 text-emerald-600" />}
+              title="No patients enrolled yet"
+              description="Enroll your first patient to begin automated voice-call adherence monitoring."
+              actionText="+ Enroll Patient"
+              onAction={() => setIsEnrollModalOpen(true)}
+            />
+          ) : (
+            displayPatients.map((patient) => (
+              <div
+                key={patient.id}
+                className="p-4 rounded-xl border border-gray-100 bg-[#FAF9F6] space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Link
+                      href={`/patients/${patient.id}`}
+                      className="font-semibold text-sm text-gray-900 hover:text-[#55941E]"
+                    >
+                      {patient.name}
+                    </Link>
+                    <span className="block text-xs text-gray-400 font-mono">
+                      {patient.phone_number}
+                    </span>
+                  </div>
+                  <Badge variant="status" status={patient.status} size="sm" />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-gray-600 pt-2 border-t border-gray-200/50">
+                  <span>Adherence: <strong className="text-gray-900">{patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : 'New'}</strong></span>
+                  <span className="font-semibold text-[10px] uppercase bg-gray-200 px-1.5 py-0.5 rounded">
+                    {patient.preferred_language}
                   </span>
                 </div>
-                <Badge variant="status" status={patient.status} size="sm" />
-              </div>
 
-              <div className="flex items-center justify-between text-xs text-gray-600 pt-2 border-t border-gray-200/50">
-                <span>Adherence: <strong className="text-gray-900">{patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : 'New'}</strong></span>
-                <span className="font-semibold text-[10px] uppercase bg-gray-200 px-1.5 py-0.5 rounded">
-                  {patient.preferred_language}
-                </span>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    onClick={() => {
+                      setActiveCallPatientId(patient.id);
+                      setIsCallModalOpen(true);
+                    }}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-700 flex items-center gap-1"
+                  >
+                    <Phone className="w-3 h-3 text-[#70BF2B]" />
+                    <span>Call</span>
+                  </button>
+                  <Link
+                    href={`/patients/${patient.id}`}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#70BF2B] text-white"
+                  >
+                    View Detail
+                  </Link>
+                </div>
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  onClick={() => {
-                    setActiveCallPatientId(patient.id);
-                    setIsCallModalOpen(true);
-                  }}
-                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-700 flex items-center gap-1"
-                >
-                  <Phone className="w-3 h-3 text-[#70BF2B]" />
-                  <span>Call</span>
-                </button>
-                <Link
-                  href={`/patients/${patient.id}`}
-                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#70BF2B] text-white"
-                >
-                  View Detail
-                </Link>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
+
+      <EnrollPatientModal
+        isOpen={isEnrollModalOpen}
+        onClose={() => setIsEnrollModalOpen(false)}
+      />
 
       <TriggerCallModal
         isOpen={isCallModalOpen}
@@ -287,9 +333,8 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                     {(() => {
                       const activeTrack = dashboardAudioTrackByMed[med.id] || 'prescription';
                       const isPrescriptionTrack = activeTrack === 'prescription';
-                      const effectiveAudioUrl = isPrescriptionTrack
-                        ? (med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'))
-                        : (med.reminder_audio_url || med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'));
+                      const trackAudioUrl = isPrescriptionTrack ? med.audio_url : med.reminder_audio_url;
+                      const isGenerating = !trackAudioUrl;
 
                       const title = isPrescriptionTrack
                         ? (med.instruction_source === 'recorded'
@@ -343,14 +388,41 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                             </span>
                           </div>
 
-                          <AudioPlayer
-                            title={title}
-                            language={isMedEnglish ? 'english' : 'twi'}
-                            durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
-                            spokenText={spokenText}
-                            audioUrl={effectiveAudioUrl}
-                            appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
-                          />
+                          {isGenerating ? (
+                            <div className="p-4 rounded-xl border border-amber-200/80 bg-[#FFFDF9] space-y-2.5 animate-in fade-in">
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 text-amber-900 font-semibold">
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                  </span>
+                                  <span>
+                                    {isPrescriptionTrack
+                                      ? `Synthesizing tailored prescription in ${medLangLabel}...`
+                                      : `Synthesizing tailored dose reminder in ${medLangLabel}...`}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-medium text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-full border border-amber-200">
+                                  Generating Audio...
+                                </span>
+                              </div>
+                              <div className="w-full bg-amber-100/70 rounded-full h-1.5 overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-amber-400 to-[#70BF2B] rounded-full animate-pulse w-3/4" />
+                              </div>
+                              <p className="text-[11px] text-gray-500">
+                                AI speech synthesis running in background. Player will become available automatically.
+                              </p>
+                            </div>
+                          ) : (
+                            <AudioPlayer
+                              title={title}
+                              language={isMedEnglish ? 'english' : 'twi'}
+                              durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
+                              spokenText={spokenText}
+                              audioUrl={trackAudioUrl}
+                              appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
+                            />
+                          )}
                         </div>
                       );
                     })()}

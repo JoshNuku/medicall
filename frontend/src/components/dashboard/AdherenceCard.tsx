@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import { DailyAdherence } from '@/lib/types';
 import { ChevronDown, TrendingUp, BarChart3 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useData } from '@/lib/data-context';
 
 interface AdherenceCardProps {
   overallRate: number;
@@ -13,6 +15,7 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
   overallRate,
   history,
 }) => {
+  const { isLoading } = useData();
   const [activeDay, setActiveDay] = useState<DailyAdherence | null>(null);
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('7d');
 
@@ -30,6 +33,32 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
   }, [history]);
 
   const maxRate = 100;
+
+  if (isLoading && (!history || history.length === 0)) {
+    return (
+      <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full min-h-[290px]">
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="w-36 h-5 rounded" />
+            <Skeleton className="w-24 h-7 rounded-lg" />
+          </div>
+          <div className="flex gap-4 mb-6">
+            <Skeleton className="w-24 h-4 rounded" />
+            <Skeleton className="w-24 h-4 rounded" />
+            <Skeleton className="w-24 h-4 rounded" />
+          </div>
+        </div>
+        <div className="flex items-end justify-between gap-3 h-36 pt-4 px-2">
+          {[40, 65, 55, 80, 70, 90, 85].map((heightPct, idx) => (
+            <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+              <Skeleton className="w-full rounded-t-lg" style={{ height: `${heightPct}%` }} />
+              <Skeleton className="w-6 h-3 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!history || history.length === 0) {
     return (

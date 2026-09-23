@@ -125,8 +125,8 @@ const handleReminderCall = async (req, res, next) => {
       }
       console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
     } else {
-      // For Twi reminder calls: use pre-generated reminder audio, or medication audio, or fallback to default
-      const candidateAudio = medication?.reminder_audio_url || (medication?.instruction_source === 'recorded' ? medication.audio_url : null);
+      // For Twi reminder calls: use pre-generated reminder audio from callEvent or medication, or fallback to default
+      const candidateAudio = callEvent?.audio_url || medication?.reminder_audio_url || (medication?.instruction_source === 'recorded' ? medication.audio_url : null);
       if (candidateAudio) {
         audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
         console.log(`🔊 [VOICE ROUTE]: Serving personalized Asante Twi reminder audio (${audioUrl})`);

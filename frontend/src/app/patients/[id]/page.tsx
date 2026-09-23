@@ -594,13 +594,8 @@ export default function PatientDetailPage() {
                     const medLangLabel = isMedEnglish ? 'English' : 'Twi';
                     const activeTrack = audioTrackByMed[med.id] || 'prescription';
                     const isPrescriptionTrack = activeTrack === 'prescription';
-
-                    const isAudioSynthesizing =
-                      med.instruction_source === 'template' && !med.reminder_audio_url;
-
-                    const effectiveAudioUrl = isPrescriptionTrack
-                      ? (med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'))
-                      : (med.reminder_audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'));
+                    const trackAudioUrl = isPrescriptionTrack ? med.audio_url : med.reminder_audio_url;
+                    const isGenerating = !trackAudioUrl;
 
                     const title = isPrescriptionTrack
                       ? (med.instruction_source === 'recorded'
@@ -620,22 +615,6 @@ export default function PatientDetailPage() {
 
                     return (
                       <div className="space-y-2.5">
-                        {/* Background Voice Synthesis Progress Bar */}
-                        {isAudioSynthesizing && (
-                          <div className="flex items-center gap-2 px-3 py-2 bg-[#FFF9F2] text-amber-900 text-xs font-medium rounded-xl border border-[#F6D8B8]/80 animate-in fade-in duration-300">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                            </span>
-                            <span className="flex-1">
-                              Synthesizing tailored AI voice note in background... Ready on next scheduled cycle.
-                            </span>
-                            <span className="text-[10px] text-amber-700 bg-amber-100/90 font-medium px-2 py-0.5 rounded-full border border-amber-200">
-                              In Progress
-                            </span>
-                          </div>
-                        )}
-
                         {/* Track Segment Switcher & Script Action */}
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="inline-flex p-1 bg-[#F2F0EC] rounded-xl text-xs gap-1 border border-[#E6E3DB]">
@@ -680,15 +659,43 @@ export default function PatientDetailPage() {
                           </button>
                         </div>
 
-                        {/* Single Unified Audio Player */}
-                        <AudioPlayer
-                          title={title}
-                          language={isMedEnglish ? 'english' : 'twi'}
-                          durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
-                          spokenText={spokenText}
-                          audioUrl={effectiveAudioUrl}
-                          appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
-                        />
+                        {/* If audio is still synthesizing in the background, show dedicated progress bar */}
+                        {isGenerating ? (
+                          <div className="p-4 rounded-xl border border-amber-200/80 bg-[#FFFDF9] space-y-2.5 animate-in fade-in">
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2 text-amber-900 font-semibold">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                </span>
+                                <span>
+                                  {isPrescriptionTrack
+                                    ? `Synthesizing tailored full prescription in ${medLangLabel}...`
+                                    : `Synthesizing tailored daily dose reminder in ${medLangLabel}...`}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-medium text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-full border border-amber-200">
+                                Generating Audio...
+                              </span>
+                            </div>
+                            <div className="w-full bg-amber-100/70 rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-amber-400 to-[#70BF2B] rounded-full animate-pulse w-3/4" />
+                            </div>
+                            <p className="text-[11px] text-gray-500">
+                              AI speech synthesis running in background. Audio player will appear automatically when ready.
+                            </p>
+                          </div>
+                        ) : (
+                          /* Real unified Audio Player with generated audio */
+                          <AudioPlayer
+                            title={title}
+                            language={isMedEnglish ? 'english' : 'twi'}
+                            durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
+                            spokenText={spokenText}
+                            audioUrl={trackAudioUrl}
+                            appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
+                          />
+                        )}
 
                         {/* Expandable Spoken Script */}
                         {showScriptByMed[`script-${med.id}`] && (

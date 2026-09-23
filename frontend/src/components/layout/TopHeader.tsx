@@ -106,10 +106,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-        {!isBackendOnline && (
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            <span>Offline preview</span>
+        {isBackendOnline ? (
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Server Live</span>
+          </div>
+        ) : (
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>Server Offline</span>
           </div>
         )}
 
