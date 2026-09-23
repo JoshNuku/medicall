@@ -17,7 +17,7 @@ const hasCollision = (retryDate, scheduleTimesStr) => {
   });
 };
 
-const processRetries = (callsNeedingRetry) => {
+const processRetries = async (callsNeedingRetry) => {
   for (const call of callsNeedingRetry) {
     const callTime = new Date(call.actual_call_time || call.scheduled_time);
     const delayMinutes = call.outcome === 'not_taken' ? RETRY_NOT_TAKEN_MINUTES : RETRY_NO_ANSWER_MINUTES;
@@ -28,7 +28,7 @@ const processRetries = (callsNeedingRetry) => {
       continue;
     }
 
-    createCallEvent({
+    await createCallEvent({
       patient_id: call.patient_id,
       medication_id: call.medication_id,
       scheduled_time: retryTime.toISOString(),

@@ -1,44 +1,58 @@
-const fs = require('fs');
-const path = require('path');
-const { DatabaseSync } = require('node:sqlite');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/medicall.db');
-const dbDir = path.dirname(dbPath);
+const connectionString = process.env.DATABASE_URL;
 
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+if (!connectionString) {
+  console.error('❌ [DATABASE]: DATABASE_URL is not set in environment!');
+  process.exit(1);
 }
 
-const db = new DatabaseSync(dbPath);
+const pool = new Pool({
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 15000,
+});
 
-// Ensure compatibility with pragma and transaction
-db.pragma = (sql) => db.exec(`PRAGMA ${sql};`);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+pool.on('error', (err) => {
+  console.error('⚠️ [DATABASE POOL ERROR]:', err.message);
+});
 
-try {
-  db.exec("ALTER TABLE medications ADD COLUMN language TEXT DEFAULT 'twi';");
-} catch (_) {}
+/**
+ * Helper to run a parameterized query
+ * @param {string} text - SQL statement with $1, $2 placeholders
+ * @param {Array} params - Query arguments
+ * @returns {Promise<import('pg').QueryResult>}
+ */
+const query = async (text, params = []) => {
+  return pool.query(text, params);
+};
 
-try {
-  db.exec("ALTER TABLE medications ADD COLUMN reminder_audio_url TEXT;");
-} catch (_) {}
-
-try {
-  db.exec("ALTER TABLE call_events ADD COLUMN audio_url TEXT;");
-} catch (_) {}
-
-db.transaction = (fn) => (...args) => {
-  db.exec('BEGIN');
+/**
+ * Helper to execute inside a single transactional client
+ * @param {Function} callback - (client) => Promise<any>
+ */
+const transaction = async (callback) => {
+  const client = await pool.connect();
   try {
-    const result = fn(...args);
-    db.exec('COMMIT');
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
     return result;
   } catch (err) {
-    db.exec('ROLLBACK');
+    await client.query('ROLLBACK');
     throw err;
+  } finally {
+    client.release();
   }
 };
 
-module.exports = db;
+module.exports = {
+  pool,
+  query,
+  transaction
+};

@@ -14,7 +14,7 @@ const agent = async ({ prompt, model = DEFAULT_MODEL, patientId = null, systemPr
 
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: prompt });
-  if (patientId) addConversationMessage({ patient_id: patientId, role: 'user', content: prompt });
+  if (patientId) await addConversationMessage({ patient_id: patientId, role: 'user', content: prompt });
 
   for (let i = 0; i < maxIterations; i++) {
     const result = await sendChatCompletion({ model, messages, tools, temperature });
@@ -32,7 +32,7 @@ const agent = async ({ prompt, model = DEFAULT_MODEL, patientId = null, systemPr
       }
     } else {
       const finalContent = message.content || '';
-      if (patientId) addConversationMessage({ patient_id: patientId, role: 'assistant', content: finalContent });
+      if (patientId) await addConversationMessage({ patient_id: patientId, role: 'assistant', content: finalContent });
       return { content: finalContent, messages };
     }
   }
@@ -44,7 +44,7 @@ const agent = async ({ prompt, model = DEFAULT_MODEL, patientId = null, systemPr
  * Phase 1: Generates purely spoken reminder text for outbound call (NO tools attached).
  */
 const generateReminderMessage = async ({ patientId, medicationId, model = DEFAULT_MODEL }) => {
-  const context = getPatientFullContext(patientId, medicationId);
+  const context = await getPatientFullContext(patientId, medicationId);
   const systemPrompt = context ? buildSystemPrompt(context) : null;
   const prompt = 'Generate the warm phone reminder voice message for the upcoming dose in plain English.';
 
@@ -56,7 +56,7 @@ const generateReminderMessage = async ({ patientId, medicationId, model = DEFAUL
  * Phase 2: Hook for DTMF/keypress responses with full tool execution.
  */
 const passResponseToAgent = async ({ patientId, medicationId, dtmfDigits, callEventId = null, model = DEFAULT_MODEL }) => {
-  const context = getPatientFullContext(patientId, medicationId);
+  const context = await getPatientFullContext(patientId, medicationId);
   const baseSystemPrompt = context ? buildSystemPrompt(context) : '';
 
   const triageInstructions = `
@@ -84,7 +84,7 @@ const decideNextAction = async (patientId, medicationId, diagnosticContext = nul
  * Generates the phone diagnostic check-in voice message for assessing non-adherence barriers.
  */
 const generateDiagnosticMessage = async ({ patientId, medicationId, model = DEFAULT_MODEL }) => {
-  const context = getPatientFullContext(patientId, medicationId);
+  const context = await getPatientFullContext(patientId, medicationId);
   const systemPrompt = context ? buildDiagnosticSystemPrompt(context) : null;
   const prompt = `Conduct an empathetic phone check-in for ${context?.patient?.name || 'the patient'} regarding their ${context?.primaryMed?.drug_name || 'medication'}. Gently ask why they were unable to take their medication, and clearly instruct them to press number one for cost or refill challenges, press number two for side effects or feeling unwell, press number three if they forgot, or press number four for any other reason. Press number nine to repeat, or press number zero to reach their pharmacist.`;
 

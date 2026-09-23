@@ -41,17 +41,17 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   console.log(`   Call Event: ${callEventId || 'unknown'}`);
   console.log(`==============================================`);
 
-  const callEvent = getCallEventById(callEventId);
+  const callEvent = await getCallEventById(callEventId);
   if (!callEvent) {
     console.log('⚠️ No call event found for ID:', callEventId);
     return buildVoiceResponse(buildSay('Thank you. Goodbye.'));
   }
 
-  const medication = getMedicationById(callEvent.medication_id);
+  const medication = await getMedicationById(callEvent.medication_id);
   const audioUrl = medication ? medication.audio_url : null;
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId}`;
 
-  const patient = getPatientById(callEvent.patient_id);
+  const patient = await getPatientById(callEvent.patient_id);
   const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
   const isEnglish = medLang ? medLang === 'english' : (patient && (patient.preferred_language || '').toLowerCase() === 'english');
   const isTwi = !isEnglish;
@@ -59,12 +59,12 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
 
   if (isEnglish && medication?.instruction_source !== 'recorded') {
     const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
-    const latestMsg = patient ? getLatestAssistantMessage(patient.id) : null;
+    const latestMsg = patient ? await getLatestAssistantMessage(patient.id) : null;
     replaySayText = latestMsg?.content || `Hello ${patient ? patient.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, press number four for an earlier reminder, or press number six to hear this again.`;
   }
 
   // Check universal keys (6/9: repeat, 0: help)
-  const universalResponse = handleUniversalKeys(dtmfDigits, {
+  const universalResponse = await handleUniversalKeys(dtmfDigits, {
     patientId: callEvent.patient_id,
     replayUrl: audioUrl,
     replaySayText,
@@ -83,11 +83,9 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
 
   if (isAiAgentEnabled) {
     // --- AI AGENT MODE: Instant Neutral Acknowledgment + Autonomous LLM Triage ---
-    // isTwi already computed from medication language
-
     if (dtmfDigits === '1') {
       outcome = CALL_OUTCOMES.CONFIRMED;
-      resetCaregiverNotifiedAt(callEvent.patient_id);
+      await resetCaregiverNotifiedAt(callEvent.patient_id);
       responseMessage = isTwi
         ? 'Medaase. Yɛagye atom sɛ woafa wo nnuro no. Yɛma wo apɔmuden!'
         : `Thank you for confirming your medication, ${patient ? patient.name : 'there'}! Stay healthy and have a wonderful day.`;
@@ -124,12 +122,12 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       '3': 'Pressed 3 (Reported cost barrier)',
       '4': 'Pressed 4 (Reported forgot / early reminder request)'
     };
-    addConversationMessage({
+    await addConversationMessage({
       patient_id: callEvent.patient_id,
       role: 'user',
       content: keyDescriptions[dtmfDigits] || `Pressed keypad digit '${dtmfDigits}'`
     });
-    addConversationMessage({
+    await addConversationMessage({
       patient_id: callEvent.patient_id,
       role: 'assistant',
       content: responseMessage
@@ -157,7 +155,7 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     if (dtmfDigits === '1') {
       outcome = CALL_OUTCOMES.CONFIRMED;
       responseMessage = 'Thank you for confirming your medication. Stay healthy!';
-      resetCaregiverNotifiedAt(callEvent.patient_id);
+      await resetCaregiverNotifiedAt(callEvent.patient_id);
       console.log('✓ [Classic Mode] Key 1: Confirmed');
     } else if (dtmfDigits === '2') {
       outcome = CALL_OUTCOMES.NOT_TAKEN;
@@ -168,9 +166,9 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     }
   }
 
-  updateCallOutcome(callEventId, outcome);
+  await updateCallOutcome(callEventId, outcome);
 
-  const patientForAudio = getPatientById(callEvent.patient_id);
+  const patientForAudio = await getPatientById(callEvent.patient_id);
   const isTwiCaller = patientForAudio && (patientForAudio.preferred_language || '').toLowerCase() !== 'english';
 
   if (isTwiCaller) {

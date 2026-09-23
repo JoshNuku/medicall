@@ -23,9 +23,15 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { patients, todayCalls, alerts, adherenceHistory, metrics, isLoading, error, refetch } = useData();
+  const { patients, todayCalls, allCalls, alerts, adherenceHistory, metrics, isLoading, error, refetch } = useData();
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+
+  const formattedToday = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -47,7 +53,7 @@ export default function DashboardPage() {
           {/* Date Pill */}
           <div className="hidden lg:inline-flex items-center gap-2 bg-white border border-[#EAEAEA] px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-            <span>Today &middot; September 19, 2026</span>
+            <span>Today &middot; {formattedToday}</span>
           </div>
 
           {/* Quick Demo Call Button */}
@@ -94,8 +100,8 @@ export default function DashboardPage() {
             <MetricCard
               variant="default"
               label="Monitored Patients"
-              value={metrics.total_patients || 15}
-              subtext={`${Math.max(0, (metrics.total_patients || 15) - (metrics.open_alerts || 0))} adherent · ${metrics.open_alerts || 0} need attention`}
+              value={metrics.total_patients ?? 0}
+              subtext={`${Math.max(0, (metrics.total_patients ?? 0) - (metrics.open_alerts ?? 0))} adherent · ${metrics.open_alerts ?? 0} need attention`}
               icon={<Users className="w-5 h-5 text-blue-600 transition-transform group-hover:scale-110" />}
               iconBg="bg-blue-50"
             />
@@ -105,8 +111,18 @@ export default function DashboardPage() {
           <MetricCard
             variant="default"
             label="Calls Today"
-            value={metrics.calls_today || 14}
-            subtext={`${metrics.calls_today_confirmed || 11} confirmed · 3 retries scheduled`}
+            value={metrics.calls_today ?? 0}
+            subtext={
+              (metrics.calls_today ?? 0) === 0
+                ? "No calls scheduled today"
+                : `${metrics.calls_today_confirmed ?? 0} confirmed · ${
+                    (metrics.calls_today_retries ?? 0) > 0
+                      ? `${metrics.calls_today_retries} retries scheduled`
+                      : (metrics.calls_today_pending ?? 0) > 0
+                      ? `${metrics.calls_today_pending} scheduled`
+                      : 'all completed'
+                  }`
+            }
             icon={<PhoneCall className="w-5 h-5 text-[#70BF2B]" />}
             iconBg="bg-[#F0F9EB]"
           />
@@ -116,10 +132,10 @@ export default function DashboardPage() {
             <MetricCard
               variant="default"
               label="Open Alerts"
-              value={metrics.open_alerts || 0}
-              subtext={metrics.open_alerts > 0 ? "Requires clinician review" : "All patients adherent"}
-              icon={<AlertTriangle className={`w-5 h-5 ${metrics.open_alerts > 0 ? 'text-rose-600' : 'text-emerald-600'} transition-transform group-hover:scale-110`} />}
-              iconBg={metrics.open_alerts > 0 ? "bg-rose-50" : "bg-emerald-50"}
+              value={metrics.open_alerts ?? 0}
+              subtext={(metrics.open_alerts ?? 0) > 0 ? "Requires clinician review" : "All patients adherent"}
+              icon={<AlertTriangle className={`w-5 h-5 ${(metrics.open_alerts ?? 0) > 0 ? 'text-rose-600' : 'text-emerald-600'} transition-transform group-hover:scale-110`} />}
+              iconBg={(metrics.open_alerts ?? 0) > 0 ? "bg-rose-50" : "bg-emerald-50"}
             />
           </Link>
         </div>
@@ -134,7 +150,7 @@ export default function DashboardPage() {
           />
         </div>
         <div className="lg:col-span-5">
-          <CallsCard calls={todayCalls} />
+          <CallsCard calls={allCalls.length ? allCalls : todayCalls} />
         </div>
       </div>
 

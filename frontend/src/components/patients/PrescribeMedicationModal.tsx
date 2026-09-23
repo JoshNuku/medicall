@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { AudioPlayer } from './AudioPlayer';
 import { useData } from '@/lib/data-context';
+import { useToast } from '@/components/ui/Toast';
 import {
   ShieldCheck,
   Mic,
@@ -36,6 +37,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   patientLanguage = 'twi',
 }) => {
   const { templates, prescribeMedication } = useData();
+  const toast = useToast();
 
   const [mode, setMode] = useState<'template' | 'recorded'>('template');
   const isPatientEnglish = (patientLanguage || '').toLowerCase() === 'english';
@@ -338,7 +340,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!drugName.trim()) {
-      setError('Please provide a drug name.');
+      const msg = 'Please provide a drug name.';
+      setError(msg);
+      toast.warning('Missing Drug Name', msg);
       return;
     }
 
@@ -368,7 +372,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         });
       } else {
         if (!recordedAudioBlob) {
-          setError('Please record or upload a voice note before saving the medication instructions.');
+          const msg = 'Please record or upload a voice note before saving the medication instructions.';
+          setError(msg);
+          toast.warning('Voice Note Required', msg);
           setIsSubmitting(false);
           return;
         }
@@ -398,6 +404,11 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
       }
 
       const savedDrugName = drugName.trim();
+      toast.success(
+        'Prescription Saved',
+        `Medication regimen for ${savedDrugName} has been configured with automated call schedule.`
+      );
+
       // Reset and close
       setDrugName('');
       handleResetRecording();
@@ -407,6 +418,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to prescribe medication in backend.';
       setError(message);
+      toast.error('Prescription Failed', message);
     } finally {
       setIsSubmitting(false);
     }

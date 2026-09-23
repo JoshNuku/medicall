@@ -22,9 +22,10 @@ const { getAllPatients, getPatientById, updatePatient, deletePatient } = require
  *                   items:
  *                     $ref: '#/components/schemas/Patient'
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    res.json({ patients: getAllPatients() });
+    const patients = await getAllPatients();
+    res.json({ patients });
   } catch (err) {
     next(err);
   }
@@ -60,9 +61,9 @@ router.get('/', (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
-    const patient = getPatientById(parseInt(req.params.id, 10));
+    const patient = await getPatientById(parseInt(req.params.id, 10));
     if (!patient) return res.status(404).json({ error: 'Patient not found', status: 404 });
     res.json({ patient });
   } catch (err) {
@@ -103,14 +104,28 @@ router.get('/:id', (req, res, next) => {
  *       404:
  *         description: Patient not found
  */
-router.put('/:id', (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const existing = getPatientById(id);
+    const existing = await getPatientById(id);
     if (!existing) return res.status(404).json({ error: 'Patient not found', status: 404 });
 
     const { name, phone_number, preferred_language, caregiver_phone, consent_given } = req.body;
-    const updated = updatePatient(id, {
+
+    if (phone_number) {
+      const { getPatientByPhoneNumber } = require('../db/queries/patients');
+      const cleanPhone = phone_number.replace(/[\s\-\(\)]/g, '');
+      const otherPatient = await getPatientByPhoneNumber(cleanPhone);
+      if (otherPatient && otherPatient.id !== id) {
+        return res.status(409).json({
+          error: `Phone number ${phone_number.trim()} is already assigned to another patient (${otherPatient.name}).`,
+          code: 'DUPLICATE_PHONE',
+          status: 409
+        });
+      }
+    }
+
+    const updated = await updatePatient(id, {
       name,
       phone_number,
       preferred_language,
@@ -142,13 +157,13 @@ router.put('/:id', (req, res, next) => {
  *       404:
  *         description: Patient not found
  */
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const existing = getPatientById(id);
+    const existing = await getPatientById(id);
     if (!existing) return res.status(404).json({ error: 'Patient not found', status: 404 });
 
-    const deleted = deletePatient(id);
+    const deleted = await deletePatient(id);
     res.json({ success: true, message: `Patient ${deleted.name} deleted successfully`, patient: deleted });
   } catch (err) {
     next(err);
@@ -156,4 +171,3 @@ router.delete('/:id', (req, res, next) => {
 });
 
 module.exports = router;
-

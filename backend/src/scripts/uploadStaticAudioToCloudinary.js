@@ -1,0 +1,51 @@
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const { uploadAudioFile, isCloudinaryConfigured } = require('../services/cloudinaryService');
+
+const staticFiles = [
+  'twi_confirmed.mp3',
+  'twi_not_taken_ack.mp3',
+  'twi_diagnostic_reason.mp3',
+  'english_diagnostic_reason.mp3',
+  'twi_inbound_intro.mp3',
+  'twi_outbound_reminder.mp3',
+  'default-reminder.mp3',
+  'default-reminder-en.mp3'
+];
+
+async function main() {
+  if (!isCloudinaryConfigured()) {
+    console.error('Cloudinary credentials not found.');
+    process.exit(1);
+  }
+
+  console.log('=== UPLOADING STATIC IVR AUDIO TO CLOUDINARY ===\n');
+  const urls = {};
+  const audioDir = path.join(__dirname, '../../public/audio');
+
+  for (const filename of staticFiles) {
+    const filePath = path.join(audioDir, filename);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`File not found: ${filename}`);
+      continue;
+    }
+
+    const publicId = path.basename(filename, '.mp3');
+    console.log(`Uploading ${filename}...`);
+    const url = await uploadAudioFile(filePath, {
+      folder: 'medicall/audio/static',
+      public_id: publicId
+    });
+
+    if (url) {
+      urls[filename] = url;
+      console.log(`✓ ${filename} -> ${url}`);
+    }
+  }
+
+  console.log('\n=== UPLOAD SUMMARY ===');
+  console.log(JSON.stringify(urls, null, 2));
+}
+
+main().catch(console.error);

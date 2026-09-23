@@ -1,34 +1,27 @@
 const db = require('./connection');
 
-const seedCallHistory = () => {
-  console.log('Seeding rich 7-day call history across patients into SQLite...');
+const seedCallHistory = async () => {
+  console.log('Seeding rich 7-day call history across patients into Neon PostgreSQL...');
 
-  const patients = db.prepare('SELECT id, name FROM patients').all();
-  const insertCall = db.prepare(`
-    INSERT INTO call_events (
-      patient_id, medication_id, scheduled_time, actual_call_time,
-      call_type, outcome, attempt_number, dose_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  const patientsRes = await db.query('SELECT id, name FROM patients');
+  const patients = patientsRes.rows;
 
   const dates = [
-    { date: '2026-09-11', day: 'Mon' },
-    { date: '2026-09-12', day: 'Tue' },
-    { date: '2026-09-13', day: 'Wed' },
-    { date: '2026-09-14', day: 'Thu' },
-    { date: '2026-09-15', day: 'Fri' },
-    { date: '2026-09-16', day: 'Sat' },
-    { date: '2026-09-17', day: 'Sun' }
+    { date: '2026-09-17', day: 'Mon' },
+    { date: '2026-09-18', day: 'Tue' },
+    { date: '2026-09-19', day: 'Wed' },
+    { date: '2026-09-20', day: 'Thu' },
+    { date: '2026-09-21', day: 'Fri' },
+    { date: '2026-09-22', day: 'Sat' },
+    { date: '2026-09-23', day: 'Sun' }
   ];
 
-  // Map patient medications
-  const getMedStmt = db.prepare('SELECT id, drug_name, schedule_times FROM medications WHERE patient_id = ?');
-
   // Clear existing call_events to re-seed clean realistic timeline
-  db.prepare('DELETE FROM call_events').run();
+  await db.query('DELETE FROM call_events');
 
   for (const p of patients) {
-    const meds = getMedStmt.all(p.id);
+    const medsRes = await db.query('SELECT id, drug_name, schedule_times FROM medications WHERE patient_id = $1', [p.id]);
+    const meds = medsRes.rows;
     if (meds.length === 0) continue;
 
     const med = meds[0];
@@ -36,26 +29,28 @@ const seedCallHistory = () => {
 
     for (const d of dates) {
       for (const timeStr of times) {
-        const scheduledTime = `${d.date} ${timeStr}:00`;
+        const scheduledTime = `${d.date}T${timeStr}:00Z`;
         let outcome = 'confirmed';
-        let actualCallTime = `${d.date} ${timeStr}:42`;
+        let actualCallTime = `${d.date}T${timeStr}:42Z`;
 
         // Introduce realistic clinical variations
-        if (p.id === 3 && (d.day === 'Tue' || d.day === 'Fri')) {
+        if (p.id % 4 === 1 && (d.day === 'Tue' || d.day === 'Fri')) {
           outcome = 'no_answer';
-        } else if (p.id === 4 && (d.day === 'Mon' || d.day === 'Thu')) {
+        } else if (p.id % 3 === 0 && (d.day === 'Mon' || d.day === 'Thu')) {
           outcome = 'not_taken';
-        } else if (p.id === 8 && (d.day === 'Wed' || d.day === 'Sat')) {
+        } else if (p.id % 5 === 2 && (d.day === 'Wed' || d.day === 'Sat')) {
           outcome = 'no_answer';
-        } else if (p.id === 1 && d.day === 'Tue' && timeStr.includes('20:00')) {
-          outcome = 'not_taken';
-        } else if (d.date === '2026-09-17' && timeStr > '14:00') {
-          // Future calls today are pending (null outcome)
+        } else if (d.date === '2026-09-23' && timeStr > '16:00') {
           outcome = null;
           actualCallTime = null;
         }
 
-        insertCall.run(
+        await db.query(`
+          INSERT INTO call_events (
+            patient_id, medication_id, scheduled_time, actual_call_time,
+            call_type, outcome, attempt_number, dose_date
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
           p.id,
           med.id,
           scheduledTime,
@@ -64,7 +59,7 @@ const seedCallHistory = () => {
           outcome,
           1,
           d.date
-        );
+        ]);
       }
     }
   }
@@ -73,7 +68,12 @@ const seedCallHistory = () => {
 };
 
 if (require.main === module) {
-  seedCallHistory();
+  seedCallHistory()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Failed to seed call history:', err);
+      process.exit(1);
+    });
 }
 
 module.exports = seedCallHistory;

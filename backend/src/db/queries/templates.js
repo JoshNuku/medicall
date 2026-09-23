@@ -1,14 +1,17 @@
-const db = require('../connection');
+const { query } = require('../connection');
 
-const getTemplatesByCategory = (category) => {
+const getTemplatesByCategory = async (category) => {
   if (category) {
-    return db.prepare('SELECT * FROM instruction_templates WHERE category = ? ORDER BY id ASC').all(category);
+    const res = await query('SELECT * FROM instruction_templates WHERE category = $1 ORDER BY id ASC', [category]);
+    return res.rows;
   }
-  return db.prepare('SELECT * FROM instruction_templates ORDER BY category, id ASC').all();
+  const res = await query('SELECT * FROM instruction_templates ORDER BY category, id ASC');
+  return res.rows;
 };
 
-const getTemplateById = (id) => {
-  return db.prepare('SELECT * FROM instruction_templates WHERE id = ?').get(id);
+const getTemplateById = async (id) => {
+  const res = await query('SELECT * FROM instruction_templates WHERE id = $1', [id]);
+  return res.rows[0] || null;
 };
 
 module.exports = {

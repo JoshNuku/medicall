@@ -4,8 +4,8 @@ const { createCallEvent } = require('../db/queries/callEvents');
 const { createEscalation } = require('../db/queries/escalations');
 const { buildVoiceResponse, buildSay, buildGetDigits } = require('../utils/xmlBuilder');
 
-const handleInboundCall = (callerNumber, baseUrl) => {
-  const patient = callerNumber ? getPatientByPhoneNumber(callerNumber) : null;
+const handleInboundCall = async (callerNumber, baseUrl) => {
+  const patient = callerNumber ? await getPatientByPhoneNumber(callerNumber) : null;
 
   if (!patient) {
     return buildVoiceResponse(
@@ -13,7 +13,7 @@ const handleInboundCall = (callerNumber, baseUrl) => {
     );
   }
 
-  const medications = getMedicationsByPatientId(patient.id);
+  const medications = await getMedicationsByPatientId(patient.id);
 
   if (!medications || medications.length === 0) {
     return buildVoiceResponse(
@@ -46,7 +46,7 @@ const handleInboundCall = (callerNumber, baseUrl) => {
   // Single active medication: Play instruction immediately followed by keypress trailer
   const activeMed = medications[0];
   const today = new Date().toISOString().split('T')[0];
-  createCallEvent({
+  await createCallEvent({
     patient_id: patient.id,
     medication_id: activeMed.id,
     scheduled_time: new Date().toISOString(),
@@ -80,15 +80,15 @@ const handleInboundCall = (callerNumber, baseUrl) => {
   return buildVoiceResponse(digitsXml);
 };
 
-const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
-  const patient = patientId ? getPatientById(patientId) : null;
+const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null) => {
+  const patient = patientId ? await getPatientById(patientId) : null;
   if (!patient) return buildVoiceResponse(buildSay('Thank you. Goodbye.'));
 
   const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
 
   // Key 0: Request pharmacist help
   if (dtmfDigits === '0') {
-    createEscalation({
+    await createEscalation({
       patient_id: patient.id,
       escalation_type: 'patient_requested_help'
     });
@@ -101,11 +101,11 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
     );
   }
 
-  const medications = getMedicationsByPatientId(patient.id);
+  const medications = await getMedicationsByPatientId(patient.id);
 
   // Key 9: Repeat menu
   if (dtmfDigits === '9') {
-    return handleInboundCall(patient.phone_number, baseUrl);
+    return await handleInboundCall(patient.phone_number, baseUrl);
   }
 
   // Key 1..N: Selected specific medication
@@ -115,7 +115,7 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
     : (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
 
   if (!chosenMed) {
-    return handleInboundCall(patient.phone_number, baseUrl);
+    return await handleInboundCall(patient.phone_number, baseUrl);
   }
 
   let fullAudioUrl = chosenMed.audio_url;
@@ -145,4 +145,3 @@ module.exports = {
   handleInboundCall,
   handleInboundSelect
 };
-

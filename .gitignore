@@ -39,5 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-backend/public/audio/recording_1790081581688_47b14a.webm
-backend/public/audio/recording_1790082248636_1ntzui.webm
+
+# backend — exclude generated audio files and local database
+backend/public/audio/*.mp3
+backend/public/audio/*.wav
+backend/public/audio/*.webm
+backend/public/audio/*.ogg
+backend/public/audio/recordings/
+backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal

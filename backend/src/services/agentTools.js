@@ -114,7 +114,7 @@ const executeTool = async (name, args) => {
 
   if (name === 'do_nothing') {
     const patientId = Number(args.patient_id);
-    const patient = getPatientById(patientId);
+    const patient = await getPatientById(patientId);
     console.log(`   Result: 🟢 Patient ${patient ? patient.name : patientId} confirmed dose taken. No clinical intervention needed.`);
     console.log(`======================================================\n`);
     return { status: 'success', action: 'none', message: 'Dose taken on schedule. Adherence recorded.' };
@@ -122,10 +122,10 @@ const executeTool = async (name, args) => {
 
   if (name === 'escalate_case') {
     const patientId = Number(args.patient_id);
-    const patient = getPatientById(patientId);
+    const patient = await getPatientById(patientId);
     if (!patient) return { error: `Patient ID ${patientId} not found in database` };
 
-    const esc = createEscalation({ patient_id: patientId, escalation_type: args.escalation_type });
+    const esc = await createEscalation({ patient_id: patientId, escalation_type: args.escalation_type, details: args.details });
     const pharmacistPhone = process.env.PHARMACIST_PHONE || '+233272806050';
     const readableIssue = (args.escalation_type || '').replace(/_/g, ' ').toUpperCase();
     const alertMessage = `🚨 [MediCall Pharmacist Alert]\nPatient: ${patient.name} (${patient.phone_number})\nIssue: ${readableIssue}\nDetails: ${args.details || 'Patient reported barrier during reminder call.'}`;
@@ -141,7 +141,7 @@ const executeTool = async (name, args) => {
 
   if (name === 'send_sms' || name === 'notifybySMS') {
     const patientId = Number(args.patient_id);
-    const patient = getPatientById(patientId);
+    const patient = await getPatientById(patientId);
     if (!patient) return { error: `Patient ID ${patientId} not found in database` };
 
     let targetPhone = patient.phone_number;
@@ -160,13 +160,13 @@ const executeTool = async (name, args) => {
 
   if (name === 'editCronReminder') {
     const medicationId = Number(args.medication_id);
-    const med = getMedicationById(medicationId);
+    const med = await getMedicationById(medicationId);
     if (!med) return { error: 'Medication not found' };
     const newSchedule = args.mode === 'add_10min_pre_reminder'
       ? calculateEarlyReminderTimes(med.schedule_times, 10)
       : (args.custom_times || med.schedule_times);
 
-    const updated = updateMedicationSchedule(medicationId, newSchedule);
+    const updated = await updateMedicationSchedule(medicationId, newSchedule);
     console.log(`   Result: ⏰ Schedule adapted from "${med.schedule_times}" to "${updated.schedule_times}"`);
     console.log(`======================================================\n`);
     return { status: 'schedule_adapted', medication_id: medicationId, schedule: updated.schedule_times };

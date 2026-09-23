@@ -1,6 +1,6 @@
 const db = require('../connection');
 
-const createMedication = ({
+const createMedication = async ({
   patient_id,
   drug_name,
   instruction_source,
@@ -14,15 +14,14 @@ const createMedication = ({
   is_chronic = 0,
   language = 'twi'
 }) => {
-  const stmt = db.prepare(`
+  const res = await db.query(`
     INSERT INTO medications (
       patient_id, drug_name, instruction_source,
       dosage_template_id, frequency_template_id, timing_template_id,
       audio_url, reminder_audio_url, schedule_times, duration_days, is_chronic, language
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const info = stmt.run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    RETURNING *
+  `, [
     patient_id,
     drug_name,
     instruction_source,
@@ -35,54 +34,65 @@ const createMedication = ({
     duration_days,
     is_chronic ? 1 : 0,
     language || 'twi'
+  ]);
+
+  return res.rows[0];
+};
+
+const getMedicationsByPatientId = async (patientId) => {
+  const res = await db.query(
+    'SELECT * FROM medications WHERE patient_id = $1 ORDER BY created_at DESC',
+    [patientId]
   );
-
-  return getMedicationById(info.lastInsertRowid);
+  return res.rows;
 };
 
-const getMedicationsByPatientId = (patientId) => {
-  return db.prepare('SELECT * FROM medications WHERE patient_id = ? ORDER BY created_at DESC').all(patientId);
+const getMedicationById = async (id) => {
+  const res = await db.query('SELECT * FROM medications WHERE id = $1', [id]);
+  return res.rows[0] || null;
 };
 
-const getMedicationById = (id) => {
-  return db.prepare('SELECT * FROM medications WHERE id = ?').get(id);
-};
-
-const getMedicationWithPatient = (id) => {
-  return db.prepare(`
+const getMedicationWithPatient = async (id) => {
+  const res = await db.query(`
     SELECT m.*, p.phone_number, p.name AS patient_name, p.caregiver_phone, p.caregiver_notified_at
     FROM medications m
     JOIN patients p ON m.patient_id = p.id
-    WHERE m.id = ?
-  `).get(id);
+    WHERE m.id = $1
+  `, [id]);
+  return res.rows[0] || null;
 };
 
-const updateMedicationSchedule = (id, schedule_times) => {
-  db.prepare('UPDATE medications SET schedule_times = ? WHERE id = ?').run(schedule_times, id);
-  return getMedicationById(id);
+const updateMedicationSchedule = async (id, schedule_times) => {
+  const res = await db.query(
+    'UPDATE medications SET schedule_times = $1 WHERE id = $2 RETURNING *',
+    [schedule_times, id]
+  );
+  return res.rows[0] || null;
 };
 
-const updateMedication = (id, fields) => {
+const updateMedication = async (id, fields) => {
   const allowed = ['drug_name', 'schedule_times', 'duration_days', 'is_chronic', 'audio_url', 'reminder_audio_url'];
   const updates = [];
   const values = [];
+  let paramIdx = 1;
   for (const key of allowed) {
     if (fields[key] !== undefined) {
-      updates.push(`${key} = ?`);
+      updates.push(`${key} = $${paramIdx++}`);
       values.push(key === 'is_chronic' ? (fields[key] ? 1 : 0) : fields[key]);
     }
   }
   if (updates.length === 0) return getMedicationById(id);
   values.push(id);
-  db.prepare(`UPDATE medications SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-  return getMedicationById(id);
+  const res = await db.query(
+    `UPDATE medications SET ${updates.join(', ')} WHERE id = $${paramIdx} RETURNING *`,
+    values
+  );
+  return res.rows[0] || null;
 };
 
-const deleteMedication = (id) => {
-  const med = getMedicationById(id);
-  if (!med) return null;
-  db.prepare('DELETE FROM medications WHERE id = ?').run(id);
-  return med;
+const deleteMedication = async (id) => {
+  const res = await db.query('DELETE FROM medications WHERE id = $1 RETURNING *', [id]);
+  return res.rows[0] || null;
 };
 
 module.exports = {

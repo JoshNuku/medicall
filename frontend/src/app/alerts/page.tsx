@@ -11,6 +11,7 @@ import { TableRowSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { EscalationAlert } from '@/lib/types';
+import { useToast } from '@/components/ui/Toast';
 import {
   AlertTriangle,
   CheckCircle,
@@ -21,6 +22,7 @@ import {
 
 export default function AlertsPage() {
   const { alerts, resolveAlert, isLoading, error, refetch } = useData();
+  const toast = useToast();
 
   const [selectedTab, setSelectedTab] = useState<'open' | 'resolved' | 'cost' | 'side_effects' | 'forgetting'>('open');
   const [resolvingAlert, setResolvingAlert] = useState<EscalationAlert | null>(null);
@@ -28,7 +30,6 @@ export default function AlertsPage() {
   const [resolvedByName, setResolvedByName] = useState('Josh Nuku (Pharmacist)');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resolveError, setResolveError] = useState('');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const openCount = alerts.filter((a) => a.status === 'open').length;
 
@@ -62,11 +63,15 @@ export default function AlertsPage() {
 
     try {
       await resolveAlert(resolvingAlert.id, resolvedByName, resolutionNotes);
-      setToastMessage(`Escalation for ${resolvingAlert.patient_name} resolved in database.`);
+      toast.success(
+        'Alert Resolved',
+        `Escalation for ${resolvingAlert.patient_name} marked resolved by ${resolvedByName}.`
+      );
       setResolvingAlert(null);
-      setTimeout(() => setToastMessage(null), 4000);
     } catch (err: any) {
-      setResolveError(err?.message || 'Failed to resolve alert in backend.');
+      const errMsg = err?.message || 'Failed to resolve alert in backend.';
+      setResolveError(errMsg);
+      toast.error('Resolve Failed', errMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -74,13 +79,6 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg border border-gray-700 flex items-center gap-2 animate-in slide-in-from-bottom-3">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Error Banner */}
       {error && <ErrorBanner message={error} onRetry={refetch} />}

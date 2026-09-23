@@ -11,7 +11,7 @@ const { getMedicationById } = require('../db/queries/medications');
  */
 const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = 'female' }) => {
   const isAiEnabled = process.env.ENABLE_AI_AGENT === 'true';
-  const medication = getMedicationById(medicationId);
+  const medication = await getMedicationById(medicationId);
 
   if (!medication) return null;
 
@@ -27,7 +27,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
 
   // 3. AI Agent dynamic generation (English -> Twi -> Neural TTS)
   try {
-    const patient = getPatientById(patientId);
+    const patient = await getPatientById(patientId);
     const lang = (patient ? patient.preferred_language : 'twi').toLowerCase();
 
     // Step A: Groq LLM generates English text with context
@@ -78,10 +78,10 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     console.log(`   ✓ Audio file ready: ${audioUrl}`);
 
     const resolvedAudio = audioUrl || medication.reminder_audio_url || medication.audio_url;
-    if (resolvedAudio && typeof resolvedAudio === 'string' && resolvedAudio.startsWith('/audio/')) {
+    if (resolvedAudio && typeof resolvedAudio === 'string') {
       const db = require('../db/connection');
       try {
-        db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(resolvedAudio, medicationId);
+        await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [resolvedAudio, medicationId]);
       } catch (_) {}
     }
 
@@ -99,17 +99,17 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
  */
 const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerId = 'female' }) => {
   const { getTemplateById } = require('../db/queries/templates');
-  const medication = getMedicationById(medicationId);
+  const medication = await getMedicationById(medicationId);
   if (!medication) return null;
   if (medication.instruction_source === 'recorded') return medication.audio_url;
 
-  const patient = getPatientById(patientId);
+  const patient = await getPatientById(patientId);
   const lang = (medication.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
   const isEnglish = lang === 'english' || lang === 'en';
 
-  const dosage = medication.dosage_template_id ? getTemplateById(medication.dosage_template_id) : null;
-  const freq = medication.frequency_template_id ? getTemplateById(medication.frequency_template_id) : null;
-  const timing = medication.timing_template_id ? getTemplateById(medication.timing_template_id) : null;
+  const dosage = medication.dosage_template_id ? await getTemplateById(medication.dosage_template_id) : null;
+  const freq = medication.frequency_template_id ? await getTemplateById(medication.frequency_template_id) : null;
+  const timing = medication.timing_template_id ? await getTemplateById(medication.timing_template_id) : null;
 
   if (isEnglish) {
     const drugLower = (medication.drug_name || '').toLowerCase();
@@ -136,7 +136,7 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
       console.log(`✓ Full prescription audio ready: ${audioUrl}`);
       const db = require('../db/connection');
       try {
-        db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
+        await db.query('UPDATE medications SET audio_url = $1 WHERE id = $2', [audioUrl, medicationId]);
       } catch (_) {}
       return audioUrl;
     }
@@ -170,6 +170,15 @@ const synthesizeEnglishSpeech = async (text, filename) => {
     if (buffers.length > 0) {
       const combined = Buffer.concat(buffers);
       fs.writeFileSync(finalFilePath, combined);
+
+      try {
+        const { uploadAudioFile } = require('./cloudinaryService');
+        const cloudUrl = await uploadAudioFile(finalFilePath);
+        if (cloudUrl) return cloudUrl;
+      } catch (cloudErr) {
+        console.warn('⚠️ [Cloudinary Upload Warning]:', cloudErr.message);
+      }
+
       return `/audio/${filename}`;
     }
   } catch (err) {
@@ -185,8 +194,8 @@ const synthesizeEnglishSpeech = async (text, filename) => {
  */
 const generateDiagnosticAudio = async ({ patientId, medicationId, speakerId = 'female' }) => {
   const isAiEnabled = process.env.ENABLE_AI_AGENT === 'true';
-  const patient = getPatientById(patientId);
-  const medication = medicationId ? getMedicationById(medicationId) : null;
+  const patient = await getPatientById(patientId);
+  const medication = medicationId ? await getMedicationById(medicationId) : null;
   const lang = (medication?.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
   const isEnglish = lang === 'english' || lang === 'en';
   const patientName = patient ? patient.name : 'there';

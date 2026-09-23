@@ -30,10 +30,10 @@ const { getTemplatesByCategory } = require('../db/queries/templates');
  *                   items:
  *                     $ref: '#/components/schemas/InstructionTemplate'
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const { category } = req.query;
-    const templates = getTemplatesByCategory(category);
+    const templates = await getTemplatesByCategory(category);
     res.json({ templates });
   } catch (err) {
     next(err);

@@ -15,6 +15,7 @@ import { CallTimeline } from '@/components/patients/CallTimeline';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { useToast } from '@/components/ui/Toast';
 import {
   ArrowLeft,
   Plus,
@@ -38,6 +39,7 @@ import {
 export default function PatientDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const {
     getPatientById,
     getPatientMedications,
@@ -63,7 +65,6 @@ export default function PatientDetailPage() {
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const [isDeletePatientOpen, setIsDeletePatientOpen] = useState(false);
   const [isDeletingPatient, setIsDeletingPatient] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showScriptByMed, setShowScriptByMed] = useState<Record<string | number, boolean>>({});
   const [audioTrackByMed, setAudioTrackByMed] = useState<Record<number, 'prescription' | 'reminder'>>({});
 
@@ -88,12 +89,10 @@ export default function PatientDetailPage() {
     setIsMutating(true);
     try {
       await updateMedication(patientId, editingMedId, editFields);
-      setToastMessage('Medication updated successfully.');
-      setTimeout(() => setToastMessage(null), 3500);
+      toast.success('Medication Updated', `${editFields.drug_name} schedule was updated.`);
       setEditingMedId(null);
     } catch (err) {
-      setToastMessage(`Failed to update: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setTimeout(() => setToastMessage(null), 4000);
+      toast.error('Update Failed', err instanceof Error ? err.message : 'Could not update medication.');
     } finally {
       setIsMutating(false);
     }
@@ -104,12 +103,10 @@ export default function PatientDetailPage() {
     setIsMutating(true);
     try {
       await deleteMedication(patientId, deletingMedId);
-      setToastMessage('Medication deleted.');
-      setTimeout(() => setToastMessage(null), 3500);
+      toast.success('Medication Deleted', 'Medication regimen was removed.');
       setDeletingMedId(null);
     } catch (err) {
-      setToastMessage(`Failed to delete: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setTimeout(() => setToastMessage(null), 4000);
+      toast.error('Deletion Failed', err instanceof Error ? err.message : 'Could not delete medication.');
     } finally {
       setIsMutating(false);
     }
@@ -151,11 +148,12 @@ export default function PatientDetailPage() {
 
   useEffect(() => {
     if (searchParams.get('enrolled') === 'true') {
-      setToastMessage(`Patient ${patient ? patient.name : 'profile'} enrolled successfully! Prescribe their first medication regimen below.`);
-      const timer = setTimeout(() => setToastMessage(null), 5000);
-      return () => clearTimeout(timer);
+      toast.info(
+        'Patient Enrolled',
+        `Patient ${patient ? patient.name : 'profile'} enrolled successfully! Prescribe their first medication regimen below.`
+      );
     }
-  }, [searchParams, patient?.name]);
+  }, [searchParams, patient?.name, toast]);
 
   useEffect(() => {
     if (patientId) {
@@ -203,13 +201,6 @@ export default function PatientDetailPage() {
 
   return (
     <div className="space-y-8">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg border border-gray-700 flex items-center gap-2 animate-in slide-in-from-bottom-3">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Error Banner */}
       {error && <ErrorBanner message={error} onRetry={refetch} />}
@@ -308,32 +299,24 @@ export default function PatientDetailPage() {
             patient.adherence_rate !== null
               ? patient.adherence_rate >= 80
                 ? 'bg-[#70BF2B] text-white'
-                : 'bg-[#FFF9F2] border border-[#F6D8B8] text-gray-900'
+                : 'bg-amber-600 text-white'
               : 'bg-white border border-[#ECECEC] text-gray-900'
           }`}
         >
-          {patient.adherence_rate !== null && patient.adherence_rate >= 80 && (
-            <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none blur-lg" />
+          {patient.adherence_rate !== null && (
+            <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-white/15 pointer-events-none blur-lg" />
           )}
           <div className="flex items-center justify-between mb-2 relative z-10">
             <span
               className={`text-xs font-semibold uppercase tracking-wider ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
-                  ? 'text-white/90'
-                  : patient.adherence_rate !== null
-                  ? 'text-amber-800'
-                  : 'text-gray-400'
+                patient.adherence_rate !== null ? 'text-white/90' : 'text-gray-400'
               }`}
             >
               Adherence Rate
             </span>
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
-                  ? 'bg-white/20 text-white'
-                  : patient.adherence_rate !== null
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-[#F0F9EB] text-[#70BF2B]'
+                patient.adherence_rate !== null ? 'bg-white/20 text-white' : 'bg-[#F0F9EB] text-[#70BF2B]'
               }`}
             >
               <Activity className="w-4 h-4 stroke-[2.2]" />
@@ -342,22 +325,14 @@ export default function PatientDetailPage() {
           <div className="relative z-10">
             <div
               className={`text-3xl font-bold tracking-tight ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
-                  ? 'text-white'
-                  : patient.adherence_rate !== null
-                  ? 'text-amber-950'
-                  : 'text-gray-900'
+                patient.adherence_rate !== null ? 'text-white' : 'text-gray-900'
               }`}
             >
               {patient.adherence_rate !== null ? `${patient.adherence_rate}%` : '--'}
             </div>
             <p
               className={`text-xs mt-1 font-medium ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
-                  ? 'text-white/85'
-                  : patient.adherence_rate !== null
-                  ? 'text-amber-800 font-semibold flex items-center gap-1.5'
-                  : 'text-gray-500'
+                patient.adherence_rate !== null ? 'text-white/90' : 'text-gray-500'
               }`}
             >
               {patient.adherence_rate !== null
@@ -400,7 +375,7 @@ export default function PatientDetailPage() {
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900 tracking-tight">
+            <div suppressHydrationWarning className="text-2xl font-bold text-gray-900 tracking-tight">
               {lastCallTimeDisplay}
             </div>
             <div className="mt-1">
@@ -742,8 +717,10 @@ export default function PatientDetailPage() {
           loadPatientDetails(patient.id);
         }}
         onSuccess={(drugName) => {
-          setToastMessage(`Prescription "${drugName}" saved and automated voice schedule activated.`);
-          setTimeout(() => setToastMessage(null), 4500);
+          toast.success(
+            'Prescription Saved',
+            `Prescription "${drugName}" was saved and automated voice schedule activated.`
+          );
         }}
         patientId={patient.id}
         patientName={patient.name}
@@ -766,8 +743,7 @@ export default function PatientDetailPage() {
           patient={patient}
           onSuccess={(updated) => {
             loadPatientDetails(patient.id);
-            setToastMessage(`Patient profile for "${updated.name}" updated successfully.`);
-            setTimeout(() => setToastMessage(null), 4000);
+            toast.success('Patient Updated', `Profile for "${updated.name}" updated successfully.`);
           }}
         />
       )}

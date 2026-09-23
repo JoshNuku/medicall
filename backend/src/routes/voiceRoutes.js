@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { generateReminderXml, processReminderConfirm } = require('../services/reminderVoiceService');
-const { getCallEventById, createCallEvent, getRecentCallEventsForMedication } = require('../db/queries/callEvents');
+const { getCallEventById, createCallEvent, getRecentCallEventsForMedication, getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
 const { getMedicationById, getMedicationsByPatientId } = require('../db/queries/medications');
-const { getPatientByPhoneNumber } = require('../db/queries/patients');
+const { getPatientByPhoneNumber, getPatientById } = require('../db/queries/patients');
+const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
+const db = require('../db/connection');
 
 /**
  * @openapi
@@ -12,37 +14,21 @@ const { getPatientByPhoneNumber } = require('../db/queries/patients');
  *     tags: [Voice Webhooks]
  *     summary: Outbound reminder call webhook
  *     description: Africa's Talking webhook invoked when reminder connects. Returns GetDigits and Play tags.
- *     parameters:
- *       - in: query
- *         name: callEventId
- *         required: true
- *         schema:
- *           type: integer
- *         example: 1
- *     responses:
- *       200:
- *         description: Africa's Talking XML response
- *         content:
- *           text/xml:
- *             schema:
- *               type: string
- *               example: "<Response><GetDigits timeout='10' numDigits='1' callbackUrl='...'><Play url='...'/></GetDigits></Response>"
  */
-const handleReminderCall = (req, res, next) => {
+const handleReminderCall = async (req, res, next) => {
   try {
     if (req.body.isActive === '0' || req.body.status === 'Completed') {
       const destPhone = req.body.destinationNumber;
       const callerPhone = req.body.callerNumber;
       const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
       const targetPhone = callerPhone && callerPhone !== atNumber ? callerPhone : destPhone;
-      const patient = getPatientByPhoneNumber(targetPhone) || (destPhone ? getPatientByPhoneNumber(destPhone) : null);
+      const patient = (targetPhone ? await getPatientByPhoneNumber(targetPhone) : null) || (destPhone ? await getPatientByPhoneNumber(destPhone) : null);
       if (patient) {
-        const { getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
-        const pending = getLatestPendingCallEventForPatient(patient.id);
+        const pending = await getLatestPendingCallEventForPatient(patient.id);
         if (pending && !pending.outcome) {
           const isNotAnswered = req.body.status === 'NotAnswered' || req.body.callSessionState === 'NotAnswered' || req.body.hangupCause === 'USER_BUSY' || req.body.hangupCause === 'NO_ANSWER';
           const outcome = isNotAnswered ? 'no_answer' : 'answered_no_keypress';
-          updateCallOutcome(pending.id, outcome, new Date().toISOString());
+          await updateCallOutcome(pending.id, outcome, new Date().toISOString());
         }
       }
       res.set('Content-Type', 'text/xml');
@@ -50,23 +36,22 @@ const handleReminderCall = (req, res, next) => {
     }
 
     let callEventId = req.query.callEventId || req.body.callEventId;
-    let callEvent = callEventId ? getCallEventById(callEventId) : null;
-    let medication = callEvent ? getMedicationById(callEvent.medication_id) : null;
+    let callEvent = callEventId ? await getCallEventById(callEventId) : null;
+    let medication = callEvent ? await getMedicationById(callEvent.medication_id) : null;
 
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const { getLatestPendingCallEventForPatient } = require('../db/queries/callEvents');
 
     // Inbound call auto-detection: If someone is dialing our helpline number
     const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
     if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
-      const patient = callerPhone ? getPatientByPhoneNumber(callerPhone) : null;
-      const pendingEvent = patient ? getLatestPendingCallEventForPatient(patient.id) : null;
+      const patient = callerPhone ? await getPatientByPhoneNumber(callerPhone) : null;
+      const pendingEvent = patient ? await getLatestPendingCallEventForPatient(patient.id) : null;
       if (!pendingEvent) {
         const { handleInboundCall } = require('../services/inboundVoiceService');
-        const xml = handleInboundCall(callerPhone, baseUrl);
+        const xml = await handleInboundCall(callerPhone, baseUrl);
         res.set('Content-Type', 'text/xml');
         return res.status(200).send(xml);
       }
@@ -75,20 +60,20 @@ const handleReminderCall = (req, res, next) => {
     if (!callEvent) {
       // In outbound reminder calls from Africa's Talking, destinationNumber is the patient's phone!
       const targetPhone = destPhone || callerPhone;
-      const patient = getPatientByPhoneNumber(targetPhone) || (callerPhone ? getPatientByPhoneNumber(callerPhone) : null);
+      const patient = (targetPhone ? await getPatientByPhoneNumber(targetPhone) : null) || (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null);
 
       if (patient) {
         // First check if a pending callEvent was already registered when outbound call was dispatched
-        const pendingEvent = getLatestPendingCallEventForPatient(patient.id);
+        const pendingEvent = await getLatestPendingCallEventForPatient(patient.id);
         if (pendingEvent) {
           callEvent = pendingEvent;
           callEventId = callEvent.id;
-          medication = getMedicationById(callEvent.medication_id);
+          medication = await getMedicationById(callEvent.medication_id);
         } else {
-          const meds = getMedicationsByPatientId(patient.id);
+          const meds = await getMedicationsByPatientId(patient.id);
           if (meds.length > 0) {
             medication = meds[0];
-            callEvent = createCallEvent({
+            callEvent = await createCallEvent({
               patient_id: patient.id,
               medication_id: medication.id,
               scheduled_time: new Date().toISOString(),
@@ -104,12 +89,10 @@ const handleReminderCall = (req, res, next) => {
     }
 
     if (callEvent && !callEvent.actual_call_time) {
-      const db = require('../db/connection');
-      db.prepare('UPDATE call_events SET actual_call_time = ? WHERE id = ?').run(new Date().toISOString(), callEvent.id);
+      await db.query('UPDATE call_events SET actual_call_time = $1 WHERE id = $2', [new Date().toISOString(), callEvent.id]);
     }
 
-    const { getPatientById } = require('../db/queries/patients');
-    const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
+    const patientObj = callEvent ? await getPatientById(callEvent.patient_id) : null;
     const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
     const isEnglish = medLang
       ? medLang === 'english'
@@ -132,8 +115,7 @@ const handleReminderCall = (req, res, next) => {
     let sayText = null;
 
     if (isEnglish) {
-      const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
-      const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
+      const latestMsg = patientObj ? await getLatestAssistantMessage(patientObj.id) : null;
       if (isAiAgentEnabled) {
         sayText = (latestMsg && latestMsg.content)
           ? latestMsg.content
@@ -171,24 +153,6 @@ router.post('/', handleReminderCall);
  *   post:
  *     tags: [Voice Webhooks]
  *     summary: Reminder keypress confirmation callback
- *     description: Africa's Talking callback processing patient keypress (1=confirmed, 2=not_taken, 9=repeat, 0=help).
- *     requestBody:
- *       content:
- *         application/x-www-form-urlencoded:
- *           schema:
- *             type: object
- *             properties:
- *               dtmfDigits:
- *                 type: string
- *                 example: "1"
- *     responses:
- *       200:
- *         description: Africa's Talking acknowledgment XML
- *         content:
- *           text/xml:
- *             schema:
- *               type: string
- *               example: "<Response><Say>Thank you for confirming your medication.</Say></Response>"
  */
 const handleReminderConfirm = async (req, res, next) => {
   try {
@@ -196,11 +160,11 @@ const handleReminderConfirm = async (req, res, next) => {
     if (!callEventId || callEventId === 'undefined') {
       const callerPhone = req.body.callerNumber;
       const destPhone = req.body.destinationNumber;
-      const patient = (callerPhone && getPatientByPhoneNumber(callerPhone)) || (destPhone && getPatientByPhoneNumber(destPhone));
+      const patient = (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null) || (destPhone ? await getPatientByPhoneNumber(destPhone) : null);
       if (patient) {
-        const meds = getMedicationsByPatientId(patient.id);
+        const meds = await getMedicationsByPatientId(patient.id);
         if (meds.length > 0) {
-          const recents = getRecentCallEventsForMedication(meds[0].id, 1);
+          const recents = await getRecentCallEventsForMedication(meds[0].id, 1);
           if (recents.length > 0) {
             callEventId = recents[0].id;
           }

@@ -8,6 +8,7 @@ import { Language } from '@/lib/types';
 import { UserPlus, Phone, Globe, HeartHandshake } from 'lucide-react';
 
 import { useData } from '@/lib/data-context';
+import { useToast } from '@/components/ui/Toast';
 
 interface EnrollPatientModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
 }) => {
   const router = useRouter();
   const { enrollPatient } = useData();
+  const toast = useToast();
   const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('+233 ');
   const [preferredLanguage, setPreferredLanguage] = useState<Language>('twi');
@@ -37,11 +39,15 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Patient name is required.');
+      const msg = 'Patient name is required.';
+      setError(msg);
+      toast.warning('Missing Name', msg);
       return;
     }
     if (phoneNumber.trim().length < 9) {
-      setError('A valid phone number is required for voice calls.');
+      const msg = 'A valid phone number is required (e.g. +233 20 019 3622).';
+      setError(msg);
+      toast.warning('Invalid Phone', msg);
       return;
     }
 
@@ -63,6 +69,11 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
         createdPatient = await enrollPatient(payload);
       }
 
+      toast.success(
+        'Patient Enrolled',
+        `${createdPatient?.name || name} was enrolled successfully into MediCall.`
+      );
+
       // Reset and close
       setName('');
       setPhoneNumber('+233 ');
@@ -75,7 +86,9 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
         router.push(`/patients/${createdPatient.id}?enrolled=true`);
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to enroll patient in backend.');
+      const errorMessage = err?.message || 'Failed to enroll patient in backend.';
+      setError(errorMessage);
+      toast.error('Enrollment Failed', errorMessage);
     } finally {
       setIsSubmitting(false);
     }

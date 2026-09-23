@@ -70,7 +70,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {displayCalls.map((call) => {
+              {displayCalls.map((call, idx) => {
                 const timeFormatted = call.scheduled_time
                   ? new Date(call.scheduled_time).toLocaleTimeString('en-GB', {
                       hour: '2-digit',
@@ -81,7 +81,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
 
                 return (
                   <div
-                    key={call.id}
+                    key={`call-${call.id || idx}-${idx}`}
                     className="py-3 flex items-center justify-between gap-3 hover:bg-[#F8F9FA] -mx-2 px-2 rounded-xl transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">

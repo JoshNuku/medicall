@@ -11,7 +11,7 @@ interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
-  const { metrics, alerts } = useData();
+  const { metrics, alerts, isBackendOnline } = useData();
   const pathname = usePathname();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -106,6 +106,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+        {!isBackendOnline && (
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span>Offline preview</span>
+          </div>
+        )}
+
         {/* Notification Bell with Dropdown */}
         <div className="relative" ref={notifRef}>
           <button

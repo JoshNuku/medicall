@@ -1,13 +1,8 @@
-const db = require('./connection');
+const { query } = require('./connection');
 
-const seedTemplates = () => {
-  const row = db.prepare('SELECT COUNT(*) as count FROM instruction_templates').get();
-  if (row && row.count > 0) return;
-
-  const insert = db.prepare(`
-    INSERT INTO instruction_templates (category, label_english, text_twi, audio_url)
-    VALUES (?, ?, ?, ?)
-  `);
+const seedTemplates = async () => {
+  const row = await query('SELECT COUNT(*) as count FROM instruction_templates');
+  if (row.rows[0] && parseInt(row.rows[0].count, 10) > 0) return;
 
   const templates = [
     // Dosages (~8)
@@ -34,13 +29,13 @@ const seedTemplates = () => {
     ['timing', 'At bedtime', 'ansa na wobɛkɔ akɔda', null]
   ];
 
-  const insertMany = db.transaction((items) => {
-    for (const item of items) {
-      insert.run(item[0], item[1], item[2], item[3]);
-    }
-  });
-
-  insertMany(templates);
+  for (const item of templates) {
+    await query(
+      'INSERT INTO instruction_templates (category, label_english, text_twi, audio_url) VALUES ($1, $2, $3, $4)',
+      item
+    );
+  }
+  console.log('✓ Seeding default instruction templates into Neon PostgreSQL.');
 };
 
 module.exports = seedTemplates;

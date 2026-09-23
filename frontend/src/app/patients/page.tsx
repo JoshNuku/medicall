@@ -27,9 +27,12 @@ import {
   Trash2,
 } from 'lucide-react';
 
+import { useToast } from '@/components/ui/Toast';
+
 export default function PatientsPage() {
   const router = useRouter();
   const { patients, enrollPatient, deletePatient, isLoading, error, refetch } = useData();
+  const toast = useToast();
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
@@ -37,7 +40,6 @@ export default function PatientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [languageFilter, setLanguageFilter] = useState<'all' | 'twi' | 'english'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'attention'>('all');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const filteredPatients = useMemo(() => {
     return patients.filter((patient) => {
@@ -68,13 +70,6 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg border border-gray-700 flex items-center gap-2 animate-in slide-in-from-bottom-3">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Error / Offline Banner */}
       {error && <ErrorBanner message={error} onRetry={refetch} />}
@@ -113,31 +108,28 @@ export default function PatientsPage() {
           <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
             <button
               onClick={() => setLanguageFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                languageFilter === 'all'
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${languageFilter === 'all'
                   ? 'bg-white text-gray-900 shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               All Languages
             </button>
             <button
               onClick={() => setLanguageFilter('twi')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                languageFilter === 'twi'
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${languageFilter === 'twi'
                   ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               Twi
             </button>
             <button
               onClick={() => setLanguageFilter('english')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                languageFilter === 'english'
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${languageFilter === 'english'
                   ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               English
             </button>
@@ -146,31 +138,28 @@ export default function PatientsPage() {
           <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                statusFilter === 'all'
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${statusFilter === 'all'
                   ? 'bg-white text-gray-900 shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               All Status
             </button>
             <button
               onClick={() => setStatusFilter('active')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                statusFilter === 'active'
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${statusFilter === 'active'
                   ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               Active
             </button>
             <button
               onClick={() => setStatusFilter('attention')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                statusFilter === 'attention'
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${statusFilter === 'attention'
                   ? 'bg-amber-500 text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               Attention
             </button>
@@ -234,10 +223,10 @@ export default function PatientsPage() {
                 filteredPatients.map((patient) => {
                   const enrolledDate = patient.enrolled_at
                     ? new Date(patient.enrolled_at).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
                     : 'Recently';
 
                   return (
@@ -318,7 +307,7 @@ export default function PatientsPage() {
         {!isLoading && filteredPatients.length > 0 && (
           <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
             <span>Showing {filteredPatients.length} of {patients.length} enrolled patients</span>
-            <span>Real SQLite Database Persistence Active</span>
+
           </div>
         )}
       </div>
@@ -419,8 +408,7 @@ export default function PatientsPage() {
         onClose={() => setPatientToEdit(null)}
         patient={patientToEdit}
         onSuccess={(updated) => {
-          setToastMessage(`Patient profile for "${updated.name}" updated successfully.`);
-          setTimeout(() => setToastMessage(null), 4000);
+          toast.success('Patient Updated', `Profile for "${updated.name}" updated successfully.`);
         }}
       />
 
@@ -461,11 +449,10 @@ export default function PatientsPage() {
                   const name = patientToDelete.name;
                   await deletePatient(patientToDelete.id);
                   setPatientToDelete(null);
-                  setToastMessage(`Patient "${name}" and all associated records deleted.`);
-                  setTimeout(() => setToastMessage(null), 4000);
+                  toast.success('Patient Deleted', `Patient "${name}" and all records were deleted.`);
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : 'Failed to delete patient';
-                  alert(msg);
+                  toast.error('Deletion Failed', msg);
                 } finally {
                   setIsDeleting(false);
                 }

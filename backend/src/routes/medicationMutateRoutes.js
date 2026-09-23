@@ -54,16 +54,16 @@ const { getMedicationById, updateMedication, deleteMedication } = require('../db
  *       404:
  *         description: Medication not found
  */
-router.put('/:medId', (req, res, next) => {
+router.put('/:medId', async (req, res, next) => {
   try {
     const medId = parseInt(req.params.medId, 10);
-    const existing = getMedicationById(medId);
+    const existing = await getMedicationById(medId);
     if (!existing) {
       return res.status(404).json({ error: 'Medication not found', status: 404 });
     }
 
     const { drug_name, schedule_times, duration_days, is_chronic } = req.body;
-    const updated = updateMedication(medId, { drug_name, schedule_times, duration_days, is_chronic });
+    const updated = await updateMedication(medId, { drug_name, schedule_times, duration_days, is_chronic });
     res.json({ medication: updated });
   } catch (err) {
     next(err);
@@ -106,10 +106,10 @@ router.put('/:medId', (req, res, next) => {
  *       404:
  *         description: Medication not found
  */
-router.delete('/:medId', (req, res, next) => {
+router.delete('/:medId', async (req, res, next) => {
   try {
     const medId = parseInt(req.params.medId, 10);
-    const deleted = deleteMedication(medId);
+    const deleted = await deleteMedication(medId);
     if (!deleted) {
       return res.status(404).json({ error: 'Medication not found', status: 404 });
     }

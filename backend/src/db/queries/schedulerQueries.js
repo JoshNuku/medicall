@@ -1,24 +1,26 @@
 const db = require('../connection');
 
-const getAllActiveMedications = () => {
-  return db.prepare(`
+const getAllActiveMedications = async () => {
+  const res = await db.query(`
     SELECT m.*, p.phone_number, p.name AS patient_name, p.caregiver_phone
     FROM medications m
     JOIN patients p ON m.patient_id = p.id
     WHERE p.consent_given = 1
-  `).all();
+  `);
+  return res.rows;
 };
 
-const hasReminderCallToday = (medicationId, doseDate, timeStr) => {
-  const row = db.prepare(`
+const hasReminderCallToday = async (medicationId, doseDate, timeStr) => {
+  const res = await db.query(`
     SELECT id FROM call_events
-    WHERE medication_id = ? AND dose_date = ? AND scheduled_time LIKE ? AND call_type = 'reminder'
-  `).get(medicationId, doseDate, `%${timeStr}%`);
-  return !!row;
+    WHERE medication_id = $1 AND dose_date = $2 AND scheduled_time::text LIKE $3 AND call_type = 'reminder'
+    LIMIT 1
+  `, [medicationId, doseDate, `%${timeStr}%`]);
+  return res.rows.length > 0;
 };
 
-const getCallsNeedingRetry = () => {
-  return db.prepare(`
+const getCallsNeedingRetry = async () => {
+  const res = await db.query(`
     SELECT ce.*, m.schedule_times
     FROM call_events ce
     JOIN medications m ON ce.medication_id = m.id
@@ -32,7 +34,8 @@ const getCallsNeedingRetry = () => {
           AND r.call_type = 'retry'
           AND r.attempt_number = ce.attempt_number + 1
       )
-  `).all();
+  `);
+  return res.rows;
 };
 
 module.exports = {

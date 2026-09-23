@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Phone, PhoneCall, CheckCircle2, AlertCircle, Sparkles, Volume2 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { triggerCallApi } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 interface TriggerCallModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   defaultCallType = 'reminder',
 }) => {
   const { patients } = useData();
+  const toast = useToast();
   const [selectedPatientId, setSelectedPatientId] = useState<number | string>(
     defaultPatientId || (patients.length > 0 ? patients[0].id : '')
   );
@@ -43,27 +45,42 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
     setCallStatus('idle');
     setStatusMessage('');
 
+    const phoneToCall = selectedPatient ? selectedPatient.phone_number : customPhone;
+    const loadingToastId = toast.loading(
+      'Dialing Outbound Call',
+      `Connecting Africa's Talking live voice to ${phoneToCall}...`
+    );
+
     try {
-      const phoneToCall = selectedPatient ? selectedPatient.phone_number : customPhone;
       const res = await triggerCallApi({
         patient_id: selectedPatient ? selectedPatient.id : undefined,
         phone_number: phoneToCall,
         call_type: callType,
       });
 
+      toast.dismissToast(loadingToastId);
+
       if (res.status === 'success') {
         setCallStatus('success');
-        setStatusMessage(
+        const successMsg =
           callType === 'diagnostic'
-            ? `AI Diagnostic call queued successfully! Handset will ring shortly. Test pressing 1 (Cost barrier), 2 (Side effects), 3 (Forgot), 4 (Other), or 0 (Help).`
-            : `Outbound reminder call queued successfully! Handset will ring shortly. Test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`
+            ? `AI Diagnostic call queued successfully! Handset will ring shortly. Test pressing 1 (Cost), 2 (Side effects), 3 (Forgot), 4 (Other), or 0 (Help).`
+            : `Outbound reminder call queued successfully! Handset will ring shortly. Test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`;
+
+        setStatusMessage(successMsg);
+        toast.success(
+          'Call Dispatched',
+          `Handset ${phoneToCall} is ringing for ${selectedPatient?.name || 'recipient'}.`
         );
       } else {
         throw new Error(res.message || 'Call failed to dispatch');
       }
     } catch (err: any) {
+      toast.dismissToast(loadingToastId);
+      const errMsg = err?.message || 'Failed to dispatch outbound call.';
       setCallStatus('error');
-      setStatusMessage(err?.message || 'Failed to dispatch outbound call.');
+      setStatusMessage(errMsg);
+      toast.error('Telephony Call Failed', errMsg);
     } finally {
       setIsCalling(false);
     }

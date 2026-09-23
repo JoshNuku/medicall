@@ -4,6 +4,7 @@ const { createCallEvent } = require('../db/queries/callEvents');
 const { processRetries } = require('./retryService');
 const { makeOutboundCall, sendSms } = require('./africasTalkingService');
 const { preGenerateReminderAudio, cleanupOldAudioFiles } = require('./reminderPipelineService');
+const db = require('../db/connection');
 
 const getHhMmWithOffset = (now = new Date(), offsetMinutes = 0) => {
   const target = new Date(now.getTime() + offsetMinutes * 60 * 1000);
@@ -15,7 +16,7 @@ const runSchedulerCycle = async (now = new Date()) => {
   const currentHhMm = getHhMmWithOffset(now, 0);
   const upcoming10MinHhMm = getHhMmWithOffset(now, 10);
   const todayDate = now.toISOString().split('T')[0];
-  const medications = getAllActiveMedications();
+  const medications = await getAllActiveMedications();
 
   // 1. Pre-generate AI reminder audio 10 mins before call to avoid telephony latency
   if (process.env.ENABLE_AI_AGENT === 'true') {
@@ -31,8 +32,7 @@ const runSchedulerCycle = async (now = new Date()) => {
             speakerId: 'female'
           });
           if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
-            const db = require('../db/connection');
-            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
+            await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
             med.reminder_audio_url = audioResult;
           }
         } catch (err) {
@@ -47,7 +47,7 @@ const runSchedulerCycle = async (now = new Date()) => {
     const times = (med.schedule_times || '').split(',').map(t => t.trim());
     if (!times.includes(currentHhMm)) continue;
 
-    if (hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
+    if (await hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
 
     // Ensure reminder audio / agent message is generated if not already done 10 mins prior
     if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded') {
@@ -62,8 +62,7 @@ const runSchedulerCycle = async (now = new Date()) => {
             speakerId: 'female'
           });
           if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
-            const db = require('../db/connection');
-            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
+            await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, med.id]);
             med.reminder_audio_url = audioResult;
           }
         } catch (genErr) {
@@ -73,7 +72,7 @@ const runSchedulerCycle = async (now = new Date()) => {
     }
 
     // Immediately create call_event to prevent duplicates
-    const callEvent = createCallEvent({
+    await createCallEvent({
       patient_id: med.patient_id,
       medication_id: med.id,
       scheduled_time: now.toISOString(),
@@ -93,9 +92,9 @@ const runSchedulerCycle = async (now = new Date()) => {
   }
 
   // 3. Handle retries
-  const callsNeedingRetry = getCallsNeedingRetry();
+  const callsNeedingRetry = await getCallsNeedingRetry();
   if (callsNeedingRetry.length > 0) {
-    processRetries(callsNeedingRetry);
+    await processRetries(callsNeedingRetry);
   }
 };
 

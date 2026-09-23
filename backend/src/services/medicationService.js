@@ -18,15 +18,15 @@ const registerMedication = async ({
 }) => {
   let finalAudioUrl = audioFileUrl;
 
-  const patient = patientId ? getPatientById(patientId) : null;
+  const patient = patientId ? await getPatientById(patientId) : null;
   // If pharmacist explicitly selected language during prescription, respect that choice; otherwise fall back to patient's preferred language
   const selectedLang = (language || (patient && patient.preferred_language) || 'twi').toLowerCase();
   const isEnglish = selectedLang === 'english';
 
   if (instructionSource === 'template') {
-    const dosage = dosageTemplateId ? getTemplateById(dosageTemplateId) : null;
-    const freq = frequencyTemplateId ? getTemplateById(frequencyTemplateId) : null;
-    const timing = timingTemplateId ? getTemplateById(timingTemplateId) : null;
+    const dosage = dosageTemplateId ? await getTemplateById(dosageTemplateId) : null;
+    const freq = frequencyTemplateId ? await getTemplateById(frequencyTemplateId) : null;
+    const timing = timingTemplateId ? await getTemplateById(timingTemplateId) : null;
 
     if (isEnglish) {
       const drugLower = (drugName || '').toLowerCase();
@@ -54,7 +54,7 @@ const registerMedication = async ({
     finalAudioUrl = isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3';
   }
 
-  const createdMed = createMedication({
+  const createdMed = await createMedication({
     patient_id: patientId,
     drug_name: drugName,
     instruction_source: instructionSource,

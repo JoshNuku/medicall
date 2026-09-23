@@ -21,18 +21,19 @@ const spellOutNumberWords = (text) => {
     .replace(/\b1g\b/gi, 'one gram');
 };
 
-const getPatientFullContext = (patientId, medicationId = null) => {
-  const patient = getPatientById(patientId);
+const getPatientFullContext = async (patientId, medicationId = null) => {
+  const patient = await getPatientById(patientId);
   if (!patient) return null;
 
   const medications = medicationId
-    ? [getMedicationById(medicationId)].filter(Boolean)
-    : getMedicationsByPatientId(patientId);
+    ? [(await getMedicationById(medicationId))].filter(Boolean)
+    : await getMedicationsByPatientId(patientId);
 
   const primaryMed = medications[0] || null;
-  const recentCalls = primaryMed ? getRecentCallEventsForMedication(primaryMed.id, 5) : [];
-  const diagnosticHistory = getDiagnosticResponsesByPatientId(patientId).slice(0, 5);
-  const conversationHistory = getConversationHistory(patientId, 10);
+  const recentCalls = primaryMed ? await getRecentCallEventsForMedication(primaryMed.id, 5) : [];
+  const allDiag = await getDiagnosticResponsesByPatientId(patientId);
+  const diagnosticHistory = (allDiag || []).slice(0, 5);
+  const conversationHistory = await getConversationHistory(patientId, 10);
 
   let dosageLabel = 'prescribed dose';
   let frequencyLabel = 'as directed';
@@ -40,15 +41,15 @@ const getPatientFullContext = (patientId, medicationId = null) => {
 
   if (primaryMed) {
     if (primaryMed.dosage_template_id) {
-      const t = getTemplateById(primaryMed.dosage_template_id);
+      const t = await getTemplateById(primaryMed.dosage_template_id);
       if (t && t.label_english) dosageLabel = t.label_english;
     }
     if (primaryMed.frequency_template_id) {
-      const t = getTemplateById(primaryMed.frequency_template_id);
+      const t = await getTemplateById(primaryMed.frequency_template_id);
       if (t && t.label_english) frequencyLabel = t.label_english;
     }
     if (primaryMed.timing_template_id) {
-      const t = getTemplateById(primaryMed.timing_template_id);
+      const t = await getTemplateById(primaryMed.timing_template_id);
       if (t && t.label_english) timingLabel = t.label_english;
     }
   }

@@ -1,39 +1,38 @@
 const db = require('../connection');
 
-const addConversationMessage = ({ patient_id, role, content }) => {
-  const stmt = db.prepare(`
+const addConversationMessage = async ({ patient_id, role, content }) => {
+  const res = await db.query(`
     INSERT INTO agent_conversations (patient_id, role, content)
-    VALUES (?, ?, ?)
-  `);
-  const info = stmt.run(patient_id, role, content);
-  return { id: info.lastInsertRowid, patient_id, role, content };
+    VALUES ($1, $2, $3)
+    RETURNING *
+  `, [patient_id, role, content]);
+  return res.rows[0];
 };
 
-const getConversationHistory = (patientId, limit = 20) => {
-  const stmt = db.prepare(`
+const getConversationHistory = async (patientId, limit = 20) => {
+  const res = await db.query(`
     SELECT id, patient_id, role, content, created_at
     FROM agent_conversations
-    WHERE patient_id = ?
+    WHERE patient_id = $1
     ORDER BY id ASC
-    LIMIT ?
-  `);
-  return stmt.all(patientId, limit);
+    LIMIT $2
+  `, [patientId, limit]);
+  return res.rows;
 };
 
-const clearConversationHistory = (patientId) => {
-  const stmt = db.prepare('DELETE FROM agent_conversations WHERE patient_id = ?');
-  return stmt.run(patientId);
+const clearConversationHistory = async (patientId) => {
+  return await db.query('DELETE FROM agent_conversations WHERE patient_id = $1', [patientId]);
 };
 
-const getLatestAssistantMessage = (patientId) => {
-  const stmt = db.prepare(`
+const getLatestAssistantMessage = async (patientId) => {
+  const res = await db.query(`
     SELECT id, patient_id, role, content, created_at
     FROM agent_conversations
-    WHERE patient_id = ? AND role = 'assistant'
+    WHERE patient_id = $1 AND role = 'assistant'
     ORDER BY id DESC
     LIMIT 1
-  `);
-  return stmt.get(patientId);
+  `, [patientId]);
+  return res.rows[0] || null;
 };
 
 module.exports = {

@@ -119,6 +119,8 @@ export interface DashboardMetrics {
   adherence_delta: string;
   calls_today: number;
   calls_today_confirmed: number;
+  calls_today_retries?: number;
+  calls_today_pending?: number;
   open_alerts: number;
   urgent_alerts: number;
 }

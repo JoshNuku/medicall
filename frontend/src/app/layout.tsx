@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/data-context";
+import { ToastProvider } from "@/components/ui/Toast";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -27,16 +28,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable}`}>
       <body className="bg-[#F8F9FA] text-[#111827] min-h-screen flex flex-col md:flex-row antialiased selection:bg-[#70BF2B]/20 selection:text-[#55941E]">
-        <DataProvider>
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FA]">
-            <MobileNav />
-            <TopHeader />
-            <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto">
-              {children}
-            </main>
-          </div>
-        </DataProvider>
+        <ToastProvider>
+          <DataProvider>
+            <Sidebar />
+            <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FA]">
+              <MobileNav />
+              <TopHeader />
+              <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto">
+                {children}
+              </main>
+            </div>
+          </DataProvider>
+        </ToastProvider>
       </body>
     </html>
   );

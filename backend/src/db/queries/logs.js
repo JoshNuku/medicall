@@ -1,7 +1,7 @@
 const db = require('../connection');
 
-const getLogsByPatientId = (patientId) => {
-  return db.prepare(`
+const getLogsByPatientId = async (patientId) => {
+  const res = await db.query(`
     SELECT 
       ce.id AS id,
       ce.id AS call_event_id,
@@ -19,10 +19,17 @@ const getLogsByPatientId = (patientId) => {
       dr.responded_at AS diagnostic_responded_at
     FROM call_events ce
     LEFT JOIN medications m ON ce.medication_id = m.id
-    LEFT JOIN diagnostic_responses dr ON dr.call_event_id = ce.id
-    WHERE ce.patient_id = ?
+    LEFT JOIN diagnostic_responses dr ON dr.id = (
+      SELECT id FROM diagnostic_responses 
+      WHERE call_event_id = ce.id 
+      ORDER BY id DESC 
+      LIMIT 1
+    )
+    WHERE ce.patient_id = $1
     ORDER BY ce.scheduled_time DESC
-  `).all(patientId);
+  `, [patientId]);
+
+  return res.rows;
 };
 
 module.exports = {

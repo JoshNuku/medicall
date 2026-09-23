@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: medicall-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_USERNAME
+        sync: false
+      - key: AT_VOICE_PHONE_NUMBER
+        sync: false
+      - key: KHAYA_API_KEY
+        sync: false
+      - key: KHAYA_API_URL
+        value: https://translation-api.ghananlp.org/tts/v2/synthesize
+      - key: CLOUDINARY_CLOUD_NAME
+        value: deplhwhk7
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: gpt-oss-120B
+      - key: GROQ_API_URL
+        value: https://api.groq.com/openai/v1/chat/completions
+      - key: ENABLE_AI_AGENT
+        value: "true"

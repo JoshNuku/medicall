@@ -132,6 +132,17 @@ const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'female
       fs.writeFileSync(finalFilePath, audioBuffer);
     }
 
+    // Upload to Cloudinary CDN for persistent, high-speed telephony streaming
+    try {
+      const { uploadAudioFile } = require('./cloudinaryService');
+      const cloudUrl = await uploadAudioFile(finalFilePath);
+      if (cloudUrl) {
+        return cloudUrl;
+      }
+    } catch (cloudErr) {
+      console.warn('⚠️ [Cloudinary Upload Warning]:', cloudErr.message);
+    }
+
     return `/audio/${outputName}`;
   } catch (err) {
     console.error('[Khaya AI TTS] Error:', err.message);

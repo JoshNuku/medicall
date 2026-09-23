@@ -1,41 +1,44 @@
 const db = require('../connection');
 
-const createEscalation = ({
+const createEscalation = async ({
   patient_id,
   diagnostic_response_id = null,
-  escalation_type
+  escalation_type,
+  details = null
 }) => {
-  const stmt = db.prepare(`
-    INSERT INTO escalations (patient_id, diagnostic_response_id, escalation_type, status)
-    VALUES (?, ?, ?, 'open')
-  `);
+  const res = await db.query(`
+    INSERT INTO escalations (patient_id, diagnostic_response_id, escalation_type, status, details)
+    VALUES ($1, $2, $3, 'open', $4)
+    RETURNING *
+  `, [patient_id, diagnostic_response_id, escalation_type, details]);
 
-  const info = stmt.run(patient_id, diagnostic_response_id, escalation_type);
-  return getEscalationById(info.lastInsertRowid);
+  return res.rows[0];
 };
 
-const getEscalationById = (id) => {
-  return db.prepare('SELECT * FROM escalations WHERE id = ?').get(id);
+const getEscalationById = async (id) => {
+  const res = await db.query('SELECT * FROM escalations WHERE id = $1', [id]);
+  return res.rows[0] || null;
 };
 
-const getOpenEscalationsWithPatient = () => {
-  return db.prepare(`
+const getOpenEscalationsWithPatient = async () => {
+  const res = await db.query(`
     SELECT e.*, p.name AS patient_name, p.phone_number, p.caregiver_phone
     FROM escalations e
     JOIN patients p ON e.patient_id = p.id
     WHERE e.status = 'open'
     ORDER BY e.created_at DESC
-  `).all();
+  `);
+  return res.rows;
 };
 
-const resolveEscalation = (id, resolved_by = 'pharmacist') => {
-  const stmt = db.prepare(`
+const resolveEscalation = async (id, resolved_by = 'pharmacist') => {
+  const res = await db.query(`
     UPDATE escalations
-    SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP, resolved_by = ?
-    WHERE id = ?
-  `);
-  stmt.run(resolved_by, id);
-  return getEscalationById(id);
+    SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP, resolved_by = $1
+    WHERE id = $2
+    RETURNING *
+  `, [resolved_by, id]);
+  return res.rows[0] || null;
 };
 
 module.exports = {

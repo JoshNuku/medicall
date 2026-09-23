@@ -52,7 +52,20 @@ router.post('/', upload.single('audio'), async (req, res, next) => {
       return res.status(400).json({ error: 'drug_name, instruction_source, and schedule_times are required', status: 400 });
     }
 
-    const audioFileUrl = req.file ? `/audio/${req.file.filename}` : null;
+    let audioFileUrl = req.file ? `/audio/${req.file.filename}` : null;
+    if (req.file) {
+      try {
+        const path = require('path');
+        const { uploadAudioFile } = require('../services/cloudinaryService');
+        const localPath = path.join(__dirname, '../../public/audio', req.file.filename);
+        const cloudUrl = await uploadAudioFile(localPath);
+        if (cloudUrl) {
+          audioFileUrl = cloudUrl;
+        }
+      } catch (cloudErr) {
+        console.warn('⚠️ [Cloudinary Upload Warning]:', cloudErr.message);
+      }
+    }
     const medication = await registerMedication({
       patientId,
       drugName: drug_name,

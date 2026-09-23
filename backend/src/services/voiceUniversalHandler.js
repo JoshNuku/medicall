@@ -6,7 +6,7 @@ const { buildVoiceResponse, buildSay, buildGetDigits } = require('../utils/xmlBu
  * Handles universal digits (9=repeat, 0=request help).
  * Returns an XML string if a universal key was handled, or null to proceed with specific call logic.
  */
-const handleUniversalKeys = (digit, callContext = {}) => {
+const handleUniversalKeys = async (digit, callContext = {}) => {
   const { patientId, replayUrl, replayCallbackUrl } = callContext;
 
   if (digit === UNIVERSAL_KEYS.REPEAT || digit === UNIVERSAL_KEYS.REPEAT_ALT) {
@@ -26,7 +26,7 @@ const handleUniversalKeys = (digit, callContext = {}) => {
   if (digit === UNIVERSAL_KEYS.REQUEST_HELP) {
     // 0 = Request help: log escalation and close call politely
     if (patientId) {
-      createEscalation({
+      await createEscalation({
         patient_id: patientId,
         escalation_type: ESCALATION_TYPES.PATIENT_REQUEST_HELP
       });
