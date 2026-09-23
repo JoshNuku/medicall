@@ -19,6 +19,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [activePrescribePatient, setActivePrescribePatient] = useState<Patient | null>(null);
   const [audioPreviewPatient, setAudioPreviewPatient] = useState<Patient | null>(null);
+  const [dashboardAudioTrackByMed, setDashboardAudioTrackByMed] = useState<Record<number, 'prescription' | 'reminder'>>({});
 
   const displayPatients = patients.slice(0, 6);
 
@@ -105,9 +106,8 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                         <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
                           {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? (
                             <div
-                              className={`h-full rounded-full ${
-                                patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
-                              }`}
+                              className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
+                                }`}
                               style={{ width: `${patient.adherence_rate}%` }}
                             />
                           ) : (
@@ -283,62 +283,77 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                       <Badge variant="status" status="active" size="sm" />
                     </div>
 
-                    {/* Track 1: Dose Reminder */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-gray-700 uppercase tracking-wider">
-                          1. Daily Dose Reminder Audio
-                        </span>
-                        <span className="text-gray-400 font-medium">Outbound automated call</span>
-                      </div>
-                      <AudioPlayer
-                        title={`${med.drug_name} · Dose Reminder (${medLangLabel})`}
-                        language={isMedEnglish ? 'english' : 'twi'}
-                        durationSeconds={12}
-                        spokenText={
-                          isMedEnglish
-                            ? `Hello ${audioPreviewPatient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
-                            : `Meda wo akye ${audioPreviewPatient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`
-                        }
-                        audioUrl={
-                          isMedEnglish
-                            ? '/audio/default-reminder-en.mp3'
-                            : '/audio/default-reminder.mp3'
-                        }
-                      />
-                    </div>
+                    {/* Single Clean Audio Player with Track Switcher */}
+                    {(() => {
+                      const activeTrack = dashboardAudioTrackByMed[med.id] || 'prescription';
+                      const isPrescriptionTrack = activeTrack === 'prescription';
+                      const effectiveAudioUrl = isPrescriptionTrack
+                        ? (med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'))
+                        : (med.reminder_audio_url || med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'));
 
-                    {/* Track 2: Full Prescription */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-[#447817] uppercase tracking-wider">
-                          2. Full Prescription Audio
-                        </span>
-                        <span className="font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded border border-[#70BF2B]/30 font-mono">
-                          Inbound callback (0308048104)
-                        </span>
-                      </div>
-                      <AudioPlayer
-                        title={
-                          med.instruction_source === 'recorded'
-                            ? `${med.drug_name} · Pharmacist Custom Recording (${medLangLabel})`
-                            : `${med.drug_name} · Full Clinical Prescription (${medLangLabel})`
-                        }
-                        language={isMedEnglish ? 'english' : 'twi'}
-                        durationSeconds={med.instruction_source === 'recorded' ? 24 : 18}
-                        spokenText={
-                          med.instruction_source === 'recorded'
-                            ? undefined
-                            : isMedEnglish
+                      const title = isPrescriptionTrack
+                        ? (med.instruction_source === 'recorded'
+                          ? `Pharmacist Custom Recording (${medLangLabel})`
+                          : `Full Prescription Instructions (${medLangLabel})`)
+                        : `Daily Dose Reminder (${medLangLabel})`;
+
+                      const spokenText = isPrescriptionTrack
+                        ? (med.instruction_source === 'recorded'
+                          ? undefined
+                          : isMedEnglish
                             ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'} ${med.frequency_label || 'twice daily'} ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. For questions or side effects, press 0 anytime to reach your pharmacist.`
-                            : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Sɛ worete nka bɔne bi a, mia 0 na kasa kyerɛ wo duruyɛfoɔ.`
-                        }
-                        audioUrl={
-                          med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3')
-                        }
-                        appendKeypressTrailer={med.instruction_source === 'recorded'}
-                      />
-                    </div>
+                            : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Sɛ worete nka bɔne bi a, mia 0 na kasa kyerɛ wo duruyɛfoɔ.`)
+                        : (isMedEnglish
+                          ? `Hello ${audioPreviewPatient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
+                          : `Meda wo akye ${audioPreviewPatient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`);
+
+                      return (
+                        <div className="space-y-2.5">
+                          {/* Track Switcher */}
+                          <div className="flex items-center justify-between">
+                            <div className="inline-flex p-1 bg-[#F2F0EC] rounded-xl text-xs gap-1 border border-[#E6E3DB]">
+                              <button
+                                type="button"
+                                onClick={() => setDashboardAudioTrackByMed(prev => ({ ...prev, [med.id]: 'prescription' }))}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${isPrescriptionTrack
+                                    ? 'bg-white text-gray-900 shadow-2xs font-semibold'
+                                    : 'text-gray-500 hover:text-gray-800'
+                                  }`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                                Full Prescription
+                                <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Helpline</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDashboardAudioTrackByMed(prev => ({ ...prev, [med.id]: 'reminder' }))}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${!isPrescriptionTrack
+                                    ? 'bg-white text-gray-900 shadow-2xs font-semibold'
+                                    : 'text-gray-500 hover:text-gray-800'
+                                  }`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${!isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                                Dose Reminder
+                                <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Outbound</span>
+                              </button>
+                            </div>
+
+                            <span className="text-[11px] text-gray-400 font-medium">
+                              {isPrescriptionTrack ? 'Helpline 0308048104' : 'Outbound Call'}
+                            </span>
+                          </div>
+
+                          <AudioPlayer
+                            title={title}
+                            language={isMedEnglish ? 'english' : 'twi'}
+                            durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
+                            spokenText={spokenText}
+                            audioUrl={effectiveAudioUrl}
+                            appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
+                          />
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               });

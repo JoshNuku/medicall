@@ -1,7 +1,7 @@
 const { sendChatCompletion } = require('./groqClient');
 const { toolDefinitions, executeTool } = require('./agentTools');
 const { addConversationMessage } = require('../db/queries/agentConversations');
-const { getPatientFullContext, buildSystemPrompt } = require('./agentContextService');
+const { getPatientFullContext, buildSystemPrompt, buildDiagnosticSystemPrompt } = require('./agentContextService');
 const decisionEngine = require('./decisionEngine');
 
 const DEFAULT_MODEL = process.env.GROQ_MODEL || 'gpt-oss-120B';
@@ -80,9 +80,22 @@ const decideNextAction = async (patientId, medicationId, diagnosticContext = nul
   return decisionEngine.decideNextAction(patientId, medicationId, diagnosticContext);
 };
 
+/**
+ * Generates the phone diagnostic check-in voice message for assessing non-adherence barriers.
+ */
+const generateDiagnosticMessage = async ({ patientId, medicationId, model = DEFAULT_MODEL }) => {
+  const context = getPatientFullContext(patientId, medicationId);
+  const systemPrompt = context ? buildDiagnosticSystemPrompt(context) : null;
+  const prompt = `Conduct an empathetic phone check-in for ${context?.patient?.name || 'the patient'} regarding their ${context?.primaryMed?.drug_name || 'medication'}. Gently ask why they were unable to take their medication, and clearly instruct them to press number one for cost or refill challenges, press number two for side effects or feeling unwell, press number three if they forgot, or press number four for any other reason. Press number nine to repeat, or press number zero to reach their pharmacist.`;
+
+  const response = await agent({ prompt, model, patientId, systemPrompt, tools: [], temperature: 0.2 });
+  return response.content;
+};
+
 module.exports = {
   agent,
   generateReminderMessage,
+  generateDiagnosticMessage,
   passResponseToAgent,
   decideNextAction
 };

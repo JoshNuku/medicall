@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS medications (
   frequency_template_id INTEGER REFERENCES instruction_templates(id),
   timing_template_id INTEGER REFERENCES instruction_templates(id),
   audio_url TEXT NOT NULL,
+  reminder_audio_url TEXT,
   schedule_times TEXT NOT NULL,
   duration_days INTEGER NOT NULL,
   is_chronic INTEGER NOT NULL DEFAULT 0,
@@ -42,7 +43,8 @@ CREATE TABLE IF NOT EXISTS call_events (
   call_type TEXT NOT NULL CHECK (call_type IN ('reminder', 'retry', 'relisten', 'diagnostic')),
   outcome TEXT CHECK (outcome IN ('confirmed', 'not_taken', 'no_answer', 'answered_no_keypress')),
   attempt_number INTEGER NOT NULL DEFAULT 1,
-  dose_date TEXT NOT NULL
+  dose_date TEXT NOT NULL,
+  audio_url TEXT
 );
 
 CREATE TABLE IF NOT EXISTS diagnostic_responses (

@@ -16,8 +16,7 @@ const buildGetDigits = ({ numDigits = 1, timeout = 10, finishOnKey = null, callb
   const parts = [];
   if (playUrl) {
     parts.push(`    <Play url="${escapeXml(playUrl)}"/>`);
-  }
-  if (sayText) {
+  } else if (sayText) {
     parts.push(`    <Say>${escapeXml(sayText)}</Say>`);
   }
 

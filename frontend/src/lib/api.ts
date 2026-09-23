@@ -257,7 +257,11 @@ export async function fetchTodayCalls() {
 }
 
 // 8. Trigger Instant Demo Call
-export async function triggerCallApi(payload: { patient_id?: number; phone_number?: string }) {
+export async function triggerCallApi(payload: {
+  patient_id?: number;
+  phone_number?: string;
+  call_type?: 'reminder' | 'diagnostic';
+}) {
   const res = await fetchWithRetry(`${API_BASE_URL}/calls/trigger`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

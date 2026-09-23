@@ -4,7 +4,7 @@ const { getTodayCallEvents, createCallEvent } = require('../db/queries/callEvent
 const { getPatientById, getPatientByPhoneNumber } = require('../db/queries/patients');
 const { getMedicationsByPatientId } = require('../db/queries/medications');
 const { makeOutboundCall } = require('../services/africasTalkingService');
-const { preGenerateReminderAudio } = require('../services/reminderPipelineService');
+const { preGenerateReminderAudio, generateDiagnosticAudio } = require('../services/reminderPipelineService');
 
 /**
  * @openapi
@@ -45,7 +45,7 @@ router.get('/today', (req, res, next) => {
  */
 router.post('/trigger', async (req, res, next) => {
   try {
-    const { patient_id, phone_number } = req.body;
+    const { patient_id, phone_number, call_type = 'reminder' } = req.body;
     let patient = null;
     if (patient_id) {
       patient = getPatientById(patient_id);
@@ -59,7 +59,7 @@ router.post('/trigger', async (req, res, next) => {
 
     const patientLang = (patient?.preferred_language || 'english').toUpperCase();
     console.log(`\n======================================================`);
-    console.log(`🚀 [FRONTEND TRIGGER]: Live Outbound Call Requested`);
+    console.log(`🚀 [FRONTEND TRIGGER]: Live Outbound Call Requested [Mode: ${call_type.toUpperCase()}]`);
     console.log(`   Patient: ${patient ? patient.name : 'Custom Phone'} (${targetPhone})`);
     console.log(`   Language Mode: [${patientLang}]`);
     console.log(`======================================================`);
@@ -85,21 +85,37 @@ router.post('/trigger', async (req, res, next) => {
       }
     }
 
-    // Pre-generate AI reminder audio (English via LLM or Twi via Khaya TTS)
+    let generatedCallAudio = null;
+
+    // Pre-generate AI audio depending on call type
     if (patient && medicationId) {
       try {
-        console.log(`\n🤖 [AI PIPELINE]: Generating personalized message for Patient #${patient.id}...`);
-        const audioResult = await preGenerateReminderAudio({
-          patientId: patient.id,
-          medicationId: medicationId,
-          speakerId: 'female'
-        });
-        if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
-          const db = require('../db/connection');
-          db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioResult, medicationId);
+        if (call_type === 'reminder') {
+          console.log(`\n🤖 [AI PIPELINE]: Generating personalized reminder for Patient #${patient.id}...`);
+          const audioResult = await preGenerateReminderAudio({
+            patientId: patient.id,
+            medicationId: medicationId,
+            speakerId: 'female'
+          });
+          if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+            generatedCallAudio = audioResult;
+            const db = require('../db/connection');
+            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, medicationId);
+          }
+        } else if (call_type === 'diagnostic') {
+          console.log(`\n🩺 [DIAGNOSTIC PIPELINE]: Synthesizing AI diagnostic audio evaluation for Patient #${patient.id}...`);
+          const diagAudio = await generateDiagnosticAudio({
+            patientId: patient.id,
+            medicationId: medicationId,
+            speakerId: 'female'
+          });
+          if (typeof diagAudio === 'string' && diagAudio.startsWith('/audio/')) {
+            generatedCallAudio = diagAudio;
+            console.log(`   ✓ Diagnostic audio generated and attached: ${generatedCallAudio}`);
+          }
         }
       } catch (genErr) {
-        console.warn('⚠️ [Call Trigger] AI Audio pre-generation notice:', genErr.message);
+        console.warn('⚠️ [Call Trigger] AI Audio generation notice:', genErr.message);
       }
     }
 
@@ -107,12 +123,13 @@ router.post('/trigger', async (req, res, next) => {
       patient_id: patient ? patient.id : 1,
       medication_id: medicationId || 1,
       scheduled_time: new Date().toISOString(),
-      call_type: 'reminder',
+      call_type: call_type === 'diagnostic' ? 'diagnostic' : 'reminder',
       attempt_number: 1,
-      dose_date: new Date().toISOString().split('T')[0]
+      dose_date: new Date().toISOString().split('T')[0],
+      audio_url: generatedCallAudio
     });
 
-    console.log(`\n📞 [TELEPHONY]: Dialing ${targetPhone} via Africa's Talking...`);
+    console.log(`\n📞 [TELEPHONY]: Dialing ${targetPhone} via Africa's Talking (${call_type})...`);
     const callResult = await makeOutboundCall(targetPhone);
     console.log(`✓ [TELEPHONY RESULT]:`, JSON.stringify(callResult, null, 2));
     console.log(`======================================================\n`);

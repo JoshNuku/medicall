@@ -55,7 +55,22 @@ const handleReminderCall = (req, res, next) => {
 
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
+    const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const { getLatestPendingCallEventForPatient } = require('../db/queries/callEvents');
+
+    // Inbound call auto-detection: If someone is dialing our helpline number
+    const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
+    if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
+      const patient = callerPhone ? getPatientByPhoneNumber(callerPhone) : null;
+      const pendingEvent = patient ? getLatestPendingCallEventForPatient(patient.id) : null;
+      if (!pendingEvent) {
+        const { handleInboundCall } = require('../services/inboundVoiceService');
+        const xml = handleInboundCall(callerPhone, baseUrl);
+        res.set('Content-Type', 'text/xml');
+        return res.status(200).send(xml);
+      }
+    }
 
     if (!callEvent) {
       // In outbound reminder calls from Africa's Talking, destinationNumber is the patient's phone!
@@ -93,13 +108,22 @@ const handleReminderCall = (req, res, next) => {
       db.prepare('UPDATE call_events SET actual_call_time = ? WHERE id = ?').run(new Date().toISOString(), callEvent.id);
     }
 
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const { getPatientById } = require('../db/queries/patients');
     const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
     const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
     const isEnglish = medLang
       ? medLang === 'english'
       : (patientObj && (patientObj.preferred_language || '').toLowerCase() === 'english');
+
+    // Branch directly to Diagnostic IVR if this is a diagnostic call
+    if (callEvent && callEvent.call_type === 'diagnostic') {
+      const { generateDiagnosticXml } = require('../services/diagnosticVoiceService');
+      const audioToPlay = callEvent.audio_url || (isEnglish ? '/audio/english_diagnostic_reason.mp3' : '/audio/twi_diagnostic_reason.mp3');
+      console.log(`🩺 [VOICE ROUTE]: Serving Diagnostic IVR audio (${audioToPlay}) for Patient #${patientObj?.id || 'unknown'}`);
+      const xml = generateDiagnosticXml(callEventId, baseUrl, !isEnglish, null, audioToPlay);
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send(xml);
+    }
 
     const isAiAgentEnabled = process.env.ENABLE_AI_AGENT === 'true';
     const medName = medication ? medication.drug_name : 'your medication';
@@ -119,12 +143,14 @@ const handleReminderCall = (req, res, next) => {
       }
       console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
     } else {
-      // For Twi reminder calls (including recorded medications), use the crisp template reminder audio
-      audioUrl = `${baseUrl}/audio/default-reminder.mp3`;
-      if (medication && medication.instruction_source === 'recorded') {
-        console.log(`🎙️ [VOICE ROUTE]: Medication #${medication.id} has custom recorded audio. Using standard template reminder for outbound call; custom recording will be played on inbound callback.`);
+      // For Twi reminder calls: use pre-generated reminder audio, or medication audio, or fallback to default
+      const candidateAudio = medication?.reminder_audio_url || (medication?.instruction_source === 'recorded' ? medication.audio_url : null);
+      if (candidateAudio) {
+        audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
+        console.log(`🔊 [VOICE ROUTE]: Serving personalized Asante Twi reminder audio (${audioUrl})`);
       } else {
-        console.log(`🔊 [VOICE ROUTE]: Serving Asante Twi template reminder audio (${audioUrl})`);
+        audioUrl = `${baseUrl}/audio/default-reminder.mp3`;
+        console.log(`🔊 [VOICE ROUTE]: Serving default Asante Twi template reminder audio (${audioUrl})`);
       }
     }
 

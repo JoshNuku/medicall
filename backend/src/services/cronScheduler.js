@@ -23,10 +23,21 @@ const runSchedulerCycle = async (now = new Date()) => {
       if (med.instruction_source === 'recorded') continue;
       const times = (med.schedule_times || '').split(',').map(t => t.trim());
       if (times.includes(upcoming10MinHhMm)) {
-        preGenerateReminderAudio({
-          patientId: med.patient_id,
-          medicationId: med.id
-        }).catch(err => console.error(`[Pre-Gen Error Med ${med.id}]:`, err.message));
+        try {
+          console.log(`🤖 [CRON PRE-GEN 10M]: Pre-generating reminder audio for Patient #${med.patient_id} (Med #${med.id})...`);
+          const audioResult = await preGenerateReminderAudio({
+            patientId: med.patient_id,
+            medicationId: med.id,
+            speakerId: 'female'
+          });
+          if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+            const db = require('../db/connection');
+            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
+            med.reminder_audio_url = audioResult;
+          }
+        } catch (err) {
+          console.error(`[Pre-Gen Error Med ${med.id}]:`, err.message);
+        }
       }
     }
   }
@@ -37,6 +48,29 @@ const runSchedulerCycle = async (now = new Date()) => {
     if (!times.includes(currentHhMm)) continue;
 
     if (hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
+
+    // Ensure reminder audio / agent message is generated if not already done 10 mins prior
+    if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded') {
+      const isEnglish = (med.language || '').toLowerCase() === 'english';
+      const needsGen = isEnglish || !med.reminder_audio_url;
+      if (needsGen) {
+        try {
+          console.log(`🤖 [CRON CALL-TIME AGENT]: Generating reminder audio for Patient #${med.patient_id} (Med #${med.id})...`);
+          const audioResult = await preGenerateReminderAudio({
+            patientId: med.patient_id,
+            medicationId: med.id,
+            speakerId: 'female'
+          });
+          if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+            const db = require('../db/connection');
+            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
+            med.reminder_audio_url = audioResult;
+          }
+        } catch (genErr) {
+          console.warn(`⚠️ [Call Time Audio Notice Med ${med.id}]:`, genErr.message);
+        }
+      }
+    }
 
     // Immediately create call_event to prevent duplicates
     const callEvent = createCallEvent({

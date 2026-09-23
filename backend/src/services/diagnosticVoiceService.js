@@ -13,14 +13,27 @@ const REASON_MAP = {
   '4': 'other'
 };
 
-const generateDiagnosticXml = (callEventId, baseUrl) => {
+const generateDiagnosticXml = (callEventId, baseUrl, isTwi = false, customSay = null, customAudioUrl = null) => {
   const callbackUrl = `${baseUrl}/voice/diagnostic/confirm?callEventId=${callEventId}`;
+  
+  let playUrl = null;
+  if (customAudioUrl) {
+    playUrl = customAudioUrl.startsWith('http')
+      ? customAudioUrl
+      : `${baseUrl}${customAudioUrl.startsWith('/') ? '' : '/'}${customAudioUrl}`;
+  } else {
+    playUrl = isTwi
+      ? `${baseUrl}/audio/twi_diagnostic_reason.mp3`
+      : `${baseUrl}/audio/english_diagnostic_reason.mp3`;
+  }
+
   const digitsXml = buildGetDigits({
     numDigits: 1,
     timeout: 15,
     finishOnKey: '#',
     callbackUrl,
-    sayText: DIAGNOSTIC_MENU
+    playUrl,
+    sayText: null // Use actual audio file for both English and Twi to eliminate carrier drops
   });
   return buildVoiceResponse(digitsXml);
 };
@@ -43,12 +56,24 @@ const processDiagnosticConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     reason
   });
 
+  const { updateCallOutcome } = require('../db/queries/callEvents');
+  updateCallOutcome(callEventId, 'confirmed', new Date().toISOString());
+
   await decideNextAction(callEvent.patient_id, callEvent.medication_id, {
     responseId: diagResponse.id,
     reason
   });
 
-  return buildVoiceResponse(buildSay('Thank you for your feedback. We have recorded your response. Take care.'));
+  const { getPatientById } = require('../db/queries/patients');
+  const patient = getPatientById(callEvent.patient_id);
+  const isTwi = (patient?.preferred_language || '').toLowerCase() !== 'english';
+
+  if (isTwi) {
+    const { buildPlay } = require('../utils/xmlBuilder');
+    return buildVoiceResponse(buildPlay(`${baseUrl}/audio/twi_not_taken_ack.mp3`));
+  }
+
+  return buildVoiceResponse(buildSay('Thank you for your feedback. We have recorded your response and alerted your healthcare team. Take care.'));
 };
 
 module.exports = {

@@ -12,21 +12,29 @@ interface TriggerCallModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPatientId?: number;
+  defaultCallType?: 'reminder' | 'diagnostic';
 }
 
 export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   isOpen,
   onClose,
   defaultPatientId,
+  defaultCallType = 'reminder',
 }) => {
   const { patients } = useData();
   const [selectedPatientId, setSelectedPatientId] = useState<number | string>(
     defaultPatientId || (patients.length > 0 ? patients[0].id : '')
   );
+  const [callType, setCallType] = useState<'reminder' | 'diagnostic'>(defaultCallType);
   const [customPhone, setCustomPhone] = useState('+233546007121');
   const [isCalling, setIsCalling] = useState(false);
   const [callStatus, setCallStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
+
+  // Sync defaultCallType if changed by parent
+  React.useEffect(() => {
+    if (defaultCallType) setCallType(defaultCallType);
+  }, [defaultCallType, isOpen]);
 
   const selectedPatient = patients.find((p) => p.id === Number(selectedPatientId));
 
@@ -40,12 +48,15 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
       const res = await triggerCallApi({
         patient_id: selectedPatient ? selectedPatient.id : undefined,
         phone_number: phoneToCall,
+        call_type: callType,
       });
 
       if (res.status === 'success') {
         setCallStatus('success');
         setStatusMessage(
-          `Outbound call queued successfully! Handset will ring shortly. Answer and test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`
+          callType === 'diagnostic'
+            ? `AI Diagnostic call queued successfully! Handset will ring shortly. Test pressing 1 (Cost barrier), 2 (Side effects), 3 (Forgot), 4 (Other), or 0 (Help).`
+            : `Outbound reminder call queued successfully! Handset will ring shortly. Test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`
         );
       } else {
         throw new Error(res.message || 'Call failed to dispatch');
@@ -78,6 +89,50 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
           <span className="text-[11px] font-semibold text-[#55941E] bg-[#F0F9EB] px-2 py-0.5 rounded-md border border-[#70BF2B]/30">
             Live Gateway
           </span>
+        </div>
+
+        {/* Call Type Selector */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+            Call Purpose
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setCallType('reminder')}
+              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                callType === 'reminder'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-gray-900 ring-1 ring-[#70BF2B]'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-2 font-semibold text-xs text-gray-900 mb-0.5">
+                <span className="w-2 h-2 rounded-full bg-[#70BF2B]" />
+                Medication Reminder
+              </div>
+              <p className="text-[11px] text-gray-500">
+                Adherence check & dose verification
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCallType('diagnostic')}
+              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                callType === 'diagnostic'
+                  ? 'bg-amber-50 border-amber-500 text-gray-900 ring-1 ring-amber-500'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-2 font-semibold text-xs text-gray-900 mb-0.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                AI Diagnostic Call
+              </div>
+              <p className="text-[11px] text-gray-500">
+                Investigate barriers (cost, side effects, forget)
+              </p>
+            </button>
+          </div>
         </div>
 
         {/* Patient Selection */}
@@ -124,36 +179,99 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
 
         {/* Keypad Menu Guide */}
         <div className="bg-[#F8F9FA] border border-[#ECECEC] rounded-xl p-3.5 text-xs text-gray-600">
-          <p className="font-semibold text-gray-800 mb-2.5 flex items-center gap-1.5 text-xs">
-            <Volume2 className="w-3.5 h-3.5 text-gray-400" />
-            <span>Interactive IVR Keypad Responses</span>
+          <p className="font-semibold text-gray-800 mb-2.5 flex items-center justify-between text-xs">
+            <span className="flex items-center gap-1.5">
+              <Volume2 className="w-3.5 h-3.5 text-gray-400" />
+              <span>
+                {callType === 'diagnostic'
+                  ? 'Diagnostic IVR Keypad Prompts'
+                  : 'Adherence IVR Keypad Responses'}
+              </span>
+            </span>
+            <span className="text-[10px] text-gray-400 font-mono">
+              {callType === 'diagnostic' ? 'Barrier Triage' : 'Daily Adherence'}
+            </span>
           </p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
-              <span className="w-5 h-5 rounded bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
-                1
-              </span>
-              <span className="text-gray-700">Confirm dose taken</span>
+
+          {callType === 'diagnostic' ? (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  1
+                </span>
+                <span className="text-gray-700">Cost barrier</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  2
+                </span>
+                <span className="text-gray-700">Side effects</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-purple-50 text-purple-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  3
+                </span>
+                <span className="text-gray-700">Forgot / Away</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-gray-50 text-gray-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  4
+                </span>
+                <span className="text-gray-700">Other reasons</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  9
+                </span>
+                <span className="text-gray-700">Replay question</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  0
+                </span>
+                <span className="text-gray-700">Pharmacist help</span>
+              </div>
             </div>
-            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
-              <span className="w-5 h-5 rounded bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
-                2
-              </span>
-              <span className="text-gray-700">Side effects / Missed</span>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  1
+                </span>
+                <span className="text-gray-700">Confirm dose taken</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  2
+                </span>
+                <span className="text-gray-700">Side effects</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-orange-50 text-orange-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  3
+                </span>
+                <span className="text-gray-700">Cost barrier</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-purple-50 text-purple-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  4
+                </span>
+                <span className="text-gray-700">Earlier reminder</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  9
+                </span>
+                <span className="text-gray-700">Replay instruction</span>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
+                  0
+                </span>
+                <span className="text-gray-700">Pharmacist help</span>
+              </div>
             </div>
-            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
-              <span className="w-5 h-5 rounded bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
-                9
-              </span>
-              <span className="text-gray-700">Replay instruction</span>
-            </div>
-            <div className="bg-white p-2.5 rounded-lg border border-gray-200/70 flex items-center gap-2.5">
-              <span className="w-5 h-5 rounded bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-[11px] font-mono shrink-0">
-                0
-              </span>
-              <span className="text-gray-700">Pharmacist assistance</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Result notification */}

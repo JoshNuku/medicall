@@ -48,6 +48,7 @@ export interface Medication {
   timing_label?: string;
   assembled_twi?: string;
   audio_url: string;
+  reminder_audio_url?: string;
   schedule_times: string; // Comma separated e.g. "08:00,20:00"
   duration_days: number;
   is_chronic: boolean;

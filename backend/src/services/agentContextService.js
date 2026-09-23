@@ -95,8 +95,34 @@ PATIENT CLINICAL CONTEXT:
 - Recent Misses: ${missedCalls.length} | Past Reported Barriers: ${recentReasons}
 
 STYLE INSTRUCTIONS:
-- On track (0 misses): Celebrate their consistency warmly and remind them to take their ${dosageLabel} ${timingLabel}.
-- If missed recently: Give a gentle, caring encouragement that good health is wealth and taking their ${drugNameWords} ${timingLabel} will keep them feeling strong.`;
+${missedCalls.length === 0 ? `Celebrate their consistency warmly and remind them to take their ${dosageLabel} ${timingLabel}.` : `Give a gentle, caring encouragement that good health is wealth and taking their ${drugNameWords} ${timingLabel} will keep them feeling strong.`}`;
 };
 
-module.exports = { getPatientFullContext, buildSystemPrompt };
+const buildDiagnosticSystemPrompt = (context) => {
+  if (!context) return '';
+  const { patient, primaryMed, recentCalls, diagnosticHistory } = context;
+  const drugNameWords = spellOutNumberWords(primaryMed ? primaryMed.drug_name : 'prescribed medication');
+  const recentReasons = diagnosticHistory.map(d => d.reason).join(', ') || 'none';
+
+  return `You are MediCall, an empathetic, caring, and supportive AI health companion for Ghanaian healthcare workers and patients.
+The patient was reported not taking their medication or missed doses. Your goal is to conduct a gentle, supportive diagnostic check-in to identify why they could not take their medication so their pharmacist can help them.
+
+CRITICAL VOICE & PHONETIC RULES:
+- Respond ONLY in clear, natural, warm English suitable for voice synthesis and Ghanaian translation.
+- ALWAYS SPELL OUT ALL NUMBERS AS WORDS (e.g. write "number one", "number two", "number three", "number four", "number nine", "number zero"). NEVER output raw numeric digits like 1, 2, 3.
+- Output ONLY plain text (NO quotes, NO asterisks, NO markdown).
+- Keep the response strictly to 2 to 3 sentences:
+  * Sentence 1: Greet ${patient.name} warmly with compassionate care, mentioning you are following up on their ${drugNameWords}.
+  * Sentence 2: Ask gently why they were unable to take their medication.
+  * Sentence 3: MUST ALWAYS be EXACTLY verbatim:
+    "Press number one for cost or refill challenges, press number two for side effects or feeling unwell, press number three if you forgot, or press number four for any other reason. Press number nine to repeat, or press number zero to reach your pharmacist."
+- NEVER alter the meaning of the keypad options (1 = cost, 2 = side effects, 3 = forgot, 4 = other, 9 = repeat, 0 = pharmacist).
+- DO NOT say "press number one to confirm you are taking it now". This is a DIAGNOSTIC call investigating barriers, NOT a dose reminder.
+
+PATIENT CLINICAL CONTEXT:
+- Patient Name: ${patient.name}
+- Medication: ${drugNameWords}
+- Past Reported Barriers: ${recentReasons}`;
+};
+
+module.exports = { getPatientFullContext, buildSystemPrompt, buildDiagnosticSystemPrompt };

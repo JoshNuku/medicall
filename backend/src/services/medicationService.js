@@ -44,7 +44,7 @@ const registerMedication = async ({
         timing ? timing.text_twi : ''
       ].filter(Boolean);
 
-      const assembledTwiText = `Fa wo nnuro ${drugName}. ${twiPhrases.join('. ')}`;
+      const assembledTwiText = `Fa wo nnuro ${drugName}. ${twiPhrases.join('. ')}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`;
 
       // Attempt Khaya TTS synthesis, or fallback to relative template audio
       const synthesizedUrl = await synthesizeTwiSpeech(assembledTwiText);
@@ -54,7 +54,7 @@ const registerMedication = async ({
     finalAudioUrl = isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3';
   }
 
-  return createMedication({
+  const createdMed = createMedication({
     patient_id: patientId,
     drug_name: drugName,
     instruction_source: instructionSource,
@@ -67,6 +67,17 @@ const registerMedication = async ({
     is_chronic: isChronic ? 1 : 0,
     language: isEnglish ? 'english' : 'twi'
   });
+
+  // Pre-generate full prescription audio immediately in background/pipeline if needed
+  if (instructionSource === 'template' && patientId && createdMed) {
+    const { generateFullPrescriptionAudio } = require('./reminderPipelineService');
+    generateFullPrescriptionAudio({
+      patientId,
+      medicationId: createdMed.id
+    }).catch(err => console.warn('⚠️ [Prescription Audio Pre-Gen Notice]:', err.message));
+  }
+
+  return createdMed;
 };
 
 module.exports = {

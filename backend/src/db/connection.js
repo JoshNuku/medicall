@@ -21,6 +21,14 @@ try {
   db.exec("ALTER TABLE medications ADD COLUMN language TEXT DEFAULT 'twi';");
 } catch (_) {}
 
+try {
+  db.exec("ALTER TABLE medications ADD COLUMN reminder_audio_url TEXT;");
+} catch (_) {}
+
+try {
+  db.exec("ALTER TABLE call_events ADD COLUMN audio_url TEXT;");
+} catch (_) {}
+
 db.transaction = (fn) => (...args) => {
   db.exec('BEGIN');
   try {

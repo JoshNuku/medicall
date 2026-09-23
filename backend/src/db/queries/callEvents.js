@@ -8,13 +8,14 @@ const createCallEvent = ({
   call_type,
   outcome = null,
   attempt_number = 1,
-  dose_date
+  dose_date,
+  audio_url = null
 }) => {
   const stmt = db.prepare(`
     INSERT INTO call_events (
       patient_id, medication_id, scheduled_time, actual_call_time,
-      call_type, outcome, attempt_number, dose_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      call_type, outcome, attempt_number, dose_date, audio_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const info = stmt.run(
@@ -25,10 +26,21 @@ const createCallEvent = ({
     call_type,
     outcome,
     attempt_number,
-    dose_date
+    dose_date,
+    audio_url
   );
 
   return getCallEventById(info.lastInsertRowid);
+};
+
+const updateCallAudioUrl = (id, audio_url) => {
+  const stmt = db.prepare(`
+    UPDATE call_events
+    SET audio_url = ?
+    WHERE id = ?
+  `);
+  stmt.run(audio_url, id);
+  return getCallEventById(id);
 };
 
 const updateCallOutcome = (id, outcome, actual_call_time = new Date().toISOString()) => {
@@ -75,6 +87,7 @@ const getLatestPendingCallEventForPatient = (patientId) => {
 
 module.exports = {
   createCallEvent,
+  updateCallAudioUrl,
   updateCallOutcome,
   getCallEventById,
   getRecentCallEventsForMedication,

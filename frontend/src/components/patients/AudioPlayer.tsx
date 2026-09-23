@@ -82,7 +82,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     audio.muted = isMuted;
     audio.playbackRate = playbackSpeed;
     audio.onloadedmetadata = () => {
-      setAudioDuration(audio.duration || durationSeconds);
+      if (audio.duration && isFinite(audio.duration) && audio.duration > 2) {
+        setAudioDuration(Math.round(audio.duration));
+      } else {
+        setAudioDuration(durationSeconds);
+      }
       setCurrentTime(0);
     };
     audio.ontimeupdate = () => {
@@ -349,10 +353,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // 18 waveform bar heights representing speech envelope
-  const barHeights = [28, 45, 65, 85, 95, 75, 55, 35, 60, 90, 100, 80, 60, 40, 70, 85, 50, 30];
+  // 36 waveform bar heights representing realistic human speech cadence
+  const barHeights = [
+    26, 42, 65, 84, 52, 70, 92, 75, 48, 62, 86, 98,
+    82, 64, 46, 72, 90, 78, 54, 68, 88, 94, 70, 52,
+    38, 62, 84, 66, 44, 58, 76, 88, 64, 46, 32, 22
+  ];
 
-  const displayDuration = audioUrl ? audioDuration : durationSeconds;
+  const displayDuration = audioDuration && audioDuration > 2 ? audioDuration : durationSeconds;
   const progressPercent = (currentTime / Math.max(displayDuration, 1)) * 100;
 
   if (compact) {
@@ -360,24 +368,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl">
         <button
           onClick={togglePlay}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-transform active:scale-95 shadow-xs shrink-0 cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-transform active:scale-95 shadow-xs shrink-0 cursor-pointer"
           aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
         >
           {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
         </button>
 
-        <div className="flex items-center gap-1 h-5 flex-1">
-          {barHeights.slice(0, 12).map((height, i) => {
-            const isPassed = (i / 12) * 100 <= progressPercent;
+        <div className="flex items-center justify-between gap-1 h-5 flex-1">
+          {barHeights.slice(0, 16).map((height, i) => {
+            const isPassed = (i / 16) * 100 <= progressPercent;
             return (
               <div
                 key={i}
-                className={`w-1 rounded-full transition-all duration-200 ${
-                  isPassed ? 'bg-emerald-600' : 'bg-gray-200'
+                className={`w-[2.5px] rounded-full transition-all duration-150 ${
+                  isPassed ? 'bg-[#70BF2B]' : 'bg-gray-200'
                 } ${isPlaying ? 'animate-wave-bar' : ''}`}
                 style={{
                   height: `${height}%`,
-                  animationDelay: `${(i % 5) * 0.15}s`,
+                  animationDelay: `${(i % 5) * 0.12}s`,
                 }}
               />
             );
@@ -401,10 +409,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }
 
   return (
-    <div className="bg-[#FAF9F6] border border-[#E8E6E0] rounded-2xl p-4 transition-all hover:border-gray-300">
-      {/* Top row: Language badge + title */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2 truncate">
+    <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl p-3.5 transition-all hover:border-[#DFDCD4]">
+      {/* Top row: Language badge + title + speed pill + timing */}
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex items-center gap-2 min-w-0">
           <Badge variant="language" language={language} />
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
           {isPlayingTrailer ? (
@@ -412,44 +420,44 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               Playing Keypress Menu...
             </span>
           ) : appendKeypressTrailer ? (
-            <span className="text-[10px] text-gray-500 bg-gray-100 font-mono px-1.5 py-0.5 rounded border border-gray-200 shrink-0">
-              Keypad trailer attached
+            <span className="text-[10px] text-gray-500 bg-white font-mono px-1.5 py-0.5 rounded border border-gray-200 shrink-0">
+              Keypad trailer
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={toggleSpeed}
-            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
+            className="px-2 py-0.5 text-[11px] font-mono font-medium rounded-md bg-white border border-[#E2DFD7] hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
             title="Adjust playback speed for patient clarity"
           >
             {playbackSpeed}x pace
           </button>
-          <span className="text-xs text-gray-400 font-mono shrink-0">
+          <span className="text-xs text-gray-500 font-mono shrink-0">
             {formatTime(currentTime)} / {formatTime(displayDuration)}
           </span>
         </div>
       </div>
 
       {/* Main player controls + waveform */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Play/Pause Button */}
         <button
           onClick={togglePlay}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#23272E] text-white hover:bg-[#111317] transition-all active:scale-95 shadow-2xs shrink-0 cursor-pointer"
           aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
         >
           {isPlaying ? (
-            <Pause className="w-4 h-4 fill-current" />
+            <Pause className="w-3.5 h-3.5 fill-current" />
           ) : (
-            <Play className="w-4 h-4 fill-current ml-0.5" />
+            <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
           )}
         </button>
 
-        {/* Custom Animated Waveform */}
+        {/* Custom Animated Soundwave */}
         <div
-          className="flex-1 flex items-center gap-1.5 h-10 px-3 bg-white border border-gray-200/80 rounded-xl cursor-pointer select-none"
+          className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[3px] h-9 px-3 bg-white border border-[#E5E3DD] rounded-xl cursor-pointer select-none hover:border-[#D6D3CB] transition-all group overflow-hidden"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
@@ -465,12 +473,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             return (
               <div
                 key={idx}
-                className={`flex-1 rounded-full transition-all duration-150 ${
-                  isPlayed ? 'bg-emerald-600' : 'bg-gray-200 hover:bg-gray-300'
+                className={`w-[2.5px] sm:w-[3px] min-w-[2px] max-w-[4px] flex-1 rounded-full transition-all duration-150 ${
+                  isPlayed
+                    ? 'bg-[#70BF2B]'
+                    : 'bg-[#E5E3DC] group-hover:bg-[#DBD8CF]'
                 } ${isPlaying && isPlayed ? 'animate-wave-bar' : ''}`}
                 style={{
-                  height: `${Math.max(20, height)}%`,
-                  animationDelay: `${(idx % 6) * 0.12}s`,
+                  height: `${Math.max(16, height)}%`,
+                  animationDelay: `${(idx % 8) * 0.08}s`,
                 }}
               />
             );
@@ -478,22 +488,22 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
 
         {/* Secondary controls: restart & mute */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
             onClick={restart}
-            className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Restart audio"
             title="Restart"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={toggleMute}
-            className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label={isMuted ? 'Unmute' : 'Mute'}
             title={isMuted ? 'Unmute' : 'Mute'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-500" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>

@@ -30,6 +30,9 @@ import {
   Trash2,
   X,
   Save,
+  Stethoscope,
+  Calendar,
+  FileText,
 } from 'lucide-react';
 
 export default function PatientDetailPage() {
@@ -56,11 +59,13 @@ export default function PatientDetailPage() {
 
   const [isPrescribeOpen, setIsPrescribeOpen] = useState(false);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [callModalType, setCallModalType] = useState<'reminder' | 'diagnostic'>('reminder');
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const [isDeletePatientOpen, setIsDeletePatientOpen] = useState(false);
   const [isDeletingPatient, setIsDeletingPatient] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showScriptByMed, setShowScriptByMed] = useState<Record<string | number, boolean>>({});
+  const [audioTrackByMed, setAudioTrackByMed] = useState<Record<number, 'prescription' | 'reminder'>>({});
 
   // Medication edit/delete state
   const [editingMedId, setEditingMedId] = useState<number | null>(null);
@@ -264,10 +269,24 @@ export default function PatientDetailPage() {
             <Button
               variant="secondary"
               icon={<Phone className="w-4 h-4 text-[#70BF2B]" />}
-              onClick={() => setIsCallModalOpen(true)}
+              onClick={() => {
+                setCallModalType('reminder');
+                setIsCallModalOpen(true);
+              }}
               className="border-[#70BF2B]/40 hover:bg-[#F0F9EB] text-[#55941E]"
             >
               Call Patient Now
+            </Button>
+            <Button
+              variant="secondary"
+              icon={<Stethoscope className="w-4 h-4 text-amber-600" />}
+              onClick={() => {
+                setCallModalType('diagnostic');
+                setIsCallModalOpen(true);
+              }}
+              className="border-amber-200 hover:bg-amber-50 text-amber-800"
+            >
+              Diagnostic Call
             </Button>
             <Button
               variant="primary"
@@ -456,18 +475,27 @@ export default function PatientDetailPage() {
                         type="text"
                         value={editFields.drug_name}
                         onChange={(e) => setEditFields((f) => ({ ...f, drug_name: e.target.value }))}
-                        className="text-lg font-bold text-gray-900 tracking-tight w-full px-2.5 py-1.5 rounded-lg border border-[#70BF2B] bg-[#FAFFF6] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
+                        className="text-base font-bold text-gray-900 tracking-tight w-full px-2.5 py-1.5 rounded-lg border border-[#70BF2B] bg-[#FAFFF6] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
                       />
                     ) : (
-                      <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                        {med.drug_name}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-gray-900 tracking-tight">
+                          {med.drug_name}
+                        </h3>
+                        <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                          Active
+                        </span>
+                      </div>
                     )}
-                    <p className="text-xs text-gray-600 mt-1 font-medium">
-                      {med.dosage_label || '1 tablet'} &middot; {med.frequency_label || 'Twice daily'} &middot; {med.timing_label || 'After meals'}
+                    <p className="text-xs text-gray-500 mt-1 font-medium flex items-center gap-1.5">
+                      <span>{med.dosage_label || '1 tablet'}</span>
+                      <span className="text-gray-300">&middot;</span>
+                      <span>{med.frequency_label || 'Twice daily'}</span>
+                      <span className="text-gray-300">&middot;</span>
+                      <span>{med.timing_label || 'After meals'}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     {editingMedId === med.id ? (
                       <>
                         <button
@@ -508,174 +536,176 @@ export default function PatientDetailPage() {
                         </button>
                       </>
                     )}
-                    <Badge variant="status" status="active" size="sm" />
                   </div>
                 </div>
 
                 {/* Regimen timings & duration */}
-                <div className="bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl p-3.5 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[10px] uppercase font-semibold text-gray-400 block tracking-wider">
-                      Daily Call Schedule
-                    </span>
-                    {editingMedId === med.id ? (
-                      <input
-                        type="text"
-                        value={editFields.schedule_times}
-                        onChange={(e) => setEditFields((f) => ({ ...f, schedule_times: e.target.value }))}
-                        className="font-mono font-bold text-gray-900 text-sm w-40 px-2 py-1 rounded-lg border border-[#70BF2B] bg-white focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 mt-0.5"
-                      />
-                    ) : (
-                      <span className="font-mono font-bold text-gray-900 text-sm">
-                        {med.schedule_times ? med.schedule_times.replace(/,/g, '  \u00B7  ') : '08:00'}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl px-3.5 py-2.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-[#E8E6E0] flex items-center justify-center text-[#55941E] shadow-2xs shrink-0">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider block">
+                        Daily Call Schedule
                       </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-semibold text-gray-400 block tracking-wider">
-                      Course Duration
-                    </span>
-                    {editingMedId === med.id ? (
-                      <div className="flex items-center gap-2 mt-0.5">
+                      {editingMedId === med.id ? (
                         <input
-                          type="number"
-                          min={1}
-                          max={365}
-                          disabled={editFields.is_chronic}
-                          value={editFields.is_chronic ? 90 : editFields.duration_days}
-                          onChange={(e) => setEditFields((f) => ({ ...f, duration_days: Number(e.target.value) }))}
-                          className="w-16 px-2 py-1 rounded-lg border border-[#70BF2B] bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 disabled:bg-gray-100"
+                          type="text"
+                          value={editFields.schedule_times}
+                          onChange={(e) => setEditFields((f) => ({ ...f, schedule_times: e.target.value }))}
+                          className="font-mono font-semibold text-gray-900 text-xs w-full px-2 py-0.5 rounded border border-[#70BF2B] bg-white mt-0.5"
                         />
-                        <label className="flex items-center gap-1 text-[11px] text-gray-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={editFields.is_chronic}
-                            onChange={(e) => setEditFields((f) => ({ ...f, is_chronic: e.target.checked }))}
-                            className="w-3.5 h-3.5 rounded text-[#70BF2B] focus:ring-[#70BF2B]"
-                          />
-                          Chronic
-                        </label>
-                      </div>
-                    ) : (
-                      <span className="font-medium text-gray-800">
-                        {med.is_chronic ? 'Chronic / Ongoing' : `${med.duration_days} days`}
+                      ) : (
+                        <span className="font-mono font-semibold text-gray-800 text-xs">
+                          {med.schedule_times ? med.schedule_times.replace(/,/g, '  ·  ') : '08:00'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl px-3.5 py-2.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-[#E8E6E0] flex items-center justify-center text-purple-600 shadow-2xs shrink-0">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider block">
+                        Course Duration
                       </span>
-                    )}
+                      {editingMedId === med.id ? (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <input
+                            type="number"
+                            min={1}
+                            max={365}
+                            disabled={editFields.is_chronic}
+                            value={editFields.is_chronic ? 90 : editFields.duration_days}
+                            onChange={(e) => setEditFields((f) => ({ ...f, duration_days: Number(e.target.value) }))}
+                            className="w-16 px-1.5 py-0.5 rounded border border-[#70BF2B] bg-white text-xs font-medium"
+                          />
+                          <label className="flex items-center gap-1 text-[11px] text-gray-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editFields.is_chronic}
+                              onChange={(e) => setEditFields((f) => ({ ...f, is_chronic: e.target.checked }))}
+                              className="w-3.5 h-3.5 rounded text-[#70BF2B]"
+                            />
+                            Chronic
+                          </label>
+                        </div>
+                      ) : (
+                        <span className="font-medium text-gray-800 text-xs">
+                          {med.is_chronic ? 'Chronic / Ongoing' : `${med.duration_days} days`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Dual Audio Tracks: Daily Reminder Audio vs. Full Prescription Consultation */}
-                <div className="pt-3 border-t border-[#E8E6E0] space-y-4">
+                {/* Single Elegant Audio Player with Track Switcher */}
+                <div className="pt-2.5 border-t border-[#F0EFEB] space-y-2.5">
                   {(() => {
                     const isMedEnglish =
                       med.language === 'english' ||
                       Boolean(med.audio_url?.includes('_en')) ||
                       Boolean(med.audio_url?.includes('default-reminder-en'));
                     const medLangLabel = isMedEnglish ? 'English' : 'Twi';
+                    const activeTrack = audioTrackByMed[med.id] || 'prescription';
+                    const isPrescriptionTrack = activeTrack === 'prescription';
+
+                    const effectiveAudioUrl = isPrescriptionTrack
+                      ? (med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'))
+                      : (med.reminder_audio_url || med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'));
+
+                    const title = isPrescriptionTrack
+                      ? (med.instruction_source === 'recorded'
+                          ? `Pharmacist Custom Recording (${medLangLabel})`
+                          : `Full Prescription Instructions (${medLangLabel})`)
+                      : `Daily Dose Reminder (${medLangLabel})`;
+
+                    const spokenText = isPrescriptionTrack
+                      ? (med.instruction_source === 'recorded'
+                          ? undefined
+                          : isMedEnglish
+                          ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'} ${med.frequency_label || 'twice daily'} ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press 9 to repeat, or Press 0 for your pharmacist.`
+                          : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`)
+                      : (isMedEnglish
+                          ? `Hello ${patient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
+                          : `Meda wo akye ${patient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`);
 
                     return (
-                      <>
-                        {/* 1. Daily Dose Reminder Audio (Outbound automated reminder calls) */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-700">
-                                1. Daily Dose Reminder Audio
-                              </span>
-                              <span className="text-[10px] text-gray-400 font-medium">
-                                (Used for outbound scheduled calls)
-                              </span>
-                            </div>
+                      <div className="space-y-2.5">
+                        {/* Track Segment Switcher & Script Action */}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="inline-flex p-1 bg-[#F2F0EC] rounded-xl text-xs gap-1 border border-[#E6E3DB]">
                             <button
                               type="button"
-                              onClick={() => setShowScriptByMed((prev) => ({
-                                ...prev,
-                                [`reminder-${med.id}`]: !prev[`reminder-${med.id}`]
-                              }))}
-                              className="text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium cursor-pointer"
+                              onClick={() => setAudioTrackByMed(prev => ({ ...prev, [med.id]: 'prescription' }))}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                                isPrescriptionTrack
+                                  ? 'bg-white text-gray-900 shadow-2xs font-semibold'
+                                  : 'text-gray-500 hover:text-gray-800'
+                              }`}
                             >
-                              {showScriptByMed[`reminder-${med.id}`] ? 'Hide script' : 'View reminder script'}
+                              <span className={`w-1.5 h-1.5 rounded-full ${isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                              Full Prescription
+                              <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Helpline</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAudioTrackByMed(prev => ({ ...prev, [med.id]: 'reminder' }))}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                                !isPrescriptionTrack
+                                  ? 'bg-white text-gray-900 shadow-2xs font-semibold'
+                                  : 'text-gray-500 hover:text-gray-800'
+                              }`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${!isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                              Dose Reminder
+                              <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Outbound</span>
                             </button>
                           </div>
 
-                          <AudioPlayer
-                            title={`${med.drug_name} · Dose Reminder (${medLangLabel})`}
-                            language={isMedEnglish ? 'english' : 'twi'}
-                            durationSeconds={12}
-                            spokenText={
-                              isMedEnglish
-                                ? `Hello ${patient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
-                                : `Meda wo akye ${patient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`
-                            }
-                            audioUrl={
-                              isMedEnglish
-                                ? '/audio/default-reminder-en.mp3'
-                                : '/audio/default-reminder.mp3'
-                            }
-                          />
-
-                          {/* Expandable Reminder Script */}
-                          {showScriptByMed[`reminder-${med.id}`] && (
-                            <div className="p-3 bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl space-y-1.5 text-xs text-gray-600 animate-in fade-in">
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span className="font-semibold text-gray-700">Outbound Daily Prompt ({medLangLabel})</span>
-                                <span className="font-mono text-gray-500">
-                                  {med.schedule_times ? `Schedule: ${med.schedule_times}` : 'Daily'}
-                                </span>
-                              </div>
-                              <p className="text-gray-800 bg-white p-2.5 rounded-lg border border-gray-100 font-normal leading-relaxed">
-                                {isMedEnglish
-                                  ? `“Hello ${patient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.”`
-                                  : `“Meda wo akye ${patient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.”`}
-                              </p>
-                              <div className="flex items-center justify-between text-[11px] text-gray-400 pt-0.5">
-                                <span>Automated keypad trailer appended after speech</span>
-                                <span className="font-mono text-gray-500">1 Confirm &middot; 2 Not taken &middot; 0 Pharmacist</span>
-                              </div>
-                            </div>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => setShowScriptByMed((prev) => ({
+                              ...prev,
+                              [`script-${med.id}`]: !prev[`script-${med.id}`]
+                            }))}
+                            className="text-xs text-gray-500 hover:text-[#55941E] font-medium transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            {showScriptByMed[`script-${med.id}`] ? 'Hide script' : 'View spoken script'}
+                          </button>
                         </div>
 
-                        {/* 2. Full Prescription Audio (Played when patient calls inbound to relisten) */}
-                        <div className="space-y-1.5 pt-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-bold uppercase tracking-wider text-[#447817]">
-                                2. Full Prescription Audio
+                        {/* Single Unified Audio Player */}
+                        <AudioPlayer
+                          title={title}
+                          language={isMedEnglish ? 'english' : 'twi'}
+                          durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
+                          spokenText={spokenText}
+                          audioUrl={effectiveAudioUrl}
+                          appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
+                        />
+
+                        {/* Expandable Spoken Script */}
+                        {showScriptByMed[`script-${med.id}`] && (
+                          <div className="p-3 bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl space-y-1.5 text-xs text-gray-600 animate-in fade-in">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-semibold text-gray-700">
+                                {isPrescriptionTrack ? `Full Prescription Instruction (${medLangLabel})` : `Outbound Reminder Audio Prompt (${medLangLabel})`}
                               </span>
-                              <span className="text-[10px] text-gray-400 font-medium">
-                                {med.instruction_source === 'recorded'
-                                  ? '(Pharmacist Custom Voice Note · Played on Inbound Callback)'
-                                  : '(Full Clinical Instructions · Played on Inbound Callback)'}
+                              <span className="font-mono text-gray-400 text-[10px]">
+                                {isPrescriptionTrack ? 'Helpline 0308048104' : `Schedule: ${med.schedule_times || 'Daily'}`}
                               </span>
                             </div>
-                            <span className="text-[11px] font-mono text-[#447817] bg-[#F0F9EB] border border-[#70BF2B]/30 px-2 py-0.5 rounded-md">
-                              Inbound helpline (0308048104)
-                            </span>
+                            <p className="text-gray-800 bg-white p-2.5 rounded-lg border border-gray-100 font-normal leading-relaxed text-xs">
+                              {spokenText || 'Audio provided by pharmacist voice note.'}
+                            </p>
                           </div>
-
-                          <AudioPlayer
-                            title={
-                              med.instruction_source === 'recorded'
-                                ? `${med.drug_name} · Pharmacist Custom Recording (${medLangLabel})`
-                                : `${med.drug_name} · Full Clinical Prescription (${medLangLabel})`
-                            }
-                            language={isMedEnglish ? 'english' : 'twi'}
-                            durationSeconds={med.instruction_source === 'recorded' ? 24 : 18}
-                            spokenText={
-                              med.instruction_source === 'recorded'
-                                ? undefined
-                                : isMedEnglish
-                                ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'} ${med.frequency_label || 'twice daily'} ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. For questions or side effects, press 0 anytime to reach your pharmacist.`
-                                : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Sɛ worete nka bɔne bi a, mia 0 na kasa kyerɛ wo duruyɛfoɔ.`
-                            }
-                            audioUrl={
-                              med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3')
-                            }
-                            appendKeypressTrailer={med.instruction_source === 'recorded'}
-                          />
-                        </div>
-                      </>
+                        )}
+                      </div>
                     );
                   })()}
                 </div>
@@ -709,6 +739,7 @@ export default function PatientDetailPage() {
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
         defaultPatientId={patient.id}
+        defaultCallType={callModalType}
       />
 
       {/* Edit Patient Modal */}
