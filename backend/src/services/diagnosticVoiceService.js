@@ -68,13 +68,11 @@ const processDiagnosticConfirm = async (callEventId, dtmfDigits, baseUrl) => {
 
   const patient = await getPatientById(callEvent.patient_id);
   const isTwi = (patient?.preferred_language || '').toLowerCase() !== 'english';
+  const ackAudio = isTwi
+    ? `${baseUrl}/audio/twi_diagnostic_ack.mp3`
+    : `${baseUrl}/audio/en_diagnostic_ack.mp3`;
 
-  if (isTwi) {
-    const ackAudio = getStaticAudioUrl('twi_not_taken_ack', '/audio/twi_not_taken_ack.mp3', baseUrl);
-    return buildVoiceResponse(buildPlay(ackAudio));
-  }
-
-  return buildVoiceResponse(buildSay('Thank you for your feedback. We have recorded your response and alerted your healthcare team. Take care.'));
+  return buildVoiceResponse(buildPlay(ackAudio));
 };
 
 module.exports = {

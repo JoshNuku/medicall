@@ -177,6 +177,7 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     '2': 'twi_side_effects.mp3',
     '3': 'twi_cost_barrier.mp3',
     '4': 'twi_early_reminder.mp3',
+    '5': 'twi_forgot.mp3',
     '0': 'twi_pharmacist_alert.mp3',
   };
 
@@ -185,12 +186,13 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     '2': 'en_side_effects.mp3',
     '3': 'en_cost_barrier.mp3',
     '4': 'en_early_reminder.mp3',
+    '5': 'en_forgot.mp3',
     '0': 'en_pharmacist_alert.mp3',
   };
 
   const selectedFile = isTwiCaller
-    ? (twiAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_not_taken_ack.mp3'))
-    : (enAudioMap[dtmfDigits] || 'en_confirmed.mp3');
+    ? (twiAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_invalid_key.mp3'))
+    : (enAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'en_confirmed.mp3' : 'en_invalid_key.mp3'));
 
   console.log(`🔊 [DTMF RESPONSE]: Playing ${isTwiCaller ? 'Twi' : 'English'} keypress audio: ${selectedFile} (Key: ${dtmfDigits})`);
   return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${selectedFile}`));

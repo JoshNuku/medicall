@@ -92,13 +92,8 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
       patient_id: patient.id,
       escalation_type: 'patient_requested_help'
     });
-    return buildVoiceResponse(
-      buildSay(
-        isEnglish
-          ? 'Your pharmacist has been notified and will call you back shortly. Thank you for using MediCall. Goodbye.'
-          : 'Yɛabɔ wo duruyɛfoɔ amanneɛ na ɔbɛfrɛ wo ntɛm ara. Medaase firi MediCall. Nante yie.'
-      )
-    );
+    const audioFile = isEnglish ? 'en_pharmacist_alert.mp3' : 'twi_pharmacist_alert.mp3';
+    return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${audioFile}`));
   }
 
   const medications = await getMedicationsByPatientId(patient.id);

@@ -32,8 +32,13 @@ const handleUniversalKeys = async (digit, callContext = {}) => {
       });
     }
 
-    const sayXml = buildSay('Thank you. A healthcare worker has been notified and will contact you shortly. Goodbye.');
-    return buildVoiceResponse(sayXml);
+    const { getPatientById } = require('../db/queries/patients');
+    const patient = patientId ? await getPatientById(patientId) : null;
+    const isTwi = (patient?.preferred_language || '').toLowerCase() !== 'english';
+    const baseUrl = callContext.baseUrl || process.env.BASE_URL || '';
+    const audioFile = isTwi ? 'twi_pharmacist_alert.mp3' : 'en_pharmacist_alert.mp3';
+
+    return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${audioFile}`));
   }
 
   return null;
