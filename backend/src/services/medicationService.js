@@ -1,6 +1,7 @@
 const { getTemplateById } = require('../db/queries/templates');
 const { createMedication } = require('../db/queries/medications');
 const { getPatientById } = require('../db/queries/patients');
+const { CLOUDINARY_STATIC_AUDIO } = require('./cloudinaryService');
 
 const registerMedication = async ({
   patientId,
@@ -24,20 +25,15 @@ const registerMedication = async ({
   if (instructionSource === 'template') {
     const dosage = dosageTemplateId ? await getTemplateById(dosageTemplateId) : null;
     if (isEnglish) {
-      const drugLower = (drugName || '').toLowerCase();
-      if (drugLower.includes('lisinopril')) {
-        initialAudioUrl = '/audio/lisinopril_en.mp3';
-      } else if (drugLower.includes('metformin')) {
-        initialAudioUrl = '/audio/metformin_en.mp3';
-      } else {
-        initialAudioUrl = '/audio/default-reminder-en.mp3';
-      }
+      initialAudioUrl = CLOUDINARY_STATIC_AUDIO.default_reminder_en;
     } else {
       // Immediate baseline audio so the record is created instantaneously (<50ms)
-      initialAudioUrl = (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';
+      initialAudioUrl = (dosage && dosage.audio_url && dosage.audio_url.startsWith('http'))
+        ? dosage.audio_url
+        : CLOUDINARY_STATIC_AUDIO.default_reminder;
     }
   } else if (!initialAudioUrl) {
-    initialAudioUrl = isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3';
+    initialAudioUrl = isEnglish ? CLOUDINARY_STATIC_AUDIO.default_reminder_en : CLOUDINARY_STATIC_AUDIO.default_reminder;
   }
 
   // 1. Immediately create the medication regimen in DB so the UI responds instantly

@@ -15,7 +15,6 @@ const handleUniversalKeys = async (digit, callContext = {}) => {
     const getDigitsXml = buildGetDigits({
       numDigits: 1,
       timeout: 12,
-      finishOnKey: '#',
       callbackUrl: replayCallbackUrl,
       playUrl: replaySayText ? null : replayUrl,
       sayText: replaySayText || null
@@ -33,12 +32,12 @@ const handleUniversalKeys = async (digit, callContext = {}) => {
     }
 
     const { getPatientById } = require('../db/queries/patients');
+    const { CLOUDINARY_STATIC_AUDIO } = require('./cloudinaryService');
     const patient = patientId ? await getPatientById(patientId) : null;
     const isTwi = (patient?.preferred_language || '').toLowerCase() !== 'english';
-    const baseUrl = callContext.baseUrl || process.env.BASE_URL || '';
-    const audioFile = isTwi ? 'twi_pharmacist_alert.mp3' : 'en_pharmacist_alert.mp3';
+    const audioUrl = isTwi ? CLOUDINARY_STATIC_AUDIO.twi_pharmacist_alert : CLOUDINARY_STATIC_AUDIO.en_pharmacist_alert;
 
-    return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${audioFile}`));
+    return buildVoiceResponse(buildPlay(audioUrl));
   }
 
   return null;

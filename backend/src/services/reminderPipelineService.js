@@ -39,7 +39,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     // Step A: Groq LLM generates English text with context
     console.log(`   [Step 1/3] 🧠 Groq AI Agent generating personalized reminder...`);
     const englishRaw = await generateReminderMessage({ patientId, medicationId });
-    if (!englishRaw) return medication.reminder_audio_url || '/audio/default-reminder.mp3';
+    if (!englishRaw) return medication.reminder_audio_url || fallbackReminder;
 
     // Normalize any digits to full spoken words for smooth Khaya AI translation & pronunciation
     const englishText = englishRaw
@@ -72,7 +72,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
       const filename = `reminder_patient_${patientId}_med_${medicationId}_${Date.now()}.mp3`;
       const audioUrl = await synthesizeEnglishSpeech(englishText, filename);
       console.log(`   ✓ English reminder audio ready: ${audioUrl}`);
-      const resolvedAudio = audioUrl || '/audio/default-reminder-en.mp3';
+      const resolvedAudio = audioUrl || CLOUDINARY_STATIC_AUDIO.default_reminder_en;
       const db = require('../db/connection');
       try {
         await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [resolvedAudio, medicationId]);
@@ -91,7 +91,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     const audioUrl = await synthesizeTwiSpeech(finalTwiText, filename, speakerId);
     console.log(`   ✓ Audio file ready: ${audioUrl}`);
 
-    const resolvedAudio = audioUrl || medication.reminder_audio_url || '/audio/default-reminder.mp3';
+    const resolvedAudio = audioUrl || medication.reminder_audio_url || fallbackReminder;
     if (audioUrl && typeof audioUrl === 'string') {
       const db = require('../db/connection');
       try {
@@ -102,7 +102,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     return resolvedAudio;
   } catch (err) {
     console.error('[Reminder Pre-Generation Error]:', err.message);
-    return medication.reminder_audio_url || '/audio/default-reminder.mp3';
+    return medication.reminder_audio_url || fallbackReminder;
   }
 };
 
@@ -126,10 +126,7 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
   const timing = medication.timing_template_id ? await getTemplateById(medication.timing_template_id) : null;
 
   if (isEnglish) {
-    const drugLower = (medication.drug_name || '').toLowerCase();
-    if (drugLower.includes('lisinopril')) return '/audio/lisinopril_en.mp3';
-    if (drugLower.includes('metformin')) return '/audio/metformin_en.mp3';
-    return '/audio/default-reminder-en.mp3';
+    return CLOUDINARY_STATIC_AUDIO.default_reminder_en;
   }
 
   // Asante Twi full prescription
@@ -158,7 +155,7 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
     console.error('[Prescription Audio Synthesis Error]:', err.message);
   }
 
-  return (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';
+  return (dosage && dosage.audio_url) || CLOUDINARY_STATIC_AUDIO.default_reminder;
 };
 
 /**
@@ -198,7 +195,7 @@ const synthesizeEnglishSpeech = async (text, filename) => {
   } catch (err) {
     console.warn('[English TTS Warning]:', err.message);
   }
-  return '/audio/english_diagnostic_reason.mp3';
+  return CLOUDINARY_STATIC_AUDIO.english_diagnostic_reason;
 };
 
 /**

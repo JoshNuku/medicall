@@ -44,10 +44,27 @@ const handleReminderCall = async (req, res, next) => {
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
-    // Inbound call auto-detection: ONLY when direction is Inbound, or caller dials our number from outside (and NOT an outbound call)
+    // Target phone may be in callerNumber or destinationNumber
+    const targetPhone = (callerPhone && callerPhone !== atNumber) ? callerPhone : (destPhone && destPhone !== atNumber ? destPhone : destPhone || callerPhone);
+    const patient = (targetPhone ? await getPatientByPhoneNumber(targetPhone) : null) || (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null) || (destPhone ? await getPatientByPhoneNumber(destPhone) : null);
+
+    // 1. If there is a pending outbound call event for this patient, it is ALWAYS an outbound call!
+    if (!callEvent && patient) {
+      const pendingEvent = await getLatestPendingCallEventForPatient(patient.id);
+      if (pendingEvent) {
+        callEvent = pendingEvent;
+        callEventId = callEvent.id;
+        medication = await getMedicationById(callEvent.medication_id);
+      }
+    }
+
+    // 2. Only treat as Inbound Helpline if there is NO pending outbound event AND caller dialed our virtual number
     const isDirectionInbound = req.body.direction === 'Inbound';
     const isOutboundCall = req.body.direction === 'Outbound';
-    const isCallToOurNumber = isDirectionInbound || (!isOutboundCall && destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', ''))));
+    const isCallToOurNumber = !callEvent && (
+      (destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')))) ||
+      (isDirectionInbound && !isOutboundCall && callerPhone !== atNumber)
+    );
 
     if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
       console.log(`\n📞 [INBOUND HELPLINE CALL]: Incoming call from ${callerPhone} to MediCall Helpline (${destPhone})`);
@@ -57,34 +74,20 @@ const handleReminderCall = async (req, res, next) => {
       return res.status(200).send(xml);
     }
 
-    if (!callEvent) {
-      // In outbound reminder calls from Africa's Talking, patient phone may be callerNumber or destinationNumber
-      const targetPhone = (callerPhone && callerPhone !== atNumber) ? callerPhone : (destPhone && destPhone !== atNumber ? destPhone : destPhone || callerPhone);
-      const patient = (targetPhone ? await getPatientByPhoneNumber(targetPhone) : null) || (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null) || (destPhone ? await getPatientByPhoneNumber(destPhone) : null);
-
-      if (patient) {
-        // First check if a pending callEvent was already registered when outbound call was dispatched
-        const pendingEvent = await getLatestPendingCallEventForPatient(patient.id);
-        if (pendingEvent) {
-          callEvent = pendingEvent;
-          callEventId = callEvent.id;
-          medication = await getMedicationById(callEvent.medication_id);
-        } else {
-          const meds = await getMedicationsByPatientId(patient.id);
-          if (meds.length > 0) {
-            medication = meds[0];
-            callEvent = await createCallEvent({
-              patient_id: patient.id,
-              medication_id: medication.id,
-              scheduled_time: new Date().toISOString(),
-              actual_call_time: new Date().toISOString(),
-              call_type: 'reminder',
-              attempt_number: 1,
-              dose_date: new Date().toISOString().split('T')[0]
-            });
-            callEventId = callEvent.id;
-          }
-        }
+    if (!callEvent && patient) {
+      const meds = await getMedicationsByPatientId(patient.id);
+      if (meds.length > 0) {
+        medication = meds[0];
+        callEvent = await createCallEvent({
+          patient_id: patient.id,
+          medication_id: medication.id,
+          scheduled_time: new Date().toISOString(),
+          actual_call_time: new Date().toISOString(),
+          call_type: 'reminder',
+          attempt_number: 1,
+          dose_date: new Date().toISOString().split('T')[0]
+        });
+        callEventId = callEvent.id;
       }
     }
 

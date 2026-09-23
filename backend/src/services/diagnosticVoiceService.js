@@ -33,7 +33,6 @@ const generateDiagnosticXml = (callEventId, baseUrl, isTwi = false, customSay = 
   const digitsXml = buildGetDigits({
     numDigits: 1,
     timeout: 15,
-    finishOnKey: '#',
     callbackUrl,
     playUrl,
     sayText: null // Use actual audio file for both English and Twi to eliminate carrier drops
@@ -72,8 +71,8 @@ const processDiagnosticConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     ? getStaticAudioUrl('twi_diagnostic_ack', '/audio/twi_diagnostic_ack.mp3', baseUrl)
     : getStaticAudioUrl('en_diagnostic_ack', '/audio/en_diagnostic_ack.mp3', baseUrl);
   const playPart = buildPlay(ackAudio);
-  const closingPart = buildSay('Thank you for your feedback. MediCall is here to support you. Goodbye.');
-  return buildVoiceResponse(`${playPart}\n${closingPart}`);
+  const closingPart = isTwi ? '' : buildSay('Thank you for your feedback. MediCall is here to support you. Goodbye.');
+  return buildVoiceResponse(`${playPart}${closingPart ? '\n' + closingPart : ''}`);
 };
 
 module.exports = {
