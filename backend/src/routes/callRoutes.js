@@ -140,9 +140,16 @@ router.post('/trigger', async (req, res, next) => {
       }
     }
 
+    if (!medicationId) {
+      return res.status(400).json({
+        error: 'Cannot trigger call: no medication found for this patient. Please prescribe a medication first.',
+        code: 'NO_MEDICATION',
+      });
+    }
+
     const callEvent = await createCallEvent({
-      patient_id: patient ? patient.id : 1,
-      medication_id: medicationId || 1,
+      patient_id: patient.id,
+      medication_id: medicationId,
       scheduled_time: new Date().toISOString(),
       call_type: call_type === 'diagnostic' ? 'diagnostic' : 'reminder',
       attempt_number: 1,

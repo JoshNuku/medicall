@@ -72,13 +72,8 @@ router.post('/', async (req, res, next) => {
     const existing = await getPatientByPhoneNumber(cleanPhone);
     if (existing) {
       return res.status(409).json({
-        error: `A patient with phone number ${phone_number.trim()} is already registered (${existing.name}).`,
+        error: `A patient with phone number ${phone_number.trim()} is already registered.`,
         code: 'DUPLICATE_PHONE',
-        existing_patient: {
-          id: existing.id,
-          name: existing.name,
-          phone_number: existing.phone_number
-        },
         status: 409
       });
     }
@@ -88,7 +83,7 @@ router.post('/', async (req, res, next) => {
       phone_number: cleanPhone,
       name: name.trim(),
       preferred_language,
-      caregiver_phone: caregiverPhone?.trim() || null
+      caregiver_phone: caregiver_phone?.trim() || null
     });
 
     res.status(201).json({

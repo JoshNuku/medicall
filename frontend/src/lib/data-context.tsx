@@ -491,25 +491,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resolvedBy: string = 'Kwame Mensah (Pharmacist)',
     resolutionNotes?: string
   ) => {
-    try {
-      if (isBackendOnline) {
-        await api.resolveAlertApi(alertId, resolvedBy).catch(() => {});
-      }
-    } finally {
-      setAlerts((prev) =>
-        prev.map((alert) =>
-          alert.id === alertId
-            ? {
-                ...alert,
-                status: 'resolved',
-                resolved_at: new Date().toISOString(),
-                resolved_by: resolvedBy,
-                resolution_notes: resolutionNotes || 'Resolved during consultation.',
-              }
-            : alert
-        )
-      );
+    if (isBackendOnline) {
+      await api.resolveAlertApi(alertId, resolvedBy); // let error propagate
     }
+    setAlerts((prev) =>
+      prev.map((alert) =>
+        alert.id === alertId
+          ? {
+              ...alert,
+              status: 'resolved',
+              resolved_at: new Date().toISOString(),
+              resolved_by: resolvedBy,
+              resolution_notes: resolutionNotes || 'Resolved during consultation.',
+            }
+          : alert
+      )
+    );
   };
 
   const updateMedicationFn = async (
@@ -517,11 +514,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     medId: number,
     fields: { drug_name?: string; schedule_times?: string; duration_days?: number; is_chronic?: boolean }
   ): Promise<Medication> => {
-    try {
-      let updated: any = null;
-      if (isBackendOnline) {
-        updated = await api.updateMedicationApi(patientId, medId, fields).catch(() => null);
-      }
+    if (isBackendOnline) {
+      // Online: let API errors propagate so callers can show an error toast
+      const updated = await api.updateMedicationApi(patientId, medId, fields);
       const resolved = updated || fields;
       setMedications((prev) => ({
         ...prev,
@@ -529,34 +524,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }));
       const current = (medications[patientId] || []).find((m) => m.id === medId);
       return { ...current, ...resolved } as Medication;
-    } catch {
-      setMedications((prev) => ({
-        ...prev,
-        [patientId]: (prev[patientId] || []).map((m) => (m.id === medId ? { ...m, ...fields } : m)),
-      }));
-      const current = (medications[patientId] || []).find((m) => m.id === medId);
-      return { ...current, ...fields } as Medication;
     }
+    // Offline: optimistic local-only update
+    setMedications((prev) => ({
+      ...prev,
+      [patientId]: (prev[patientId] || []).map((m) => (m.id === medId ? { ...m, ...fields } : m)),
+    }));
+    const current = (medications[patientId] || []).find((m) => m.id === medId);
+    return { ...current, ...fields } as Medication;
   };
 
   const deleteMedicationFn = async (patientId: number, medId: number): Promise<void> => {
-    try {
-      if (isBackendOnline) {
-        await api.deleteMedicationApi(patientId, medId).catch(() => {});
-      }
-    } finally {
-      setMedications((prev) => ({
-        ...prev,
-        [patientId]: (prev[patientId] || []).filter((m) => m.id !== medId),
-      }));
-      setPatients((prev) =>
-        prev.map((p) =>
-          p.id === patientId
-            ? { ...p, active_medications_count: Math.max(0, (p.active_medications_count || 1) - 1) }
-            : p
-        )
-      );
+    if (isBackendOnline) {
+      await api.deleteMedicationApi(patientId, medId); // let error propagate
     }
+    // Only reach here on success (or when offline)
+    setMedications((prev) => ({
+      ...prev,
+      [patientId]: (prev[patientId] || []).filter((m) => m.id !== medId),
+    }));
+    setPatients((prev) =>
+      prev.map((p) =>
+        p.id === patientId
+          ? { ...p, active_medications_count: Math.max(0, (p.active_medications_count || 1) - 1) }
+          : p
+      )
+    );
   };
 
   const getPatientById = (id: number) => {
