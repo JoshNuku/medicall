@@ -5,7 +5,7 @@ const generalLimiter = rateLimit({
   max: 10000, // Generous limit for live dashboard polling
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === '/health',
+  skip: (req) => req.path === '/status-check',
   message: { error: 'Too many requests, please try again later.' }
 });
 

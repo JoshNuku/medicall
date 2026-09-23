@@ -40,7 +40,7 @@ MediCall is a voice-call medication adherence system designed for Ghana, support
 
 With the server running, visit:
 - **API Docs**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
-- **Health Check**: [http://localhost:3000/health](http://localhost:3000/health)
+- **Status Check**: [http://localhost:3000/status-check](http://localhost:3000/status-check)
 
 ## Africa's Talking Sandbox Voice Testing
 

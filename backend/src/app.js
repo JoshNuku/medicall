@@ -54,7 +54,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API Routes
-app.use('/health', generalLimiter, healthRoutes);
+app.use('/status-check', generalLimiter, healthRoutes);
 app.use('/patients/:id/medications', generalLimiter, medicationCreateRoutes);
 app.use('/patients/:id/medications', generalLimiter, medicationListRoutes);
 app.use('/patients/:id/medications', generalLimiter, medicationMutateRoutes);

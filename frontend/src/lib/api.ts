@@ -42,7 +42,7 @@ async function fetchWithRetry(
 // 1. Health Check
 export async function checkBackendHealth(): Promise<{ status: string; timestamp: string }> {
   try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/health`, {}, 0);
+    const res = await fetchWithRetry(`${API_BASE_URL}/status-check`, {}, 0);
     if (!res.ok) return { status: 'offline', timestamp: new Date().toISOString() };
     return await res.json();
   } catch {

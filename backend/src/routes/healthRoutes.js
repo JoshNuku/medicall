@@ -3,10 +3,10 @@ const router = express.Router();
 
 /**
  * @openapi
- * /health:
+ * /status-check:
  *   get:
  *     tags: [System]
- *     summary: System health check
+ *     summary: Application status check
  *     description: Returns operational status of the MediCall backend and current server timestamp.
  *     responses:
  *       200:

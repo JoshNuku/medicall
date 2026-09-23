@@ -1,11 +1,11 @@
-services:
+﻿services:
   - type: web
     name: medicall-backend
     runtime: node
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /health
+    healthCheckPath: /status-check
     envVars:
       - key: NODE_ENV
         value: production
@@ -41,3 +41,4 @@ services:
         value: https://api.groq.com/openai/v1/chat/completions
       - key: ENABLE_AI_AGENT
         value: "true"
+
