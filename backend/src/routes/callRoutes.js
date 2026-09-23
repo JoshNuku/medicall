@@ -109,26 +109,32 @@ router.post('/trigger', async (req, res, next) => {
 
     let generatedCallAudio = null;
 
-    // Pre-generate AI audio depending on call type
+    // Pre-generate AI audio depending on call type — guaranteed Cloudinary URL BEFORE call dispatch
     if (patient && medicationId) {
+      const { CLOUDINARY_STATIC_AUDIO } = require('../services/cloudinaryService');
+      const isPatientEnglish = patientLang === 'ENGLISH';
+
       try {
         if (call_type === 'reminder') {
           const { getMedicationById } = require('../db/queries/medications');
           const med = await getMedicationById(medicationId);
-          if (med && med.reminder_audio_url) {
+          if (med && med.reminder_audio_url && med.reminder_audio_url.startsWith('http')) {
             generatedCallAudio = med.reminder_audio_url;
-            console.log(`\n✓ [AUDIO PARITY]: Using existing reminder audio track for Patient #${patient.id}: ${generatedCallAudio}`);
+            console.log(`\n✓ [AUDIO PARITY]: Using existing Cloudinary reminder audio for Patient #${patient.id}: ${generatedCallAudio}`);
           } else {
-            console.log(`\n🤖 [AI PIPELINE]: Initializing reminder audio for Patient #${patient.id}...`);
+            console.log(`\n🤖 [AI PIPELINE]: Pre-generating reminder audio for Patient #${patient.id}...`);
             const audioResult = await preGenerateReminderAudio({
               patientId: patient.id,
               medicationId: medicationId,
               speakerId: 'female'
             });
-            if (typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http://') || audioResult.startsWith('https://'))) {
+            if (typeof audioResult === 'string' && audioResult.startsWith('http')) {
               generatedCallAudio = audioResult;
               await db.query('UPDATE medications SET reminder_audio_url = $1 WHERE id = $2', [audioResult, medicationId]);
             }
+          }
+          if (!generatedCallAudio) {
+            generatedCallAudio = isPatientEnglish ? CLOUDINARY_STATIC_AUDIO.default_reminder_en : CLOUDINARY_STATIC_AUDIO.default_reminder;
           }
         } else if (call_type === 'diagnostic') {
           console.log(`\n🩺 [DIAGNOSTIC PIPELINE]: Synthesizing AI diagnostic audio evaluation for Patient #${patient.id}...`);
@@ -137,13 +143,21 @@ router.post('/trigger', async (req, res, next) => {
             medicationId: medicationId,
             speakerId: 'female'
           });
-          if (typeof diagAudio === 'string' && (diagAudio.startsWith('/audio/') || diagAudio.startsWith('http://') || diagAudio.startsWith('https://'))) {
+          if (typeof diagAudio === 'string' && diagAudio.startsWith('http')) {
             generatedCallAudio = diagAudio;
-            console.log(`   ✓ Diagnostic audio generated and attached: ${generatedCallAudio}`);
+            console.log(`   ✓ Diagnostic audio generated and verified: ${generatedCallAudio}`);
+          }
+          if (!generatedCallAudio) {
+            generatedCallAudio = isPatientEnglish ? CLOUDINARY_STATIC_AUDIO.english_diagnostic_reason : CLOUDINARY_STATIC_AUDIO.twi_diagnostic_reason;
           }
         }
       } catch (genErr) {
         console.warn('⚠️ [Call Trigger] AI Audio generation notice:', genErr.message);
+        if (!generatedCallAudio) {
+          generatedCallAudio = call_type === 'diagnostic'
+            ? (isPatientEnglish ? CLOUDINARY_STATIC_AUDIO.english_diagnostic_reason : CLOUDINARY_STATIC_AUDIO.twi_diagnostic_reason)
+            : (isPatientEnglish ? CLOUDINARY_STATIC_AUDIO.default_reminder_en : CLOUDINARY_STATIC_AUDIO.default_reminder);
+        }
       }
     }
 

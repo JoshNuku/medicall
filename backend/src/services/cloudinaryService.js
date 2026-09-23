@@ -97,18 +97,37 @@ const uploadAudioBuffer = async (buffer, options = {}) => {
 };
 
 const CLOUDINARY_STATIC_AUDIO = {
-  twi_confirmed: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166960/medicall/audio/static/twi_confirmed.mp3',
+  twi_confirmed: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186027/medicall/audio/static/twi_confirmed.mp3',
+  en_confirmed: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186029/medicall/audio/static/en_confirmed.mp3',
   twi_not_taken_ack: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166961/medicall/audio/static/twi_not_taken_ack.mp3',
   twi_diagnostic_reason: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166963/medicall/audio/static/twi_diagnostic_reason.mp3',
   english_diagnostic_reason: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166970/medicall/audio/static/english_diagnostic_reason.mp3',
+  twi_diagnostic_ack: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186037/medicall/audio/static/twi_diagnostic_ack.mp3',
+  en_diagnostic_ack: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186038/medicall/audio/static/en_diagnostic_ack.mp3',
   twi_inbound_intro: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166971/medicall/audio/static/twi_inbound_intro.mp3',
   twi_outbound_reminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166974/medicall/audio/static/twi_outbound_reminder.mp3',
-  default_reminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166977/medicall/audio/static/default-reminder.mp3',
-  default_reminder_en: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790166978/medicall/audio/static/default-reminder-en.mp3'
+  default_reminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186043/medicall/audio/static/default_reminder.mp3',
+  default_reminder_en: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186045/medicall/audio/static/default_reminder_en.mp3',
+  twi_cost_barrier: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186047/medicall/audio/static/twi_cost_barrier.mp3',
+  en_cost_barrier: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186048/medicall/audio/static/en_cost_barrier.mp3',
+  twi_side_effects: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186049/medicall/audio/static/twi_side_effects.mp3',
+  en_side_effects: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186051/medicall/audio/static/en_side_effects.mp3',
+  twi_forgot: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186052/medicall/audio/static/twi_forgot.mp3',
+  en_forgot: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186053/medicall/audio/static/en_forgot.mp3',
+  twi_early_reminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186054/medicall/audio/static/twi_early_reminder.mp3',
+  en_early_reminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186056/medicall/audio/static/en_early_reminder.mp3',
+  twi_pharmacist_alert: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186057/medicall/audio/static/twi_pharmacist_alert.mp3',
+  en_pharmacist_alert: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186059/medicall/audio/static/en_pharmacist_alert.mp3',
+  twi_invalid_key: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186060/medicall/audio/static/twi_invalid_key.mp3',
+  en_invalid_key: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186061/medicall/audio/static/en_invalid_key.mp3',
+  metformin_en: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186062/medicall/audio/static/metformin_en.mp3',
+  lisinopril_en: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1790186064/medicall/audio/static/lisinopril_en.mp3'
 };
 
 const getStaticAudioUrl = (key, fallbackPath, baseUrl) => {
   if (CLOUDINARY_STATIC_AUDIO[key]) return CLOUDINARY_STATIC_AUDIO[key];
+  const cleanKey = key ? key.replace(/-/g, '_') : '';
+  if (CLOUDINARY_STATIC_AUDIO[cleanKey]) return CLOUDINARY_STATIC_AUDIO[cleanKey];
   if (!fallbackPath) return null;
   if (fallbackPath.startsWith('http')) return fallbackPath;
   return baseUrl ? `${baseUrl}${fallbackPath.startsWith('/') ? '' : '/'}${fallbackPath}` : fallbackPath;

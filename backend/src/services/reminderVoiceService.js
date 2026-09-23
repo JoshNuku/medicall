@@ -194,8 +194,11 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     ? (twiAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_invalid_key.mp3'))
     : (enAudioMap[dtmfDigits] || (outcome === CALL_OUTCOMES.CONFIRMED ? 'en_confirmed.mp3' : 'en_invalid_key.mp3'));
 
-  console.log(`🔊 [DTMF RESPONSE]: Playing ${isTwiCaller ? 'Twi' : 'English'} keypress audio: ${selectedFile} (Key: ${dtmfDigits})`);
-  const playPart = buildPlay(`${baseUrl}/audio/${selectedFile}`);
+  const { getStaticAudioUrl } = require('./cloudinaryService');
+  const audioKey = selectedFile.replace('.mp3', '');
+  const finalAudioUrl = getStaticAudioUrl(audioKey, `${baseUrl}/audio/${selectedFile}`, baseUrl);
+  console.log(`🔊 [DTMF RESPONSE]: Playing ${isTwiCaller ? 'Twi' : 'English'} keypress audio: ${finalAudioUrl} (Key: ${dtmfDigits})`);
+  const playPart = buildPlay(finalAudioUrl);
   const closingPart = buildSay('Thank you for using MediCall. Stay healthy and goodbye.');
   return buildVoiceResponse(`${playPart}\n${closingPart}`);
 };

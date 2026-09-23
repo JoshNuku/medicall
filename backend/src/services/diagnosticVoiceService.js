@@ -69,8 +69,8 @@ const processDiagnosticConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   const patient = await getPatientById(callEvent.patient_id);
   const isTwi = (patient?.preferred_language || '').toLowerCase() !== 'english';
   const ackAudio = isTwi
-    ? `${baseUrl}/audio/twi_diagnostic_ack.mp3`
-    : `${baseUrl}/audio/en_diagnostic_ack.mp3`;
+    ? getStaticAudioUrl('twi_diagnostic_ack', '/audio/twi_diagnostic_ack.mp3', baseUrl)
+    : getStaticAudioUrl('en_diagnostic_ack', '/audio/en_diagnostic_ack.mp3', baseUrl);
   const playPart = buildPlay(ackAudio);
   const closingPart = buildSay('Thank you for your feedback. MediCall is here to support you. Goodbye.');
   return buildVoiceResponse(`${playPart}\n${closingPart}`);

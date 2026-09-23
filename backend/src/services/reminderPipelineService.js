@@ -4,6 +4,7 @@ const { generateReminderMessage, generateDiagnosticMessage } = require('./agent'
 const { translateEnglishToTwi, synthesizeTwiSpeech } = require('./khayaService');
 const { getPatientById } = require('../db/queries/patients');
 const { getMedicationById } = require('../db/queries/medications');
+const { CLOUDINARY_STATIC_AUDIO } = require('./cloudinaryService');
 
 /**
  * Pre-generates the personalized AI audio file before a scheduled call.
@@ -20,9 +21,14 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     return medication.audio_url;
   }
 
+  const patient = await getPatientById(patientId);
+  const lang = (patient ? patient.preferred_language : 'twi').toLowerCase();
+  const isEnglish = lang === 'english' || lang === 'en';
+  const fallbackReminder = isEnglish ? CLOUDINARY_STATIC_AUDIO.default_reminder_en : CLOUDINARY_STATIC_AUDIO.default_reminder;
+
   // 2. If AI agent is switched off in .env -> fallback to static reminder template
   if (!isAiEnabled) {
-    return medication.reminder_audio_url || '/audio/default-reminder.mp3';
+    return medication.reminder_audio_url || fallbackReminder;
   }
 
   // 3. AI Agent dynamic generation (English -> Twi -> Neural TTS)
@@ -258,11 +264,13 @@ const generateDiagnosticAudio = async ({ patientId, medicationId, speakerId = 'f
     console.log(`   [Step 3/3] 🎙️ Synthesizing Asante Twi Speech via Khaya Neural TTS...`);
     const filename = `diagnostic_patient_${patientId}_${Date.now()}.mp3`;
     const audioUrl = await synthesizeTwiSpeech(finalTwiText, filename, speakerId);
-    console.log(`   ✓ Diagnostic audio ready: ${audioUrl || '/audio/twi_diagnostic_reason.mp3'}`);
-    return audioUrl || '/audio/twi_diagnostic_reason.mp3';
+    const fallbackDiag = isEnglish ? CLOUDINARY_STATIC_AUDIO.english_diagnostic_reason : CLOUDINARY_STATIC_AUDIO.twi_diagnostic_reason;
+    const finalAudio = (audioUrl && audioUrl.startsWith('http')) ? audioUrl : fallbackDiag;
+    console.log(`   ✓ Diagnostic audio ready: ${finalAudio}`);
+    return finalAudio;
   } catch (err) {
     console.error('[Diagnostic Audio Generation Error]:', err.message);
-    return isEnglish ? '/audio/english_diagnostic_reason.mp3' : '/audio/twi_diagnostic_reason.mp3';
+    return isEnglish ? CLOUDINARY_STATIC_AUDIO.english_diagnostic_reason : CLOUDINARY_STATIC_AUDIO.twi_diagnostic_reason;
   }
 };
 
