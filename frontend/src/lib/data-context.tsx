@@ -231,7 +231,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (freshPat) {
         setPatients((prev) => {
           const idx = prev.findIndex((p) => p.id === patientId);
-          if (idx === -1) return prev;
+          if (idx === -1) {
+            const realRate = freshPat.adherence_rate !== null && freshPat.adherence_rate !== undefined
+              ? Number(freshPat.adherence_rate)
+              : null;
+            return [
+              ...prev,
+              {
+                ...freshPat,
+                adherence_rate: realRate,
+                total_calls: freshPat.total_calls ? Number(freshPat.total_calls) : 0,
+                status: freshPat.status || (realRate !== null && realRate < 80 ? 'attention' : 'active'),
+                current_medication_name: freshPat.current_medication_name || 'Prescribed Regimen',
+                next_call_time: freshPat.next_call_time || '14:00',
+                active_medications_count: freshPat.active_medications_count || 1,
+              }
+            ];
+          }
           const current = prev[idx];
           const hasChanged =
             current.adherence_rate !== freshPat.adherence_rate ||

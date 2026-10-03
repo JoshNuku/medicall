@@ -65,6 +65,7 @@ export default function PatientDetailPage() {
 
   const [isPrescribeOpen, setIsPrescribeOpen] = useState(false);
   const [prescribeInitialMode, setPrescribeInitialMode] = useState<'template' | 'recorded'>('template');
+  const [isDetailLoading, setIsDetailLoading] = useState(!patient);
 
   const openPrescribeModal = (mode: 'template' | 'recorded' = 'template') => {
     setPrescribeInitialMode(mode);
@@ -172,16 +173,22 @@ export default function PatientDetailPage() {
   const isAnyMedGenerating = (medications || []).some((m) => m.audio_status === 'generating');
 
   useEffect(() => {
+    let isMounted = true;
     if (patientId) {
-      loadPatientDetails(patientId);
+      loadPatientDetails(patientId).finally(() => {
+        if (isMounted) setIsDetailLoading(false);
+      });
       const interval = setInterval(() => {
         loadPatientDetails(patientId);
       }, isAnyMedGenerating ? 2000 : 4000);
-      return () => clearInterval(interval);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
     }
   }, [patientId, loadPatientDetails, isAnyMedGenerating]);
 
-  if (isGlobalLoading && !patient) {
+  if (!patient && (isGlobalLoading || isDetailLoading)) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-6 w-32" />

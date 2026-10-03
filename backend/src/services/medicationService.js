@@ -20,15 +20,15 @@ const registerMedication = async ({
   let finalReminderAudioUrl = null;
   let initialAudioStatus = 'ready';
 
-  const patient = patientId ? getPatientById(patientId) : null;
+  const patient = patientId ? await getPatientById(patientId) : null;
   // If pharmacist explicitly selected language during prescription, respect that choice; otherwise fall back to patient's preferred language
   const selectedLang = (language || (patient && patient.preferred_language) || 'twi').toLowerCase();
   const isEnglish = selectedLang === 'english';
 
   if (instructionSource === 'template') {
-    const dosage = dosageTemplateId ? getTemplateById(dosageTemplateId) : null;
-    const freq = frequencyTemplateId ? getTemplateById(frequencyTemplateId) : null;
-    const timing = timingTemplateId ? getTemplateById(timingTemplateId) : null;
+    const dosage = dosageTemplateId ? await getTemplateById(dosageTemplateId) : null;
+    const freq = frequencyTemplateId ? await getTemplateById(frequencyTemplateId) : null;
+    const timing = timingTemplateId ? await getTemplateById(timingTemplateId) : null;
 
     if (isEnglish) {
       const drugLower = (drugName || '').toLowerCase();
@@ -57,7 +57,7 @@ const registerMedication = async ({
     initialAudioStatus = 'ready';
   }
 
-  const createdMed = createMedication({
+  const createdMed = await createMedication({
     patient_id: patientId,
     drug_name: drugName,
     instruction_source: instructionSource,
@@ -87,7 +87,7 @@ const registerMedication = async ({
             generateDoseReminderAudio({ patientId, medicationId: createdMed.id })
           ]);
 
-          db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
+          await db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
           console.log(`✓ [BACKGROUND TASK] Completed audio synthesis for Med #${createdMed.id}`);
         } else if (instructionSource === 'recorded' && audioFileUrl) {
           console.log(`\n⚡ [BACKGROUND TASK] Starting recorded audio conversion for Med #${createdMed.id}...`);
@@ -100,13 +100,15 @@ const registerMedication = async ({
           const relistenPath = `/audio/relisten_${baseName}.mp3`;
           const relistenAudio = fs.existsSync(path.join(__dirname, '../../public', relistenPath)) ? relistenPath : mergedUrl;
 
-          db.prepare('UPDATE medications SET audio_url = ?, reminder_audio_url = ?, audio_status = ? WHERE id = ?')
+          await db.prepare('UPDATE medications SET audio_url = ?, reminder_audio_url = ?, audio_status = ? WHERE id = ?')
             .run(relistenAudio, mergedUrl, 'ready', createdMed.id);
           console.log(`✓ [BACKGROUND TASK] Completed recorded audio merge for Med #${createdMed.id}`);
         }
       } catch (bgErr) {
         console.error(`⚠️ [BACKGROUND TASK ERROR] Med #${createdMed.id}:`, bgErr.message);
-        db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
+        try {
+          await db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
+        } catch (_) {}
       }
     });
   }
