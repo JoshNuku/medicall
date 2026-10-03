@@ -6,8 +6,11 @@
  */
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  (typeof window !== 'undefined' ? '/api/backend' : 'http://127.0.0.1:3000');
+  typeof window !== 'undefined'
+    ? (process.env.NEXT_PUBLIC_BACKEND_URL && !process.env.NEXT_PUBLIC_BACKEND_URL.includes('localhost')
+        ? process.env.NEXT_PUBLIC_BACKEND_URL
+        : '/api/backend')
+    : (process.env.BACKEND_URL || 'http://127.0.0.1:3000');
 
 export function formatApiError(err: unknown, fallbackMessage = 'Action could not be completed'): string {
   if (!err) return fallbackMessage;

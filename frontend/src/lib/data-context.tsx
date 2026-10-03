@@ -138,16 +138,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Normalize patients with computed fields
       const formattedPatients: Patient[] = (patientsRes || []).map((p: any) => {
-        const hasCalls = p.total_calls !== undefined && p.total_calls !== null ? Number(p.total_calls) > 0 : Boolean(p.last_call_time);
-        const realRate = p.adherence_rate !== null && p.adherence_rate !== undefined ? Number(p.adherence_rate) : (hasCalls ? 85 : null);
+        const realRate = p.adherence_rate !== null && p.adherence_rate !== undefined ? Number(p.adherence_rate) : null;
         return {
           ...p,
           adherence_rate: realRate,
           total_calls: p.total_calls ? Number(p.total_calls) : 0,
           status: p.status || (realRate !== null && realRate < 80 ? 'attention' : 'active'),
           current_medication_name: p.current_medication_name || 'Prescribed Regimen',
-          next_call_time: p.next_call_time || '14:00',
-          active_medications_count: p.active_medications_count || 1,
+          next_call_time: p.next_call_time || null,
+          active_medications_count: p.active_medications_count !== undefined ? Number(p.active_medications_count) : 0,
         };
       });
 
@@ -295,7 +294,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const metrics: DashboardMetrics = {
     total_patients: patients.length,
     patients_delta: patients.length ? `+${Math.min(12, patients.length)} this month` : 'No patients yet',
-    overall_adherence: averageAdherence || (alerts.length ? 78 : 0),
+    overall_adherence: averageAdherence,
     adherence_delta: patients.length ? '+live update' : 'Awaiting patient data',
     calls_today: todayCalls.length,
     calls_today_confirmed: confirmedCallsCount,

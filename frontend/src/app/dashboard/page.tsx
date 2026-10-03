@@ -71,7 +71,7 @@ export default function DashboardPage() {
           {/* Date Pill */}
           <div className="hidden lg:inline-flex items-center gap-2 bg-white border border-[#EAEAEA] px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-            <span>Today &middot; September 19, 2026</span>
+            <span>Today &middot; {new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())}</span>
           </div>
 
           {/* Quick Demo Call Button */}
@@ -118,8 +118,12 @@ export default function DashboardPage() {
             <MetricCard
               variant="default"
               label="Monitored Patients"
-              value={metrics.total_patients || 15}
-              subtext={`${Math.max(0, (metrics.total_patients || 15) - (metrics.open_alerts || 0))} adherent · ${metrics.open_alerts || 0} need attention`}
+              value={metrics.total_patients}
+              subtext={
+                metrics.total_patients === 0
+                  ? "No patients registered yet"
+                  : `${Math.max(0, metrics.total_patients - (metrics.open_alerts || 0))} adherent · ${metrics.open_alerts || 0} need attention`
+              }
               icon={<Users className="w-5 h-5 text-blue-600 transition-transform group-hover:scale-110" />}
               iconBg="bg-blue-50"
             />
@@ -129,8 +133,12 @@ export default function DashboardPage() {
           <MetricCard
             variant="default"
             label="Calls Today"
-            value={metrics.calls_today || 14}
-            subtext={`${metrics.calls_today_confirmed || 11} confirmed · 3 retries scheduled`}
+            value={metrics.calls_today}
+            subtext={
+              metrics.calls_today === 0
+                ? "No calls scheduled today"
+                : `${metrics.calls_today_confirmed} confirmed · ${Math.max(0, metrics.calls_today - metrics.calls_today_confirmed)} pending/retry`
+            }
             icon={<PhoneCall className="w-5 h-5 text-[#70BF2B]" />}
             iconBg="bg-[#F0F9EB]"
           />
