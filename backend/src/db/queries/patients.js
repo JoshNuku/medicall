@@ -1,19 +1,19 @@
 const db = require('../connection');
 const { normalizePhone } = require('../../utils/phoneUtils');
 
-const createPatient = ({ phone_number, name, preferred_language = 'twi', caregiver_phone = null, consent_given = 1 }) => {
+const createPatient = async ({ phone_number, name, preferred_language = 'twi', caregiver_phone = null, consent_given = 1 }) => {
   const cleanPhone = normalizePhone(phone_number);
   const cleanCaregiver = caregiver_phone ? normalizePhone(caregiver_phone) : null;
   const stmt = db.prepare(`
     INSERT INTO patients (phone_number, name, preferred_language, caregiver_phone, consent_given)
     VALUES (?, ?, ?, ?, ?)
   `);
-  const info = stmt.run(cleanPhone, name, preferred_language, cleanCaregiver, consent_given ? 1 : 0);
-  return getPatientById(info.lastInsertRowid);
+  const info = await stmt.run(cleanPhone, name, preferred_language, cleanCaregiver, consent_given ? 1 : 0);
+  return await getPatientById(info.lastInsertRowid);
 };
 
-const getAllPatients = () => {
-  return db.prepare(`
+const getAllPatients = async () => {
+  return await db.prepare(`
     SELECT 
       p.id, 
       p.phone_number, 
@@ -48,8 +48,8 @@ const getAllPatients = () => {
   `).all();
 };
 
-const getPatientById = (id) => {
-  return db.prepare(`
+const getPatientById = async (id) => {
+  return await db.prepare(`
     SELECT 
       p.*,
       latest_call.actual_call_time AS last_call_time,
@@ -78,7 +78,7 @@ const getPatientById = (id) => {
   `).get(id);
 };
 
-const getPatientByPhoneNumber = (phoneNumber) => {
+const getPatientByPhoneNumber = async (phoneNumber) => {
   if (!phoneNumber) return null;
   const clean = normalizePhone(phoneNumber);
   const digitsOnly = clean.replace(/\D/g, '');
@@ -103,21 +103,21 @@ const getPatientByPhoneNumber = (phoneNumber) => {
     WHERE REPLACE(REPLACE(REPLACE(p.phone_number, ' ', ''), '-', ''), '+', '') = ?
        OR p.phone_number = ?
        OR p.phone_number = ?
-       OR (? IS NOT NULL AND substr(REPLACE(REPLACE(REPLACE(p.phone_number, ' ', ''), '-', ''), '+', ''), -9) = ?)
+       OR substr(REPLACE(REPLACE(REPLACE(p.phone_number, ' ', ''), '-', ''), '+', ''), -9) = ?
   `);
-  return stmt.get(digitsOnly, clean, phoneNumber, last9, last9 || '');
+  return await stmt.get(digitsOnly, clean, phoneNumber, last9 || '__nomatch__');
 };
 
-const updateCaregiverNotifiedAt = (patientId, timestamp = new Date().toISOString()) => {
-  return db.prepare('UPDATE patients SET caregiver_notified_at = ? WHERE id = ?').run(timestamp, patientId);
+const updateCaregiverNotifiedAt = async (patientId, timestamp = new Date().toISOString()) => {
+  return await db.prepare('UPDATE patients SET caregiver_notified_at = ? WHERE id = ?').run(timestamp, patientId);
 };
 
-const resetCaregiverNotifiedAt = (patientId) => {
-  return db.prepare('UPDATE patients SET caregiver_notified_at = NULL WHERE id = ?').run(patientId);
+const resetCaregiverNotifiedAt = async (patientId) => {
+  return await db.prepare('UPDATE patients SET caregiver_notified_at = NULL WHERE id = ?').run(patientId);
 };
 
-const updatePatient = (id, fields = {}) => {
-  const patient = getPatientById(id);
+const updatePatient = async (id, fields = {}) => {
+  const patient = await getPatientById(id);
   if (!patient) return null;
 
   const updates = [];
@@ -146,29 +146,22 @@ const updatePatient = (id, fields = {}) => {
 
   if (updates.length > 0) {
     values.push(id);
-    db.prepare(`UPDATE patients SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    await db.prepare(`UPDATE patients SET ${updates.join(', ')} WHERE id = ?`).run(...values);
   }
 
-  return getPatientById(id);
+  return await getPatientById(id);
 };
 
-const deletePatient = (id) => {
-  const patient = getPatientById(id);
+const deletePatient = async (id) => {
+  const patient = await getPatientById(id);
   if (!patient) return null;
 
-  db.exec('BEGIN');
-  try {
-    db.prepare('DELETE FROM agent_conversations WHERE patient_id = ?').run(id);
-    db.prepare('DELETE FROM escalations WHERE patient_id = ?').run(id);
-    db.prepare('DELETE FROM diagnostic_responses WHERE patient_id = ?').run(id);
-    db.prepare('DELETE FROM call_events WHERE patient_id = ?').run(id);
-    db.prepare('DELETE FROM medications WHERE patient_id = ?').run(id);
-    db.prepare('DELETE FROM patients WHERE id = ?').run(id);
-    db.exec('COMMIT');
-  } catch (err) {
-    db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.prepare('DELETE FROM agent_conversations WHERE patient_id = ?').run(id);
+  await db.prepare('DELETE FROM escalations WHERE patient_id = ?').run(id);
+  await db.prepare('DELETE FROM diagnostic_responses WHERE patient_id = ?').run(id);
+  await db.prepare('DELETE FROM call_events WHERE patient_id = ?').run(id);
+  await db.prepare('DELETE FROM medications WHERE patient_id = ?').run(id);
+  await db.prepare('DELETE FROM patients WHERE id = ?').run(id);
 
   return patient;
 };
@@ -183,4 +176,3 @@ module.exports = {
   updatePatient,
   deletePatient
 };
-

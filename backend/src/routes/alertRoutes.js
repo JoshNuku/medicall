@@ -22,9 +22,9 @@ const { getOpenEscalationsWithPatient, resolveEscalation } = require('../db/quer
  *                   items:
  *                     $ref: '#/components/schemas/EscalationAlert'
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    const alerts = getOpenEscalationsWithPatient();
+    const alerts = await getOpenEscalationsWithPatient();
     res.json({ alerts });
   } catch (err) {
     next(err);
@@ -66,11 +66,11 @@ router.get('/', (req, res, next) => {
  *                 success: { type: boolean, example: true }
  *                 escalation: { $ref: '#/components/schemas/EscalationAlert' }
  */
-router.post('/:id/resolve', (req, res, next) => {
+router.post('/:id/resolve', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { resolved_by } = req.body;
-    const resolved = resolveEscalation(id, resolved_by || 'pharmacist');
+    const resolved = await resolveEscalation(id, resolved_by || 'pharmacist');
     res.json({ success: true, escalation: resolved });
   } catch (err) {
     next(err);

@@ -80,3 +80,34 @@ html, body {
 .animate-pulse-dot {
   animation: pulseDot 1.4s ease-in-out infinite;
 }
+
+/* AI Audio synthesis breathing wave */
+@keyframes audioSynthesizerWave {
+  0%, 100% {
+    transform: scaleY(0.3);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1.15);
+    opacity: 0.95;
+  }
+}
+
+.animate-synthesizer-wave {
+  transform-origin: center;
+  animation: audioSynthesizerWave 1.6s ease-in-out infinite;
+}
+
+/* Shimmer progress bar for background operations */
+@keyframes shimmerSlide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer-slide {
+  animation: shimmerSlide 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

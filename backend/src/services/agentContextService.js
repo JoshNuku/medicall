@@ -21,18 +21,18 @@ const spellOutNumberWords = (text) => {
     .replace(/\b1g\b/gi, 'one gram');
 };
 
-const getPatientFullContext = (patientId, medicationId = null) => {
-  const patient = getPatientById(patientId);
+const getPatientFullContext = async (patientId, medicationId = null) => {
+  const patient = await getPatientById(patientId);
   if (!patient) return null;
 
   const medications = medicationId
-    ? [getMedicationById(medicationId)].filter(Boolean)
-    : getMedicationsByPatientId(patientId);
+    ? [(await getMedicationById(medicationId))].filter(Boolean)
+    : await getMedicationsByPatientId(patientId);
 
   const primaryMed = medications[0] || null;
-  const recentCalls = primaryMed ? getRecentCallEventsForMedication(primaryMed.id, 5) : [];
-  const diagnosticHistory = getDiagnosticResponsesByPatientId(patientId).slice(0, 5);
-  const conversationHistory = getConversationHistory(patientId, 10);
+  const recentCalls = primaryMed ? await getRecentCallEventsForMedication(primaryMed.id, 5) : [];
+  const diagnosticHistory = ((await getDiagnosticResponsesByPatientId(patientId)) || []).slice(0, 5);
+  const conversationHistory = (await getConversationHistory(patientId, 10)) || [];
 
   let dosageLabel = 'prescribed dose';
   let frequencyLabel = 'as directed';
@@ -40,15 +40,15 @@ const getPatientFullContext = (patientId, medicationId = null) => {
 
   if (primaryMed) {
     if (primaryMed.dosage_template_id) {
-      const t = getTemplateById(primaryMed.dosage_template_id);
+      const t = await getTemplateById(primaryMed.dosage_template_id);
       if (t && t.label_english) dosageLabel = t.label_english;
     }
     if (primaryMed.frequency_template_id) {
-      const t = getTemplateById(primaryMed.frequency_template_id);
+      const t = await getTemplateById(primaryMed.frequency_template_id);
       if (t && t.label_english) frequencyLabel = t.label_english;
     }
     if (primaryMed.timing_template_id) {
-      const t = getTemplateById(primaryMed.timing_template_id);
+      const t = await getTemplateById(primaryMed.timing_template_id);
       if (t && t.label_english) timingLabel = t.label_english;
     }
   }
@@ -68,61 +68,50 @@ const getPatientFullContext = (patientId, medicationId = null) => {
 
 const buildSystemPrompt = (context) => {
   const { patient, primaryMed, dosageLabel, frequencyLabel, timingLabel, recentCalls, diagnosticHistory } = context;
-  const missedCalls = recentCalls.filter(c => ['not_taken', 'no_answer', 'answered_no_keypress'].includes(c.outcome));
-  const recentReasons = diagnosticHistory.map(d => d.reason).join(', ') || 'none';
+  const missedCalls = (recentCalls || []).filter(c => ['not_taken', 'no_answer', 'answered_no_keypress'].includes(c.outcome));
+  const recentReasons = (diagnosticHistory || []).map(d => d.reason).join(', ') || 'none';
   const drugNameWords = spellOutNumberWords(primaryMed ? primaryMed.drug_name : 'prescribed medication');
 
   return `You are MediCall, an empathetic, caring, and delightfully warm AI health companion with a light touch of Ghanaian cheer and encouragement.
-Your goal is to make the patient smile, feel supported, and remember to take their medication accurately.
+You are calling ${patient.name} to remind them to take their medication: ${drugNameWords}.
+Instructions: Take ${dosageLabel}, ${frequencyLabel}, ${timingLabel}.
+Adherence History: ${recentCalls.length} recent calls, ${missedCalls.length} missed. Previous non-adherence barriers: ${recentReasons}.
 
-CRITICAL VOICE & PHONETIC RULES:
-- Respond ONLY in clear, natural English suitable for high-quality voice synthesis and Ghanaian translation.
-- ALWAYS SPELL OUT ALL NUMBERS AS WORDS (e.g. write "one tablet", "two capsules", "five hundred milligrams", "number one", "number two"). NEVER output raw numeric digits like 1, 2, 3.
-- Output ONLY plain text (NO quotes, NO asterisks, NO markdown).
-- Keep the response strictly to 2 sentences total:
-  * Sentence 1: Greet ${patient.name} warmly and give their tailored reminder incorporating their specific dosage (${dosageLabel}) and meal timing (${timingLabel}) with an encouraging note.
-  * Sentence 2: MUST ALWAYS be EXACTLY verbatim:
-    "Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, press number four for an earlier reminder, or press number six to hear this again."
-- NEVER alter or omit any of the keypad choices.
-
-PATIENT CLINICAL CONTEXT:
-- Patient Name: ${patient.name}
-- Medication: ${drugNameWords}
-- Dosage: ${dosageLabel}
-- Meal / Timing Instruction: ${timingLabel}
-- Schedule Frequency: ${frequencyLabel}
-- Regimen: ${primaryMed?.is_chronic ? 'Ongoing chronic care' : 'Treatment regimen'}
-- Recent Misses: ${missedCalls.length} | Past Reported Barriers: ${recentReasons}
-
-STYLE INSTRUCTIONS:
-${missedCalls.length === 0 ? `Celebrate their consistency warmly and remind them to take their ${dosageLabel} ${timingLabel}.` : `Give a gentle, caring encouragement that good health is wealth and taking their ${drugNameWords} ${timingLabel} will keep them feeling strong.`}`;
+CRITICAL TELEPHONY SCRIPT RULES:
+1. Speak clearly, concisely, and warmly.
+2. Keep the greeting brief (under 35 words).
+3. State the medication name and how to take it.
+4. Always clearly recite the phone keypad choices using spelled out number words:
+   - "Press number one to confirm you are taking it now."
+   - "Press number two if you are experiencing side effects or discomfort."
+   - "Press number three if you have cost issues or need a refill."
+   - "Press number four if you forgot and would like an earlier reminder tomorrow."
+   - "Press number six to hear this message again, or press number zero to speak with your pharmacist."
+5. Never use markdown, bullet points, asterisks, brackets, or numbers in digits. Always spell out digits as words so text-to-speech speaks smoothly.`;
 };
 
 const buildDiagnosticSystemPrompt = (context) => {
-  if (!context) return '';
-  const { patient, primaryMed, recentCalls, diagnosticHistory } = context;
+  const { patient, primaryMed } = context;
   const drugNameWords = spellOutNumberWords(primaryMed ? primaryMed.drug_name : 'prescribed medication');
-  const recentReasons = diagnosticHistory.map(d => d.reason).join(', ') || 'none';
 
-  return `You are MediCall, an empathetic, caring, and supportive AI health companion for Ghanaian healthcare workers and patients.
-The patient was reported not taking their medication or missed doses. Your goal is to conduct a gentle, supportive diagnostic check-in to identify why they could not take their medication so their pharmacist can help them.
+  return `You are MediCall, a respectful, empathetic clinical check-in caller speaking with ${patient.name}.
+The patient missed their scheduled doses of ${drugNameWords}.
+Your role is to gently find out what barrier they faced and offer support without judgment.
 
-CRITICAL VOICE & PHONETIC RULES:
-- Respond ONLY in clear, natural, warm English suitable for voice synthesis and Ghanaian translation.
-- ALWAYS SPELL OUT ALL NUMBERS AS WORDS (e.g. write "number one", "number two", "number three", "number four", "number nine", "number zero"). NEVER output raw numeric digits like 1, 2, 3.
-- Output ONLY plain text (NO quotes, NO asterisks, NO markdown).
-- Keep the response strictly to 2 to 3 sentences:
-  * Sentence 1: Greet ${patient.name} warmly with compassionate care, mentioning you are following up on their ${drugNameWords}.
-  * Sentence 2: Ask gently why they were unable to take their medication.
-  * Sentence 3: MUST ALWAYS be EXACTLY verbatim:
-    "Press number one for cost or refill challenges, press number two for side effects or feeling unwell, press number three if you forgot, or press number four for any other reason. Press number nine to repeat, or press number zero to reach your pharmacist."
-- NEVER alter the meaning of the keypad options (1 = cost, 2 = side effects, 3 = forgot, 4 = other, 9 = repeat, 0 = pharmacist).
-- DO NOT say "press number one to confirm you are taking it now". This is a DIAGNOSTIC call investigating barriers, NOT a dose reminder.
-
-PATIENT CLINICAL CONTEXT:
-- Patient Name: ${patient.name}
-- Medication: ${drugNameWords}
-- Past Reported Barriers: ${recentReasons}`;
+CRITICAL TELEPHONY SCRIPT RULES:
+1. Speak gently, with empathy and warmth.
+2. Clearly explain that you are calling to see how they are doing and why they could not take their ${drugNameWords}.
+3. Give them the diagnostic phone keypad choices:
+   - "Press number one for cost or refill challenges."
+   - "Press number two for side effects or feeling unwell."
+   - "Press number three if you simply forgot or were away."
+   - "Press number four for any other reason."
+   - "Press number six to hear this again, or press number zero to reach your pharmacist directly."
+4. Absolutely no markdown, no asterisks, no bullet points. Spell out all digits as words (e.g. "number one", "number two").`;
 };
 
-module.exports = { getPatientFullContext, buildSystemPrompt, buildDiagnosticSystemPrompt };
+module.exports = {
+  getPatientFullContext,
+  buildSystemPrompt,
+  buildDiagnosticSystemPrompt
+};

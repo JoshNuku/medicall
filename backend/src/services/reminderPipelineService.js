@@ -11,7 +11,7 @@ const { getMedicationById } = require('../db/queries/medications');
  */
 const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = 'female' }) => {
   const isAiEnabled = process.env.ENABLE_AI_AGENT === 'true';
-  const medication = getMedicationById(medicationId);
+  const medication = await getMedicationById(medicationId);
 
   if (!medication) return null;
 
@@ -27,7 +27,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
 
   // 3. AI Agent dynamic generation (English -> Twi -> Neural TTS)
   try {
-    const patient = getPatientById(patientId);
+    const patient = await getPatientById(patientId);
     const lang = (patient ? patient.preferred_language : 'twi').toLowerCase();
 
     // Step A: Groq LLM generates English text with context
@@ -99,17 +99,17 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
  */
 const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerId = 'female' }) => {
   const { getTemplateById } = require('../db/queries/templates');
-  const medication = getMedicationById(medicationId);
+  const medication = await getMedicationById(medicationId);
   if (!medication) return null;
   if (medication.instruction_source === 'recorded') return medication.audio_url;
 
-  const patient = getPatientById(patientId);
+  const patient = await getPatientById(patientId);
   const lang = (medication.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
   const isEnglish = lang === 'english' || lang === 'en';
 
-  const dosage = medication.dosage_template_id ? getTemplateById(medication.dosage_template_id) : null;
-  const freq = medication.frequency_template_id ? getTemplateById(medication.frequency_template_id) : null;
-  const timing = medication.timing_template_id ? getTemplateById(medication.timing_template_id) : null;
+  const dosage = medication.dosage_template_id ? await getTemplateById(medication.dosage_template_id) : null;
+  const freq = medication.frequency_template_id ? await getTemplateById(medication.frequency_template_id) : null;
+  const timing = medication.timing_template_id ? await getTemplateById(medication.timing_template_id) : null;
 
   if (isEnglish) {
     const drugLower = (medication.drug_name || '').toLowerCase();
@@ -136,7 +136,7 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
       console.log(`✓ Full prescription audio ready: ${audioUrl}`);
       const db = require('../db/connection');
       try {
-        db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
+        await db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
       } catch (_) {}
       return audioUrl;
     }
@@ -155,21 +155,21 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
  */
 const generateDoseReminderAudio = async ({ patientId, medicationId, speakerId = 'PT' }) => {
   const { getTemplateById } = require('../db/queries/templates');
-  const medication = getMedicationById(medicationId);
+  const medication = await getMedicationById(medicationId);
   if (!medication) return null;
 
   if (medication.instruction_source === 'recorded') {
     return medication.reminder_audio_url || medication.audio_url;
   }
 
-  const patient = getPatientById(patientId);
+  const patient = await getPatientById(patientId);
   const lang = (medication.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
   const isEnglish = lang === 'english' || lang === 'en';
   const patientName = patient ? patient.name : 'there';
   const drugName = medication.drug_name || 'your medication';
 
-  const dosage = medication.dosage_template_id ? getTemplateById(medication.dosage_template_id) : null;
-  const timing = medication.timing_template_id ? getTemplateById(medication.timing_template_id) : null;
+  const dosage = medication.dosage_template_id ? await getTemplateById(medication.dosage_template_id) : null;
+  const timing = medication.timing_template_id ? await getTemplateById(medication.timing_template_id) : null;
 
 const convertDigitsToTwiWords = (text) => {
   if (!text) return text;
@@ -213,7 +213,7 @@ const convertDigitsToTwiWords = (text) => {
       console.log(`✓ Daily dose reminder audio ready: ${audioUrl}`);
       const db = require('../db/connection');
       try {
-        db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
+        await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
       } catch (_) {}
       return audioUrl;
     }
@@ -262,8 +262,8 @@ const synthesizeEnglishSpeech = async (text, filename) => {
  */
 const generateDiagnosticAudio = async ({ patientId, medicationId, speakerId = 'female' }) => {
   const isAiEnabled = process.env.ENABLE_AI_AGENT === 'true';
-  const patient = getPatientById(patientId);
-  const medication = medicationId ? getMedicationById(medicationId) : null;
+  const patient = await getPatientById(patientId);
+  const medication = medicationId ? await getMedicationById(medicationId) : null;
   const lang = (medication?.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
   const isEnglish = lang === 'english' || lang === 'en';
   const patientName = patient ? patient.name : 'there';

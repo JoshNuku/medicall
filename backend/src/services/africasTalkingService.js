@@ -66,8 +66,8 @@ const sendSms = async (toPhoneNumber, message, from = null) => {
 
   try {
     const cleanTo = Array.isArray(toPhoneNumber)
-      ? toPhoneNumber.map(normalizePhoneNumber)
-      : [normalizePhoneNumber(toPhoneNumber)];
+      ? toPhoneNumber.map(normalizePhone)
+      : [normalizePhone(toPhoneNumber)];
 
     const payload = {
       to: cleanTo,

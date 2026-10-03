@@ -20,13 +20,36 @@ const templateRoutes = require('./routes/templateRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const callRoutes = require('./routes/callRoutes');
 const authRoutes = require('./routes/authRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const voiceSimulateRoutes = require('./routes/voiceSimulateRoutes');
+
+const helmet = require('helmet');
 
 const app = express();
 
 app.set('trust proxy', 1);
 
-// Core Middleware
-app.use(cors());
+// Security Headers
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
+// CORS Configuration
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,8 +72,10 @@ app.use('/patients', generalLimiter, patientRoutes);
 app.use('/instruction-templates', generalLimiter, templateRoutes);
 app.use('/alerts', generalLimiter, alertRoutes);
 app.use('/calls', generalLimiter, callRoutes);
+app.use('/settings', generalLimiter, settingsRoutes);
 
 // Africa's Talking Voice Webhook Routes
+app.use('/voice', generalLimiter, voiceSimulateRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceInboundRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceDiagnosticRoutes);

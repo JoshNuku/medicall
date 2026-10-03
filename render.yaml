@@ -1,0 +1,54 @@
+services:
+  # ---------------------------------------------------------
+  # MediCall Backend (Express + Cloudinary + Neon + Africa's Talking)
+  # ---------------------------------------------------------
+  - type: web
+    name: medicall-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_USERNAME
+        sync: false
+      - key: AT_VOICE_PHONE_NUMBER
+        sync: false
+      - key: AT_SMS_SENDER_ID
+        value: medicall
+      - key: PHARMACIST_PHONE
+        sync: false
+      - key: TTS_PROVIDER
+        value: lab
+      - key: TTS_API_KEY
+        sync: false
+      - key: TTS_API_URL
+        value: https://lab-subscription-platform.vercel.app/api/v1/tts
+      - key: KHAYA_API_KEY
+        sync: false
+      - key: KHAYA_TRANSLATE_URL
+        value: https://translation-api.ghananlp.org/v1/translate
+      - key: ENABLE_AI_AGENT
+        value: "true"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: FRONTEND_URL
+        sync: false

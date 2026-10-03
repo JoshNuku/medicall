@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { generateReminderXml, processReminderConfirm } = require('../services/reminderVoiceService');
-const { getCallEventById, createCallEvent, getRecentCallEventsForMedication } = require('../db/queries/callEvents');
+const { getCallEventById, createCallEvent, getRecentCallEventsForMedication, getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
 const { getMedicationById, getMedicationsByPatientId } = require('../db/queries/medications');
-const { getPatientByPhoneNumber } = require('../db/queries/patients');
+const { getPatientByPhoneNumber, getPatientById } = require('../db/queries/patients');
+const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
 
 /**
  * @openapi
@@ -35,14 +36,13 @@ const handleReminderCall = async (req, res, next) => {
       const callerPhone = req.body.callerNumber;
       const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
       const targetPhone = callerPhone && callerPhone !== atNumber ? callerPhone : destPhone;
-      const patient = getPatientByPhoneNumber(targetPhone) || (destPhone ? getPatientByPhoneNumber(destPhone) : null);
+      const patient = (targetPhone && (await getPatientByPhoneNumber(targetPhone))) || (destPhone ? await getPatientByPhoneNumber(destPhone) : null);
       if (patient) {
-        const { getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
-        const pending = getLatestPendingCallEventForPatient(patient.id);
+        const pending = await getLatestPendingCallEventForPatient(patient.id);
         if (pending && !pending.outcome) {
           const isNotAnswered = req.body.status === 'NotAnswered' || req.body.callSessionState === 'NotAnswered' || req.body.hangupCause === 'USER_BUSY' || req.body.hangupCause === 'NO_ANSWER';
           const outcome = isNotAnswered ? 'no_answer' : 'answered_no_keypress';
-          updateCallOutcome(pending.id, outcome, new Date().toISOString());
+          await updateCallOutcome(pending.id, outcome, new Date().toISOString());
         }
       }
       res.set('Content-Type', 'text/xml');
@@ -50,23 +50,22 @@ const handleReminderCall = async (req, res, next) => {
     }
 
     let callEventId = req.query.callEventId || req.body.callEventId;
-    let callEvent = callEventId ? getCallEventById(callEventId) : null;
-    let medication = callEvent ? getMedicationById(callEvent.medication_id) : null;
+    let callEvent = callEventId ? await getCallEventById(callEventId) : null;
+    let medication = callEvent ? await getMedicationById(callEvent.medication_id) : null;
 
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
     const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
-    const { getLatestPendingCallEventForPatient } = require('../db/queries/callEvents');
 
     // Inbound call auto-detection: If someone is dialing our helpline number
     const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
     if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
-      const patient = callerPhone ? getPatientByPhoneNumber(callerPhone) : null;
-      const pendingEvent = patient ? getLatestPendingCallEventForPatient(patient.id) : null;
+      const patient = callerPhone ? await getPatientByPhoneNumber(callerPhone) : null;
+      const pendingEvent = patient ? await getLatestPendingCallEventForPatient(patient.id) : null;
       if (!pendingEvent) {
         const { handleInboundCall } = require('../services/inboundVoiceService');
-        const xml = handleInboundCall(callerPhone, baseUrl);
+        const xml = await handleInboundCall(callerPhone, baseUrl);
         res.set('Content-Type', 'text/xml');
         return res.status(200).send(xml);
       }
@@ -75,20 +74,20 @@ const handleReminderCall = async (req, res, next) => {
     if (!callEvent) {
       // In outbound reminder calls from Africa's Talking, destinationNumber is the patient's phone!
       const targetPhone = destPhone || callerPhone;
-      const patient = getPatientByPhoneNumber(targetPhone) || (callerPhone ? getPatientByPhoneNumber(callerPhone) : null);
+      const patient = (targetPhone && (await getPatientByPhoneNumber(targetPhone))) || (callerPhone ? await getPatientByPhoneNumber(callerPhone) : null);
 
       if (patient) {
         // First check if a pending callEvent was already registered when outbound call was dispatched
-        const pendingEvent = getLatestPendingCallEventForPatient(patient.id);
+        const pendingEvent = await getLatestPendingCallEventForPatient(patient.id);
         if (pendingEvent) {
           callEvent = pendingEvent;
           callEventId = callEvent.id;
-          medication = getMedicationById(callEvent.medication_id);
+          medication = await getMedicationById(callEvent.medication_id);
         } else {
-          const meds = getMedicationsByPatientId(patient.id);
+          const meds = await getMedicationsByPatientId(patient.id);
           if (meds.length > 0) {
             medication = meds[0];
-            callEvent = createCallEvent({
+            callEvent = await createCallEvent({
               patient_id: patient.id,
               medication_id: medication.id,
               scheduled_time: new Date().toISOString(),
@@ -105,11 +104,10 @@ const handleReminderCall = async (req, res, next) => {
 
     if (callEvent && !callEvent.actual_call_time) {
       const db = require('../db/connection');
-      db.prepare('UPDATE call_events SET actual_call_time = ? WHERE id = ?').run(new Date().toISOString(), callEvent.id);
+      await db.prepare('UPDATE call_events SET actual_call_time = ? WHERE id = ?').run(new Date().toISOString(), callEvent.id);
     }
 
-    const { getPatientById } = require('../db/queries/patients');
-    const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
+    const patientObj = callEvent ? await getPatientById(callEvent.patient_id) : null;
     const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
     const isEnglish = medLang
       ? medLang === 'english'
@@ -140,7 +138,7 @@ const handleReminderCall = async (req, res, next) => {
           if (upgraded) {
             fileUrl = upgraded;
             const db = require('../db/connection');
-            db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(fileUrl, medication.id);
+            await db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(fileUrl, medication.id);
           }
         } catch (_) {}
       }
@@ -149,8 +147,7 @@ const handleReminderCall = async (req, res, next) => {
         : `${baseUrl}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
       console.log(`🔊 [VOICE ROUTE]: Serving recorded voice note with embedded Khaya AI keypad prompt: ${audioUrl}`);
     } else if (isEnglish) {
-      const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
-      const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
+      const latestMsg = patientObj ? await getLatestAssistantMessage(patientObj.id) : null;
       if (isAiAgentEnabled) {
         sayText = (latestMsg && latestMsg.content)
           ? latestMsg.content
@@ -213,11 +210,11 @@ const handleReminderConfirm = async (req, res, next) => {
     if (!callEventId || callEventId === 'undefined') {
       const callerPhone = req.body.callerNumber;
       const destPhone = req.body.destinationNumber;
-      const patient = (callerPhone && getPatientByPhoneNumber(callerPhone)) || (destPhone && getPatientByPhoneNumber(destPhone));
+      const patient = (callerPhone && (await getPatientByPhoneNumber(callerPhone))) || (destPhone && (await getPatientByPhoneNumber(destPhone)));
       if (patient) {
-        const meds = getMedicationsByPatientId(patient.id);
+        const meds = await getMedicationsByPatientId(patient.id);
         if (meds.length > 0) {
-          const recents = getRecentCallEventsForMedication(meds[0].id, 1);
+          const recents = await getRecentCallEventsForMedication(meds[0].id, 1);
           if (recents.length > 0) {
             callEventId = recents[0].id;
           }

@@ -6,9 +6,10 @@ const { createCallEvent, getLatestPendingCallEventForPatient, updateCallOutcome 
 const { createEscalation } = require('../db/queries/escalations');
 const { buildVoiceResponse, buildSay, buildPlay, buildGetDigits } = require('../utils/xmlBuilder');
 const { getRelistenAudioUrl } = require('./audioMergeService');
+const { getCloudinaryAudioUrl } = require('./cloudinaryService');
 
-const handleInboundCall = (callerNumber, baseUrl) => {
-  const patient = callerNumber ? getPatientByPhoneNumber(callerNumber) : null;
+const handleInboundCall = async (callerNumber, baseUrl) => {
+  const patient = callerNumber ? await getPatientByPhoneNumber(callerNumber) : null;
 
   if (!patient) {
     return buildVoiceResponse(
@@ -16,7 +17,7 @@ const handleInboundCall = (callerNumber, baseUrl) => {
     );
   }
 
-  const medications = getMedicationsByPatientId(patient.id);
+  const medications = await getMedicationsByPatientId(patient.id);
 
   if (!medications || medications.length === 0) {
     return buildVoiceResponse(
@@ -49,7 +50,7 @@ const handleInboundCall = (callerNumber, baseUrl) => {
   // Single active medication: Play relisten audio!
   const activeMed = medications[0];
   const today = new Date().toISOString().split('T')[0];
-  createCallEvent({
+  await createCallEvent({
     patient_id: patient.id,
     medication_id: activeMed.id,
     scheduled_time: new Date().toISOString(),
@@ -72,12 +73,12 @@ const handleInboundCall = (callerNumber, baseUrl) => {
   return buildVoiceResponse(digitsXml);
 };
 
-const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
-  const patient = patientId ? getPatientById(patientId) : null;
+const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null) => {
+  const patient = patientId ? await getPatientById(patientId) : null;
   if (!patient) return buildVoiceResponse(buildSay('Thank you. Goodbye.'));
 
   const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
-  const medications = getMedicationsByPatientId(patient.id);
+  const medications = await getMedicationsByPatientId(patient.id);
 
   if (!dtmfDigits || dtmfDigits === 'undefined') {
     console.log(`ℹ️ [INBOUND HELPLINE]: Call ended / timeout for Patient #${patient.id}`);
@@ -91,14 +92,15 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
 
   // 1. Key 0: Request pharmacist help
   if (dtmfDigits === '0') {
-    createEscalation({
+    await createEscalation({
       patient_id: patient.id,
       escalation_type: 'patient_requested_help'
     });
     console.log(`✓ [INBOUND HELPLINE]: Escalated to pharmacist (patient_requested_help)`);
     const ackAudioFile = isEnglish ? 'en_pharmacist_alert.mp3' : 'twi_pharmacist_alert.mp3';
-    if (fs.existsSync(path.join(__dirname, '../../public/audio', ackAudioFile))) {
-      return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${ackAudioFile}`));
+    const playUrl = getCloudinaryAudioUrl(ackAudioFile, baseUrl);
+    if (playUrl) {
+      return buildVoiceResponse(buildPlay(playUrl));
     }
     return buildVoiceResponse(
       buildSay(
@@ -123,7 +125,7 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
         playUrl: relistenAudioUrl
       }));
     }
-    return handleInboundCall(patient.phone_number, baseUrl);
+    return await handleInboundCall(patient.phone_number, baseUrl);
   }
 
   // 3. Multi-medication selection (Key 1..N on initial menu when medId wasn't already selected)
@@ -145,15 +147,16 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
 
   // 4. Key 1: Confirm Dose (if caller wishes to confirm adherence during call-back)
   if (dtmfDigits === '1') {
-    const pending = getLatestPendingCallEventForPatient(patient.id);
+    const pending = await getLatestPendingCallEventForPatient(patient.id);
     if (pending) {
-      updateCallOutcome(pending.id, 'confirmed', new Date().toISOString());
-      resetCaregiverNotifiedAt(patient.id);
+      await updateCallOutcome(pending.id, 'confirmed', new Date().toISOString());
+      await resetCaregiverNotifiedAt(patient.id);
     }
     console.log(`✓ [INBOUND HELPLINE]: Dose marked Confirmed Taken (Key 1)`);
     const ackAudioFile = isEnglish ? 'en_confirmed.mp3' : 'twi_confirmed.mp3';
-    if (fs.existsSync(path.join(__dirname, '../../public/audio', ackAudioFile))) {
-      return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${ackAudioFile}`));
+    const playUrl = getCloudinaryAudioUrl(ackAudioFile, baseUrl);
+    if (playUrl) {
+      return buildVoiceResponse(buildPlay(playUrl));
     }
     return buildVoiceResponse(
       buildSay(
@@ -166,18 +169,19 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
 
   // 5. Key 2: Dose Not Taken / Caller reports issue
   if (dtmfDigits === '2') {
-    const pending = getLatestPendingCallEventForPatient(patient.id);
+    const pending = await getLatestPendingCallEventForPatient(patient.id);
     if (pending) {
-      updateCallOutcome(pending.id, 'not_taken', new Date().toISOString());
+      await updateCallOutcome(pending.id, 'not_taken', new Date().toISOString());
     }
-    createEscalation({
+    await createEscalation({
       patient_id: patient.id,
       escalation_type: 'patient_requested_help'
     });
     console.log(`✓ [INBOUND HELPLINE]: Dose recorded as Not Taken (Key 2) & pharmacist alerted`);
     const ackAudioFile = isEnglish ? 'en_side_effects.mp3' : 'twi_not_taken_ack.mp3';
-    if (fs.existsSync(path.join(__dirname, '../../public/audio', ackAudioFile))) {
-      return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${ackAudioFile}`));
+    const playUrl = getCloudinaryAudioUrl(ackAudioFile, baseUrl);
+    if (playUrl) {
+      return buildVoiceResponse(buildPlay(playUrl));
     }
     return buildVoiceResponse(
       buildSay(

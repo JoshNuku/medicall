@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, RotateCcw, Loader2, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
 interface AudioPlayerProps {
@@ -37,21 +37,28 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const realAudioRef = useRef<HTMLAudioElement | null>(null);
   const trailerAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const CLOUDINARY_DEFAULTS = {
+    twiReminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1791035394/medicall/audio/default-reminder.mp3',
+    enReminder: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1791035394/medicall/audio/default-reminder-en.mp3',
+    twiTrailer: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1791035416/medicall/audio/twi_keypress_trailer.mp3',
+    enTrailer: 'https://res.cloudinary.com/deplhwhk7/video/upload/v1791035397/medicall/audio/en_keypress_trailer.mp3',
+  };
+
   // Remap audio URL if pharmacist chose English but legacy/default audio was Twi
   const effectiveAudioUrl = React.useMemo(() => {
     if (language === 'english') {
       if (!audioUrl || audioUrl.includes('twi') || audioUrl.includes('default-reminder.mp3')) {
-        return '/audio/default-reminder-en.mp3';
+        return CLOUDINARY_DEFAULTS.enReminder;
       }
     }
-    return audioUrl || (language === 'english' ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3');
+    return audioUrl || (language === 'english' ? CLOUDINARY_DEFAULTS.enReminder : CLOUDINARY_DEFAULTS.twiReminder);
   }, [audioUrl, language]);
 
   const playKeypressTrailer = useCallback(() => {
     setIsPlayingTrailer(true);
     const trailerUrl = language === 'english'
-      ? '/audio/en_keypress_trailer.mp3'
-      : '/audio/twi_keypress_trailer.mp3';
+      ? CLOUDINARY_DEFAULTS.enTrailer
+      : CLOUDINARY_DEFAULTS.twiTrailer;
 
     try {
       if (trailerAudioRef.current) {
@@ -444,9 +451,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <Badge variant="language" language={language} />
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
           {isGenerating ? (
-            <span className="inline-flex items-center gap-1.5 text-[10px] text-amber-800 bg-amber-50 font-medium px-2 py-0.5 rounded-md border border-amber-200/80 animate-pulse shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
-              Generating audio in background...
+            <span className="text-[11px] text-gray-400 font-normal flex items-center gap-1.5 shrink-0 ml-1">
+              <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+              <span>Generating audio...</span>
             </span>
           ) : isPlayingTrailer ? (
             <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-2 py-0.5 rounded-md animate-pulse shrink-0">
@@ -476,28 +483,40 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       {/* Main player controls + waveform */}
       <div className="flex items-center gap-2.5">
         {/* Play/Pause Button */}
-        <button
-          onClick={togglePlay}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#23272E] text-white hover:bg-[#111317] transition-all active:scale-95 shadow-2xs shrink-0 cursor-pointer"
-          aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
-        >
-          {isPlaying ? (
-            <Pause className="w-3.5 h-3.5 fill-current" />
-          ) : (
-            <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-          )}
-        </button>
+        {isGenerating ? (
+          <div
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 text-gray-400 border border-gray-200/60 shadow-2xs shrink-0 cursor-wait"
+            title="Generating audio in background..."
+          >
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <button
+            onClick={togglePlay}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#23272E] text-white hover:bg-[#111317] transition-all active:scale-95 shadow-2xs shrink-0 cursor-pointer"
+            aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
+          >
+            {isPlaying ? (
+              <Pause className="w-3.5 h-3.5 fill-current" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+            )}
+          </button>
+        )}
 
         {/* Custom Animated Soundwave */}
         <div
-          className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[3px] h-9 px-3 bg-white border border-[#E5E3DD] rounded-xl cursor-pointer select-none hover:border-[#D6D3CB] transition-all group overflow-hidden"
+          className={`flex-1 flex items-center justify-between gap-[2px] sm:gap-[3px] h-9 px-3 bg-white border border-[#E5E3DD] rounded-xl select-none transition-all overflow-hidden ${
+            isGenerating ? 'cursor-wait opacity-50' : 'cursor-pointer hover:border-[#D6D3CB] group'
+          }`}
           onClick={(e) => {
+            if (isGenerating) return;
             const rect = e.currentTarget.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const pct = Math.max(0, Math.min(1, clickX / rect.width));
             setCurrentTime(Math.floor(pct * displayDuration));
           }}
-          title="Click to seek"
+          title={isGenerating ? "Generating audio in background..." : "Click to seek"}
         >
           {barHeights.map((height, idx) => {
             const barPct = (idx / barHeights.length) * 100;
@@ -524,7 +543,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div className="flex items-center gap-0.5 shrink-0">
           <button
             onClick={restart}
-            className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            disabled={isGenerating}
+            className={`p-1.5 rounded-lg transition-colors ${
+              isGenerating ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+            }`}
             aria-label="Restart audio"
             title="Restart"
           >
@@ -532,7 +554,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </button>
           <button
             onClick={toggleMute}
-            className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            disabled={isGenerating}
+            className={`p-1.5 rounded-lg transition-colors ${
+              isGenerating ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+            }`}
             aria-label={isMuted ? 'Unmute' : 'Mute'}
             title={isMuted ? 'Unmute' : 'Mute'}
           >

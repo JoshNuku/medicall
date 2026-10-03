@@ -300,3 +300,98 @@ export async function triggerCallApi(payload: {
   }
   return res.json();
 }
+
+// 9. TTS Engine Provider Settings API
+export async function fetchTtsProviderApi() {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/tts-provider`);
+  if (!res.ok) throw new Error('Offline — unable to load TTS settings.');
+  return res.json();
+}
+
+export async function updateTtsProviderApi(provider: 'lab' | 'khaya') {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/tts-provider`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to switch TTS provider.');
+  }
+  return res.json();
+}
+
+export async function testTtsProviderApi(provider: 'lab' | 'khaya', text?: string) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/tts-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider, text }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to test TTS provider.');
+  }
+  return res.json();
+}
+
+export interface SystemHealthData {
+  status: string;
+  timestamp: string;
+  uptimeSeconds: number;
+  latencyMs: number;
+  services: {
+    database: {
+      status: string;
+      type: string;
+      latencyMs: number | null;
+      counts: {
+        patients: number;
+        openAlerts: number;
+        callsToday: number;
+      };
+    };
+    cloudinary: {
+      status: string;
+      cloudName: string;
+      preUploadedAssetsCount: number;
+      cdnDomain: string;
+    };
+    ttsEngine: {
+      status: string;
+      activeProvider: string;
+      availableProviders: string[];
+    };
+    telephony: {
+      status: string;
+      provider: string;
+      voiceNumber: string;
+    };
+    aiAgent: {
+      enabled: boolean;
+      provider: string;
+      model: string;
+    };
+  };
+}
+
+export async function fetchSystemDiagnostics(): Promise<SystemHealthData> {
+  const res = await fetchWithRetry(`${API_BASE_URL}/health`);
+  if (!res.ok) throw new Error('Failed to retrieve system diagnostics.');
+  return res.json();
+}
+
+export async function simulateVoiceWebhookApi(payload: {
+  scenario: string;
+  patient_id?: number;
+  call_event_id?: number;
+  dtmf_digits?: string;
+}) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/voice/simulate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Simulation failed.');
+  return res.json();
+}
+

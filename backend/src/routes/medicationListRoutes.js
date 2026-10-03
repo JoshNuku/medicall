@@ -29,10 +29,10 @@ const { getMedicationsByPatientId } = require('../db/queries/medications');
  *                   items:
  *                     $ref: '#/components/schemas/Medication'
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const patientId = parseInt(req.params.id, 10);
-    const medications = getMedicationsByPatientId(patientId);
+    const medications = await getMedicationsByPatientId(patientId);
 
     // Auto-heal missing reminder_audio_url in background so subsequent refreshes have distinct audio
     medications.forEach((med) => {

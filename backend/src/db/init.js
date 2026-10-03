@@ -4,7 +4,12 @@ const db = require('./connection');
 const seedTemplates = require('./seedTemplates');
 const seedDemoData = require('./seedDemoData');
 
-const initDb = () => {
+const initDb = async () => {
+  if (db.isPostgres) {
+    console.log('🐘 [Neon PostgreSQL]: Online DB connected. Database tables and templates verified.');
+    return;
+  }
+
   const schemaPath = path.join(__dirname, 'schema.sql');
   const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 

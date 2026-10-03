@@ -54,16 +54,16 @@ const { getMedicationById, updateMedication, deleteMedication } = require('../db
  *       404:
  *         description: Medication not found
  */
-router.put('/:medId', (req, res, next) => {
+router.put('/:medId', async (req, res, next) => {
   try {
     const medId = parseInt(req.params.medId, 10);
-    const existing = getMedicationById(medId);
+    const existing = await getMedicationById(medId);
     if (!existing) {
       return res.status(404).json({ error: 'Medication not found', status: 404 });
     }
 
     const { drug_name, schedule_times, duration_days, is_chronic } = req.body;
-    const updated = updateMedication(medId, { drug_name, schedule_times, duration_days, is_chronic });
+    const updated = await updateMedication(medId, { drug_name, schedule_times, duration_days, is_chronic });
     res.json({ medication: updated });
   } catch (err) {
     next(err);
@@ -98,22 +98,26 @@ router.put('/:medId', (req, res, next) => {
  *             schema:
  *               type: object
  *               properties:
- *                 message:
- *                   type: string
- *                   example: "Medication deleted successfully"
- *                 medication:
- *                   $ref: '#/components/schemas/Medication'
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: "Medication Amoxicillin 500mg deleted successfully" }
+ *                 medication: { $ref: '#/components/schemas/Medication' }
  *       404:
  *         description: Medication not found
  */
-router.delete('/:medId', (req, res, next) => {
+router.delete('/:medId', async (req, res, next) => {
   try {
     const medId = parseInt(req.params.medId, 10);
-    const deleted = deleteMedication(medId);
-    if (!deleted) {
+    const existing = await getMedicationById(medId);
+    if (!existing) {
       return res.status(404).json({ error: 'Medication not found', status: 404 });
     }
-    res.json({ message: 'Medication deleted successfully', medication: deleted });
+
+    const deleted = await deleteMedication(medId);
+    res.json({
+      success: true,
+      message: `Medication "${deleted.drug_name}" deleted successfully`,
+      medication: deleted
+    });
   } catch (err) {
     next(err);
   }

@@ -4,8 +4,6 @@ const { createPatient } = require('../db/queries/patients');
 const { validatePhone } = require('../utils/phoneUtils');
 
 /**
-
-/**
  * @openapi
  * /patients:
  *   post:
@@ -49,7 +47,7 @@ const { validatePhone } = require('../utils/phoneUtils');
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const { phone_number, name, preferred_language, caregiver_phone } = req.body;
     if (!phone_number || !name) {
@@ -70,7 +68,7 @@ router.post('/', (req, res, next) => {
       validCaregiver = caregiverValidation.normalized;
     }
 
-    const patient = createPatient({
+    const patient = await createPatient({
       phone_number: phoneValidation.normalized,
       name,
       preferred_language,

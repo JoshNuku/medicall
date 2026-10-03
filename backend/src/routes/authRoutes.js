@@ -12,7 +12,7 @@ const {
  * POST /login
  * Authenticates user by email and password.
  */
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
 
   if (!email || !password) {
@@ -22,7 +22,7 @@ router.post('/login', (req, res) => {
     });
   }
 
-  const user = getUserByEmail(email);
+  const user = await getUserByEmail(email);
   if (!user) {
     return res.status(401).json({
       success: false,
@@ -55,7 +55,7 @@ router.post('/login', (req, res) => {
  * GET /me
  * Returns current authenticated user information from token.
  */
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
@@ -73,7 +73,7 @@ router.get('/me', (req, res) => {
     });
   }
 
-  const user = getUserById(payload.userId);
+  const user = await getUserById(payload.userId);
   if (!user) {
     return res.status(404).json({
       success: false,

@@ -1,6 +1,6 @@
 const db = require('../connection');
 
-const createCallEvent = ({
+const createCallEvent = async ({
   patient_id,
   medication_id,
   scheduled_time,
@@ -18,7 +18,7 @@ const createCallEvent = ({
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const info = stmt.run(
+  const info = await stmt.run(
     patient_id,
     medication_id,
     scheduled_time,
@@ -30,35 +30,35 @@ const createCallEvent = ({
     audio_url
   );
 
-  return getCallEventById(info.lastInsertRowid);
+  return await getCallEventById(info.lastInsertRowid);
 };
 
-const updateCallAudioUrl = (id, audio_url) => {
+const updateCallAudioUrl = async (id, audio_url) => {
   const stmt = db.prepare(`
     UPDATE call_events
     SET audio_url = ?
     WHERE id = ?
   `);
-  stmt.run(audio_url, id);
-  return getCallEventById(id);
+  await stmt.run(audio_url, id);
+  return await getCallEventById(id);
 };
 
-const updateCallOutcome = (id, outcome, actual_call_time = new Date().toISOString()) => {
+const updateCallOutcome = async (id, outcome, actual_call_time = new Date().toISOString()) => {
   const stmt = db.prepare(`
     UPDATE call_events
     SET outcome = ?, actual_call_time = ?
     WHERE id = ?
   `);
-  stmt.run(outcome, actual_call_time, id);
-  return getCallEventById(id);
+  await stmt.run(outcome, actual_call_time, id);
+  return await getCallEventById(id);
 };
 
-const getCallEventById = (id) => {
-  return db.prepare('SELECT * FROM call_events WHERE id = ?').get(id);
+const getCallEventById = async (id) => {
+  return await db.prepare('SELECT * FROM call_events WHERE id = ?').get(id);
 };
 
-const getRecentCallEventsForMedication = (medicationId, limit = 10) => {
-  return db.prepare(`
+const getRecentCallEventsForMedication = async (medicationId, limit = 10) => {
+  return await db.prepare(`
     SELECT * FROM call_events
     WHERE medication_id = ?
     ORDER BY scheduled_time DESC
@@ -66,8 +66,8 @@ const getRecentCallEventsForMedication = (medicationId, limit = 10) => {
   `).all(medicationId, limit);
 };
 
-const getTodayCallEvents = () => {
-  return db.prepare(`
+const getTodayCallEvents = async () => {
+  return await db.prepare(`
     SELECT ce.*, p.name AS patient_name, p.phone_number AS patient_phone, m.drug_name
     FROM call_events ce
     JOIN patients p ON ce.patient_id = p.id
@@ -76,8 +76,8 @@ const getTodayCallEvents = () => {
   `).all();
 };
 
-const getLatestPendingCallEventForPatient = (patientId) => {
-  return db.prepare(`
+const getLatestPendingCallEventForPatient = async (patientId) => {
+  return await db.prepare(`
     SELECT * FROM call_events
     WHERE patient_id = ? AND (outcome IS NULL OR outcome = 'pending')
     ORDER BY scheduled_time DESC

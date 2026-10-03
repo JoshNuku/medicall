@@ -732,20 +732,6 @@ export default function PatientDetailPage() {
                           </button>
                         </div>
 
-                        {/* Background Audio Generation Notice if in progress */}
-                        {med.audio_status === 'generating' && (
-                          <div className="flex items-center justify-between px-3 py-2 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 animate-in fade-in">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-                              <span className="font-semibold">AI Voice Generating</span>
-                              <span className="text-amber-400">&middot;</span>
-                              <span className="text-amber-800 text-[11px]">Synthesizing authentic Twi prompt in background (~10-15s)</span>
-                            </div>
-                            <span className="text-[10px] font-mono font-medium text-amber-800 bg-white/90 px-2 py-0.5 rounded border border-amber-200 shrink-0">
-                              Auto-refreshing
-                            </span>
-                          </div>
-                        )}
 
                         {/* Single Unified Audio Player */}
                         <AudioPlayer

@@ -37,10 +37,10 @@ const { getLogsByPatientId } = require('../db/queries/logs');
  *                       dose_date: { type: string, example: "2026-09-15" }
  *                       diagnostic_reason: { type: string, nullable: true, example: null }
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const patientId = parseInt(req.params.id, 10);
-    const logs = getLogsByPatientId(patientId);
+    const logs = await getLogsByPatientId(patientId);
     res.json({ logs });
   } catch (err) {
     next(err);

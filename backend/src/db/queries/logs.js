@@ -1,7 +1,7 @@
 const db = require('../connection');
 
-const getLogsByPatientId = (patientId) => {
-  return db.prepare(`
+const getLogsByPatientId = async (patientId) => {
+  return await db.prepare(`
     SELECT 
       ce.id AS id,
       ce.id AS call_event_id,

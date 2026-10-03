@@ -1,17 +1,19 @@
 const crypto = require('crypto');
 const db = require('../connection');
 
-// Ensure users table exists
-try {
-  db.exec(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    name TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'Pharmacist',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );`);
-} catch (_) {}
+// Ensure users table exists in SQLite mode
+if (!db.isPostgres) {
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Pharmacist',
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`);
+  } catch (_) {}
+}
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -61,24 +63,24 @@ function verifyToken(token) {
   }
 }
 
-function getUserByEmail(email) {
+async function getUserByEmail(email) {
   if (!email) return null;
   const normalized = email.toLowerCase().trim();
   const stmt = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?');
-  return stmt.get(normalized) || null;
+  return (await stmt.get(normalized)) || null;
 }
 
-function getUserById(id) {
+async function getUserById(id) {
   if (!id) return null;
   const stmt = db.prepare('SELECT id, email, name, role, created_at FROM users WHERE id = ?');
-  return stmt.get(id) || null;
+  return (await stmt.get(id)) || null;
 }
 
-function createUser(email, password, name, role = 'Pharmacist') {
+async function createUser(email, password, name, role = 'Pharmacist') {
   const normalized = email.toLowerCase().trim();
   const passwordHash = hashPassword(password);
   const stmt = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)');
-  const info = stmt.run(normalized, passwordHash, name, role);
+  const info = await stmt.run(normalized, passwordHash, name, role);
   return {
     id: info.lastInsertRowid,
     email: normalized,
@@ -87,7 +89,7 @@ function createUser(email, password, name, role = 'Pharmacist') {
   };
 }
 
-function seedDefaultUsers() {
+async function seedDefaultUsers() {
   const defaults = [
     {
       email: 'pharmacist@medicall.gh',
@@ -110,15 +112,19 @@ function seedDefaultUsers() {
   ];
 
   for (const u of defaults) {
-    const existing = getUserByEmail(u.email);
-    if (!existing) {
-      createUser(u.email, u.password, u.name, u.role);
-    }
+    try {
+      const existing = await getUserByEmail(u.email);
+      if (!existing) {
+        await createUser(u.email, u.password, u.name, u.role);
+      }
+    } catch (_) {}
   }
 }
 
-// Seed on startup
-seedDefaultUsers();
+// Seed on startup (non-blocking)
+if (!db.isPostgres) {
+  seedDefaultUsers().catch(() => {});
+}
 
 module.exports = {
   hashPassword,

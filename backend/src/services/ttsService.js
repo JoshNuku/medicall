@@ -1,9 +1,56 @@
 const fs = require('fs');
 const path = require('path');
+const { uploadAudio, isConfigured: isCloudinaryConfigured } = require('./cloudinaryService');
 require('dotenv').config();
 
 const TTS_API_URL = process.env.TTS_API_URL || process.env.LAB_TTS_URL || 'https://lab-subscription-platform.vercel.app/api/v1/tts';
 const TTS_API_KEY = process.env.TTS_API_KEY || process.env.LAB_TTS_API_KEY;
+const KHAYA_TTS_URL = process.env.KHAYA_API_URL || 'https://translation-api.ghananlp.org/tts/v2/synthesize';
+const KHAYA_API_KEY = process.env.KHAYA_API_KEY;
+
+// Active TTS Engine Provider: 'lab' or 'khaya'
+let currentProvider = (process.env.TTS_PROVIDER || 'lab').toLowerCase().trim();
+if (!['lab', 'khaya'].includes(currentProvider)) {
+  currentProvider = 'lab';
+}
+
+function getActiveTtsProvider() {
+  return currentProvider;
+}
+
+function setActiveTtsProvider(provider) {
+  const normalized = (provider || '').toLowerCase().trim();
+  if (['lab', 'khaya'].includes(normalized)) {
+    currentProvider = normalized;
+    process.env.TTS_PROVIDER = normalized;
+    console.log(`🎙️ [TTS Service] Switched active TTS engine provider to: "${currentProvider.toUpperCase()}"`);
+    return currentProvider;
+  }
+  throw new Error(`Invalid TTS provider: "${provider}". Expected "lab" or "khaya".`);
+}
+
+function getTtsProvidersStatus() {
+  const labConfigured = Boolean(process.env.TTS_API_KEY || process.env.LAB_TTS_API_KEY);
+  const khayaConfigured = Boolean(process.env.KHAYA_API_KEY);
+  return {
+    activeProvider: currentProvider,
+    availableProviders: ['lab', 'khaya'],
+    providers: {
+      lab: {
+        name: 'Lab Subscription Platform',
+        model: 'PT (ss)',
+        configured: labConfigured,
+        url: TTS_API_URL
+      },
+      khaya: {
+        name: 'Khaya AI (Ghana NLP v2)',
+        model: 'Ghanaian Asante Twi Neural',
+        configured: khayaConfigured,
+        url: KHAYA_TTS_URL
+      }
+    }
+  };
+}
 
 let ffmpeg = null;
 try {
@@ -59,13 +106,11 @@ function splitTextIntoChunks(text, maxLength = 240) {
 
 /**
  * Makes a single TTS synthesis request to the Lab Subscription Platform.
- * Uses model_type = 'ss' and speaker = 'PT'.
- * Returns Buffer of WAV audio on success, or null on error.
  */
-async function requestTtsChunk(text) {
+async function requestLabTtsChunk(text) {
   const apiKey = process.env.TTS_API_KEY || process.env.LAB_TTS_API_KEY;
   if (!apiKey) {
-    console.warn('[TTS Service] TTS_API_KEY is not set in .env. Please add TTS_API_KEY=speech_live_... to backend/.env');
+    console.warn('[TTS Lab Service] TTS_API_KEY is not set in .env');
     return null;
   }
 
@@ -97,19 +142,14 @@ async function requestTtsChunk(text) {
       const errMsg = errData?.error?.message || response.statusText;
       const reqId = errData?.request_id || response.headers.get('x-request-id') || 'n/a';
 
-      console.error(`[TTS Service Error (${response.status})]: ${errCode} - ${errMsg} (Request ID: ${reqId})`);
+      console.error(`[TTS Lab Error (${response.status})]: ${errCode} - ${errMsg} (Request ID: ${reqId})`);
       return null;
     }
-
-    const reqId = response.headers.get('x-request-id');
-    const duration = response.headers.get('x-duration-sec');
-    const chars = response.headers.get('x-characters-used');
-    console.log(`[TTS Service] Synthesized successfully (${chars || text.length} chars, ~${duration || '?'}s, Request ID: ${reqId || 'ok'})`);
 
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
   } catch (err) {
-    console.error('[TTS Service Network Error]:', err.message);
+    console.error('[TTS Lab Network Error]:', err.message);
     return null;
   }
 }
@@ -166,11 +206,8 @@ function concatAudioFiles(filePaths, outputPath, tempo = 0.88) {
       .complexFilter(filter)
       .output(outputPath)
       .on('end', () => {
-        // Clean up individual chunk files
         filePaths.forEach((fp) => {
-          try {
-            if (fs.existsSync(fp)) fs.unlinkSync(fp);
-          } catch (_) {}
+          try { if (fs.existsSync(fp)) fs.unlinkSync(fp); } catch (_) {}
         });
         resolve(outputPath);
       })
@@ -183,23 +220,11 @@ function concatAudioFiles(filePaths, outputPath, tempo = 0.88) {
 }
 
 /**
- * Synthesizes speech from text using the Lab Subscription Platform TTS API (model_type: 'ss', speaker: 'PT').
- *
- * @param {string} text - The text to synthesize (e.g. Twi medication reminder)
- * @param {string|null} filename - Optional custom output filename (e.g. 'reminder_123.mp3' or 'reminder_123.wav')
- * @param {string} _speakerId - Kept for signature compatibility (service enforces 'PT' as required by API)
- * @param {number} tempo - Speech tempo playback multiplier (default: 0.88 for patient comprehension)
- * @returns {Promise<string|null>} - Relative public audio URL, e.g. '/audio/prescription_123.mp3'
+ * Synthesizes speech using Lab Subscription Platform.
  */
-async function synthesizeSpeech(text, filename = null, _speakerId = 'PT', tempo = 0.88) {
-  if (!text || typeof text !== 'string' || !text.trim()) {
-    console.warn('[TTS Service] No text provided for speech synthesis');
-    return null;
-  }
-
+async function synthesizeWithLab(text, filename = null, _speakerId = 'PT', tempo = 0.88) {
   const audioDir = path.join(__dirname, '../../public/audio');
   if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
-
   const frontendAudioDir = path.join(__dirname, '../../../frontend/public/audio');
 
   const chunks = splitTextIntoChunks(text.trim(), 240);
@@ -207,9 +232,8 @@ async function synthesizeSpeech(text, filename = null, _speakerId = 'PT', tempo 
 
   for (let i = 0; i < chunks.length; i++) {
     const chunkText = chunks[i];
-    const chunkBuffer = await requestTtsChunk(chunkText);
+    const chunkBuffer = await requestLabTtsChunk(chunkText);
     if (!chunkBuffer) {
-      // Clean up any earlier chunks if one fails
       tempFiles.forEach((fp) => {
         try { if (fs.existsSync(fp)) fs.unlinkSync(fp); } catch (_) {}
       });
@@ -221,12 +245,11 @@ async function synthesizeSpeech(text, filename = null, _speakerId = 'PT', tempo 
     tempFiles.push(tempChunkPath);
   }
 
-  // Determine output file naming
   const isMp3Requested = !filename || filename.endsWith('.mp3');
   const ext = isMp3Requested && ffmpeg ? '.mp3' : '.wav';
   const finalFilename = filename
     ? (filename.includes('.') ? filename : `${filename}${ext}`)
-    : `tts_${Date.now()}_${Math.random().toString(36).substring(7)}${ext}`;
+    : `tts_lab_${Date.now()}_${Math.random().toString(36).substring(7)}${ext}`;
 
   const finalFilePath = path.join(audioDir, finalFilename);
 
@@ -237,26 +260,157 @@ async function synthesizeSpeech(text, filename = null, _speakerId = 'PT', tempo 
       await concatAudioFiles(tempFiles, finalFilePath, tempo);
     }
   } else {
-    // If no ffmpeg, use first wav file directly
     fs.copyFileSync(tempFiles[0], finalFilePath);
     tempFiles.forEach((fp) => {
       try { if (fs.existsSync(fp)) fs.unlinkSync(fp); } catch (_) {}
     });
   }
 
-  // Sync to frontend/public/audio for instant UI preview
   if (fs.existsSync(frontendAudioDir) && fs.existsSync(finalFilePath)) {
     try {
       fs.copyFileSync(finalFilePath, path.join(frontendAudioDir, finalFilename));
     } catch (_) {}
   }
 
+  if (isCloudinaryConfigured) {
+    try {
+      const cloudUrl = await uploadAudio(finalFilePath, { filename: finalFilename });
+      if (cloudUrl && cloudUrl.startsWith('http')) {
+        console.log(`☁️  [Lab TTS]: Audio permanently hosted on Cloudinary -> ${cloudUrl}`);
+        return cloudUrl;
+      }
+    } catch (err) {
+      console.warn(`[Lab TTS Cloudinary upload warning]:`, err.message);
+    }
+  }
+
   return `/audio/${finalFilename}`;
+}
+
+/**
+ * Synthesizes speech using Khaya AI / Ghana NLP TTS API v2.
+ */
+async function synthesizeWithKhaya(text, filename = null, speakerId = 'female', tempo = 0.88) {
+  const apiKey = process.env.KHAYA_API_KEY;
+  if (!apiKey) {
+    console.warn('[Khaya TTS] KHAYA_API_KEY is not set in .env');
+    return null;
+  }
+
+  const audioDir = path.join(__dirname, '../../public/audio');
+  if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
+  const frontendAudioDir = path.join(__dirname, '../../../frontend/public/audio');
+
+  const finalFilename = filename
+    ? (filename.endsWith('.mp3') ? filename : `${filename}.mp3`)
+    : `khaya_${Date.now()}_${Math.random().toString(36).substring(7)}.mp3`;
+
+  const finalFilePath = path.join(audioDir, finalFilename);
+  const tempRawPath = path.join(audioDir, `temp_raw_${Date.now()}_${finalFilename}`);
+
+  try {
+    console.log(`[Khaya TTS] Calling Ghana NLP API v2 for "${text.slice(0, 40)}..."`);
+    const response = await fetch(KHAYA_TTS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        text,
+        language: 'twi',
+        speaker_id: speakerId || 'female',
+        format: 'mp3'
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Khaya TTS Error (${response.status})]:`, errorText);
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = Buffer.from(arrayBuffer);
+
+    if (ffmpeg) {
+      fs.writeFileSync(tempRawPath, audioBuffer);
+      await processAudioWithFfmpeg(tempRawPath, finalFilePath, tempo);
+    } else {
+      fs.writeFileSync(finalFilePath, audioBuffer);
+    }
+
+    if (fs.existsSync(frontendAudioDir) && fs.existsSync(finalFilePath)) {
+      try {
+        fs.copyFileSync(finalFilePath, path.join(frontendAudioDir, finalFilename));
+      } catch (_) {}
+    }
+
+    if (isCloudinaryConfigured) {
+      try {
+        const cloudUrl = await uploadAudio(finalFilePath, { filename: finalFilename });
+        if (cloudUrl && cloudUrl.startsWith('http')) {
+          console.log(`☁️  [Khaya TTS]: Audio permanently hosted on Cloudinary -> ${cloudUrl}`);
+          return cloudUrl;
+        }
+      } catch (err) {
+        console.warn(`[Khaya TTS Cloudinary upload warning]:`, err.message);
+      }
+    }
+
+    console.log(`✓ [Khaya TTS] Synthesized successfully: /audio/${finalFilename}`);
+    return `/audio/${finalFilename}`;
+  } catch (err) {
+    console.error('[Khaya TTS Network Error]:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Unified Speech Synthesis with Hot-Swappable Providers ('lab' <-> 'khaya')
+ * and Automatic Fallback Resilience.
+ */
+async function synthesizeSpeech(text, filename = null, speakerId = 'PT', tempo = 0.88) {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    console.warn('[TTS Service] No text provided for speech synthesis');
+    return null;
+  }
+
+  const primary = currentProvider;
+  const secondary = primary === 'lab' ? 'khaya' : 'lab';
+
+  console.log(`🎙️ [TTS Service] Synthesizing speech via primary provider: "${primary.toUpperCase()}"...`);
+
+  let audioUrl = null;
+  if (primary === 'khaya') {
+    audioUrl = await synthesizeWithKhaya(text, filename, speakerId === 'PT' ? 'female' : speakerId, tempo);
+  } else {
+    audioUrl = await synthesizeWithLab(text, filename, 'PT', tempo);
+  }
+
+  // Graceful Automatic Fallback if Primary Provider Fails
+  if (!audioUrl) {
+    console.warn(`⚠️ [TTS Service] Primary provider "${primary}" failed. Falling back to "${secondary.toUpperCase()}"...`);
+    if (secondary === 'khaya') {
+      audioUrl = await synthesizeWithKhaya(text, filename, 'female', tempo);
+    } else {
+      audioUrl = await synthesizeWithLab(text, filename, 'PT', tempo);
+    }
+  }
+
+  return audioUrl;
 }
 
 module.exports = {
   synthesizeSpeech,
   synthesizeTwiSpeech: synthesizeSpeech,
+  synthesizeWithLab,
+  synthesizeWithKhaya,
+  getActiveTtsProvider,
+  setActiveTtsProvider,
+  getTtsProvidersStatus,
   splitTextIntoChunks,
-  TTS_API_URL
+  TTS_API_URL,
+  KHAYA_TTS_URL
 };

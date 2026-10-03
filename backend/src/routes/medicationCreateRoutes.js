@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const upload = require('../middleware/uploadMiddleware');
 const { registerMedication } = require('../services/medicationService');
+const { uploadAudio, isConfigured: isCloudinaryConfigured } = require('../services/cloudinaryService');
 
 /**
  * @openapi
@@ -52,7 +53,18 @@ router.post('/', upload.single('audio'), async (req, res, next) => {
       return res.status(400).json({ error: 'drug_name, instruction_source, and schedule_times are required', status: 400 });
     }
 
-    const audioFileUrl = req.file ? `/audio/${req.file.filename}` : null;
+    let audioFileUrl = req.file ? `/audio/${req.file.filename}` : null;
+    if (req.file && isCloudinaryConfigured) {
+      try {
+        const cloudUrl = await uploadAudio(req.file.path, { filename: req.file.filename });
+        if (cloudUrl && cloudUrl.startsWith('http')) {
+          audioFileUrl = cloudUrl;
+          console.log(`☁️  [Prescription Upload]: Hosted on Cloudinary -> ${cloudUrl}`);
+        }
+      } catch (err) {
+        console.warn(`[Prescription Upload Cloudinary warning]:`, err.message);
+      }
+    }
     const medication = await registerMedication({
       patientId,
       drugName: drug_name,

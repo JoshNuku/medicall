@@ -1,7 +1,7 @@
 const db = require('../connection');
 
-const getAllActiveMedications = () => {
-  return db.prepare(`
+const getAllActiveMedications = async () => {
+  return await db.prepare(`
     SELECT m.*, p.phone_number, p.name AS patient_name, p.caregiver_phone
     FROM medications m
     JOIN patients p ON m.patient_id = p.id
@@ -9,16 +9,16 @@ const getAllActiveMedications = () => {
   `).all();
 };
 
-const hasReminderCallToday = (medicationId, doseDate, timeStr) => {
-  const row = db.prepare(`
+const hasReminderCallToday = async (medicationId, doseDate, timeStr) => {
+  const row = await db.prepare(`
     SELECT id FROM call_events
     WHERE medication_id = ? AND dose_date = ? AND scheduled_time LIKE ? AND call_type = 'reminder'
   `).get(medicationId, doseDate, `%${timeStr}%`);
   return !!row;
 };
 
-const getCallsNeedingRetry = () => {
-  return db.prepare(`
+const getCallsNeedingRetry = async () => {
+  return await db.prepare(`
     SELECT ce.*, m.schedule_times
     FROM call_events ce
     JOIN medications m ON ce.medication_id = m.id

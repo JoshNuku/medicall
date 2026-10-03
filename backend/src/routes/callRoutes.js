@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getTodayCallEvents, createCallEvent } = require('../db/queries/callEvents');
 const { getPatientById, getPatientByPhoneNumber } = require('../db/queries/patients');
-const { getMedicationsByPatientId } = require('../db/queries/medications');
+const { getMedicationsByPatientId, createMedication, getMedicationById } = require('../db/queries/medications');
 const { makeOutboundCall } = require('../services/africasTalkingService');
 const { preGenerateReminderAudio, generateDiagnosticAudio } = require('../services/reminderPipelineService');
 const { validatePhone } = require('../utils/phoneUtils');
@@ -27,9 +27,9 @@ const { validatePhone } = require('../utils/phoneUtils');
  *                   items:
  *                     type: object
  */
-router.get('/today', (req, res, next) => {
+router.get('/today', async (req, res, next) => {
   try {
-    const calls = getTodayCallEvents();
+    const calls = await getTodayCallEvents();
     res.json({ calls });
   } catch (err) {
     next(err);
@@ -49,9 +49,9 @@ router.post('/trigger', async (req, res, next) => {
     const { patient_id, phone_number, call_type = 'reminder' } = req.body;
     let patient = null;
     if (patient_id) {
-      patient = getPatientById(patient_id);
+      patient = await getPatientById(patient_id);
     } else if (phone_number) {
-      patient = getPatientByPhoneNumber(phone_number);
+      patient = await getPatientByPhoneNumber(phone_number);
     }
     const targetPhone = phone_number || (patient ? patient.phone_number : null);
     if (!targetPhone) {
@@ -71,15 +71,14 @@ router.post('/trigger', async (req, res, next) => {
     console.log(`   Language Mode: [${patientLang}]`);
     console.log(`======================================================`);
 
-    const { createMedication } = require('../db/queries/medications');
     let medicationId = null;
     if (patient) {
-      const meds = getMedicationsByPatientId(patient.id);
+      const meds = await getMedicationsByPatientId(patient.id);
       if (meds.length > 0) {
         medicationId = meds[0].id;
       } else {
         console.log(`ℹ️ [MEDICATION REGIMEN]: Patient #${patient.id} had no meds enrolled. Auto-creating baseline regimen...`);
-        const newMed = createMedication({
+        const newMed = await createMedication({
           patient_id: patient.id,
           drug_name: 'Amoxicillin 500mg',
           instruction_source: 'template',
@@ -93,7 +92,7 @@ router.post('/trigger', async (req, res, next) => {
     }
 
     // 1. Create immediate Call Event record with outcome 'pending'
-    const callEvent = createCallEvent({
+    const callEvent = await createCallEvent({
       patient_id: patient ? patient.id : 1,
       medication_id: medicationId || 1,
       scheduled_time: new Date().toISOString(),
@@ -116,7 +115,7 @@ router.post('/trigger', async (req, res, next) => {
       const db = require('../db/connection');
 
       if (patient && medicationId) {
-        const med = getMedicationById(medicationId);
+        const med = await getMedicationById(medicationId);
         if (med && med.instruction_source !== 'recorded') {
           try {
             if (call_type === 'reminder') {
@@ -129,7 +128,7 @@ router.post('/trigger', async (req, res, next) => {
               if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
                 generatedCallAudio = audioResult;
                 try {
-                  db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, medicationId);
+                  await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, medicationId);
                 } catch (_) {}
               }
             } else if (call_type === 'diagnostic') {
@@ -152,7 +151,7 @@ router.post('/trigger', async (req, res, next) => {
 
       if (generatedCallAudio) {
         try {
-          db.prepare('UPDATE call_events SET audio_url = ? WHERE id = ?').run(generatedCallAudio, callEvent.id);
+          await db.prepare('UPDATE call_events SET audio_url = ? WHERE id = ?').run(generatedCallAudio, callEvent.id);
         } catch (_) {}
       }
 
