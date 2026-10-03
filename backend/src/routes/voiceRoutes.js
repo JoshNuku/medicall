@@ -56,7 +56,9 @@ const handleReminderCall = (req, res, next) => {
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const incomingHost = req.get('host');
+    const dynamicBase = incomingHost ? `${req.protocol}://${incomingHost}` : null;
+    const baseUrl = (dynamicBase && !dynamicBase.includes('localhost')) ? dynamicBase : (process.env.BASE_URL || dynamicBase || 'http://localhost:3000');
     const { getLatestPendingCallEventForPatient } = require('../db/queries/callEvents');
 
     // Inbound call auto-detection: If someone is dialing our helpline number
@@ -108,9 +110,6 @@ const handleReminderCall = (req, res, next) => {
       db.prepare('UPDATE call_events SET actual_call_time = ? WHERE id = ?').run(new Date().toISOString(), callEvent.id);
     }
 
-    const incomingHost = req.get('host');
-    const dynamicBase = incomingHost ? `${req.protocol}://${incomingHost}` : null;
-    const baseUrl = (dynamicBase && !dynamicBase.includes('localhost')) ? dynamicBase : (process.env.BASE_URL || dynamicBase || 'http://localhost:3000');
     const { getPatientById } = require('../db/queries/patients');
     const patientObj = callEvent ? getPatientById(callEvent.patient_id) : null;
     const medLang = medication?.language || (medication?.audio_url?.includes('_en') ? 'english' : (medication?.audio_url?.includes('twi') ? 'twi' : null));
