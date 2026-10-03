@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllPatients, getPatientById, updatePatient, deletePatient } = require('../db/queries/patients');
+const { getAllPatients, getPatientById, getPatientByPhoneNumber, updatePatient, deletePatient } = require('../db/queries/patients');
 const { validatePhone } = require('../utils/phoneUtils');
 
 /**
@@ -120,6 +120,14 @@ router.put('/:id', async (req, res, next) => {
         return res.status(400).json({ error: phoneValidation.error, status: 400 });
       }
       validPhone = phoneValidation.normalized;
+      // Ensure phone is not already registered to another patient
+      const duplicate = await getPatientByPhoneNumber(validPhone);
+      if (duplicate && Number(duplicate.id) !== Number(id)) {
+        return res.status(409).json({
+          error: 'A patient with this phone number is already enrolled.',
+          status: 409
+        });
+      }
     }
 
     let validCaregiver = undefined;
@@ -145,6 +153,12 @@ router.put('/:id', async (req, res, next) => {
 
     res.json({ patient: updated });
   } catch (err) {
+    if (err.code === '23505' || (err.message && err.message.includes('UNIQUE constraint failed'))) {
+      return res.status(409).json({
+        error: 'A patient with this phone number is already enrolled.',
+        status: 409
+      });
+    }
     next(err);
   }
 });

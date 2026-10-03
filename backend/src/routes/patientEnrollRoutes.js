@@ -63,9 +63,8 @@ router.post('/', async (req, res, next) => {
     const existingPatient = await getPatientByPhoneNumber(phoneValidation.normalized);
     if (existingPatient) {
       return res.status(409).json({
-        error: `A patient with phone number ${phoneValidation.normalized} is already enrolled (${existingPatient.name}).`,
-        status: 409,
-        existingPatientId: existingPatient.id
+        error: 'A patient with this phone number is already enrolled.',
+        status: 409
       });
     }
 

@@ -17,12 +17,12 @@ export function formatApiError(err: unknown, fallbackMessage = 'Action could not
   const msg = err instanceof Error ? err.message : String(err);
   const lower = msg.toLowerCase();
   if (
-    lower.includes('offline') ||
-    lower.includes('fetch') ||
-    lower.includes('network') ||
-    lower.includes('http') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('networkerror') ||
     lower.includes('econnrefused') ||
-    lower.includes('failed to load')
+    lower.includes('err_connection_refused') ||
+    lower.includes('err_internet_disconnected') ||
+    lower === "you're offline"
   ) {
     return "You're offline";
   }
@@ -91,8 +91,7 @@ export async function createPatient(payload: {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error(errData.error || 'Could not enroll patient.');
+    throw new Error(errData.error || `Could not enroll patient (${res.status}).`);
   }
   const data = await res.json();
   return data.patient;
@@ -114,8 +113,7 @@ export async function updatePatientApi(
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error(errData.error || 'Could not update patient.');
+    throw new Error(errData.error || `Could not update patient (${res.status}).`);
   }
   const data = await res.json();
   return data.patient;
@@ -127,8 +125,7 @@ export async function deletePatientApi(id: number) {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error(errData.error || 'Could not delete patient.');
+    throw new Error(errData.error || `Could not delete patient (${res.status}).`);
   }
   const data = await res.json();
   return data;
@@ -193,8 +190,7 @@ export async function createMedication(
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error(errData.error || 'Could not prescribe medication.');
+    throw new Error(errData.error || `Could not prescribe medication (${res.status}).`);
   }
   const data = await res.json();
   return data.medication;
@@ -217,8 +213,7 @@ export async function updateMedicationApi(
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error(errData.error || 'Could not update medication.');
+    throw new Error(errData.error || `Could not update medication (${res.status}).`);
   }
   const data = await res.json();
   return data.medication;
@@ -230,8 +225,7 @@ export async function deleteMedicationApi(patientId: number, medId: number) {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error(errData.error || 'Could not delete medication.');
+    throw new Error(errData.error || `Could not delete medication (${res.status}).`);
   }
   return res.json();
 }
@@ -270,8 +264,8 @@ export async function resolveAlertApi(alertId: number, resolvedBy: string) {
     body: JSON.stringify({ resolved_by: resolvedBy }),
   });
   if (!res.ok) {
-    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
-    throw new Error('Offline — could not resolve alert.');
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Could not resolve alert (${res.status}).`);
   }
   const data = await res.json();
   return data.escalation;
@@ -298,8 +292,7 @@ export async function triggerCallApi(payload: {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    if (res.status >= 500) throw new Error('Offline — voice gateway is temporarily offline.');
-    throw new Error(errData.error || 'Offline — unable to dispatch call.');
+    throw new Error(errData.error || `Unable to dispatch call (${res.status}).`);
   }
   return res.json();
 }
