@@ -122,9 +122,7 @@ async function seedDefaultUsers() {
 }
 
 // Seed on startup (non-blocking)
-if (!db.isPostgres) {
-  seedDefaultUsers().catch(() => {});
-}
+seedDefaultUsers().catch(() => {});
 
 module.exports = {
   hashPassword,
