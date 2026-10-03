@@ -5,6 +5,7 @@ services:
   - type: web
     name: medicall-backend
     runtime: node
+    branch: staging
     rootDir: backend
     buildCommand: npm ci --omit=dev
     startCommand: node src/server.js
