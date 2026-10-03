@@ -21,7 +21,7 @@ export function formatApiError(err: unknown, fallbackMessage = 'Action could not
     lower.includes('econnrefused') ||
     lower.includes('failed to load')
   ) {
-    return 'Offline — backend server is currently unreachable.';
+    return "You're offline";
   }
   return msg;
 }

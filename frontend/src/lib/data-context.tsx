@@ -183,7 +183,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('Backend unavailable (operating offline):', err?.message || err);
       setIsBackendOnline(false);
       if (!silent) {
-        setError('Offline — backend service is currently unreachable.');
+        setError("You're offline");
       }
     } finally {
       if (!silent) setIsLoading(false);

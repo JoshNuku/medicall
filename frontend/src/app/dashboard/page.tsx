@@ -27,6 +27,30 @@ export default function DashboardPage() {
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
 
+  // Dynamic Adherence Subtext calculation (replaces hardcoded 3.2%)
+  const adherenceSubtext = React.useMemo(() => {
+    const rate = metrics.overall_adherence;
+    if (!rate || rate === 0) {
+      return "No confirmed doses yet · Target: 85%";
+    }
+
+    if (adherenceHistory && adherenceHistory.length >= 2) {
+      const pastRates = adherenceHistory.slice(0, -1).map((h) => h.rate).filter((r) => r > 0);
+      if (pastRates.length > 0) {
+        const pastAvg = Math.round(pastRates.reduce((a, b) => a + b, 0) / pastRates.length);
+        const diff = rate - pastAvg;
+        if (diff > 0) return `↑ +${diff}% vs 7d avg · Goal: 85%`;
+        if (diff < 0) return `↓ ${Math.abs(diff)}% vs 7d avg · Goal: 85%`;
+        return `Steady with 7d avg · Goal: 85%`;
+      }
+    }
+
+    if (rate >= 85) {
+      return "Target achieved · Goal: 85%";
+    }
+    return `${85 - rate}% below target · Goal: 85%`;
+  }, [metrics.overall_adherence, adherenceHistory]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Error / Offline Banner with Retry */}
@@ -85,7 +109,7 @@ export default function DashboardPage() {
             variant="hero"
             label="Overall Adherence"
             value={`${metrics.overall_adherence}%`}
-            subtext="↑ +3.2% vs last week · Goal: 85%"
+            subtext={adherenceSubtext}
             icon={<Activity className="w-5 h-5 stroke-[2.2]" />}
           />
 
