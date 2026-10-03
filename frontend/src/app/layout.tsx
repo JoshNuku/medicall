@@ -17,9 +17,13 @@ export const metadata: Metadata = {
   description:
     "Voice-call medication adherence platform for Ghanaian healthcare workers and pharmacists.",
   icons: {
-    icon: "/logo-icon.jpg",
-    shortcut: "/logo-icon.jpg",
-    apple: "/logo-icon.jpg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/apple-icon.png",
   },
 };
 
