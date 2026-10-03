@@ -56,6 +56,7 @@ export const Badge: React.FC<BadgeProps> = ({
     const config = {
       active: { label: 'Active', shell: 'bg-[#EEF9E5] text-[#2F5F17] border border-[#C9E7A7]' },
       attention: { label: 'Attention', shell: 'bg-orange-50 text-orange-700 border-orange-200' },
+      paused_invalid_phone: { label: 'Phone Paused', shell: 'bg-amber-50 text-amber-800 border-amber-200' },
       resolved: { label: 'Resolved', shell: 'bg-slate-100 text-slate-700 border-slate-200' },
       open: { label: 'Open', shell: 'bg-rose-50 text-rose-700 border-rose-200' },
     }[status];

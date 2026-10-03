@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS patients (
   caregiver_phone TEXT,
   caregiver_notified_at DATETIME,
   enrolled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  consent_given INTEGER NOT NULL DEFAULT 1
+  consent_given INTEGER NOT NULL DEFAULT 1,
+  consecutive_failures INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused_invalid_phone', 'completed'))
 );
 
 CREATE TABLE IF NOT EXISTS instruction_templates (
@@ -51,7 +53,7 @@ CREATE TABLE IF NOT EXISTS diagnostic_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   call_event_id INTEGER NOT NULL REFERENCES call_events(id) ON DELETE CASCADE,
   patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-  reason TEXT NOT NULL CHECK (reason IN ('cost', 'side_effects', 'forgot', 'other')),
+  reason TEXT NOT NULL CHECK (reason IN ('cost', 'side_effects', 'felt_better', 'forgot', 'other')),
   responded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

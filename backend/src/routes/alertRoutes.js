@@ -24,7 +24,20 @@ const { getOpenEscalationsWithPatient, resolveEscalation } = require('../db/quer
  */
 router.get('/', async (req, res, next) => {
   try {
-    const alerts = await getOpenEscalationsWithPatient();
+    const rawAlerts = await getOpenEscalationsWithPatient();
+    const now = Date.now();
+    const alerts = rawAlerts.map(a => {
+      const createdTime = new Date(a.created_at || a.enrolled_at || Date.now()).getTime();
+      const hoursOpen = Math.max(0, Math.floor((now - createdTime) / (1000 * 60 * 60)));
+      const isOverdue = hoursOpen >= 24;
+      const tier = isOverdue ? 'tier_2_facility_lead' : 'tier_1_pharmacist';
+      return {
+        ...a,
+        hours_open: hoursOpen,
+        is_overdue: isOverdue,
+        escalation_tier: tier
+      };
+    });
     res.json({ alerts });
   } catch (err) {
     next(err);

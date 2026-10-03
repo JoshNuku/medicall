@@ -104,6 +104,8 @@ export default function SettingsPage() {
         payload = { scenario: 'dtmf_keypress', dtmf_digits: '1' };
       } else if (simScenario === 'dtmf_keypress_2') {
         payload = { scenario: 'dtmf_keypress', dtmf_digits: '2' };
+      } else if (simScenario === 'diagnostic_felt_better') {
+        payload = { scenario: 'diagnostic_reason', dtmf_digits: '3' };
       } else if (simScenario === 'diagnostic_reason') {
         payload = { scenario: 'diagnostic_reason', dtmf_digits: '1' };
       }
@@ -621,8 +623,9 @@ export default function SettingsPage() {
                 { id: 'outbound_reminder_prompt', title: '1. Outbound Call Answered', desc: 'Africa\'s Talking connects and plays Asante Twi dose reminder' },
                 { id: 'dtmf_keypress_1', title: '2. Keypress 1: Dose Confirmed', desc: 'Patient presses 1; records adherence confirmation' },
                 { id: 'dtmf_keypress_2', title: '3. Keypress 2: Side Effects', desc: 'Patient presses 2; AI agent raises healthcare worker alert' },
-                { id: 'inbound_helpline', title: '4. Inbound Helpline Dial', desc: 'Patient calls helpline; IVR offers prescription playback' },
-                { id: 'diagnostic_reason', title: '5. Diagnostic Survey (Cost)', desc: 'Patient reports cost barrier; escalates to pharmacist' },
+                { id: 'diagnostic_felt_better', title: '4. Keypress 3: Felt Better', desc: 'Patient reports symptoms improved; plays educational Twi audio & alerts pharmacist' },
+                { id: 'inbound_helpline', title: '5. Inbound Helpline Dial', desc: 'Patient calls helpline; IVR offers prescription playback' },
+                { id: 'diagnostic_reason', title: '6. Diagnostic Survey (Cost)', desc: 'Patient reports cost barrier; escalates to pharmacist' },
               ].map((item) => (
                 <button
                   key={item.id}

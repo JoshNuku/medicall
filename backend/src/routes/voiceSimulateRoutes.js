@@ -143,6 +143,10 @@ router.post('/simulate', async (req, res, next) => {
         '0': 'Clinician Help Requested (Key 0) → Escalated'
       };
 
+      let playAudioUrl = null;
+      const playMatch = xml.match(/<Play[^>]*url=["']([^"']+)["']/i) || xml.match(/<Play>([^<]+)<\/Play>/i);
+      if (playMatch) playAudioUrl = playMatch[1];
+
       return res.json({
         success: true,
         scenario: 'dtmf_keypress',
@@ -150,6 +154,7 @@ router.post('/simulate', async (req, res, next) => {
         patient: { id: patient.id, name: patient.name },
         dtmfDigits: String(dtmf_digits),
         actionTaken: keyMeanings[String(dtmf_digits)] || `Digit ${dtmf_digits} received`,
+        audioUrl: playAudioUrl,
         xml,
         summary: `Patient pressed "${dtmf_digits}" during call. Result: ${keyMeanings[String(dtmf_digits)] || 'Processed'}`
       });
@@ -178,14 +183,20 @@ router.post('/simulate', async (req, res, next) => {
         callEventId: call_event_id || 1,
         language: isTwi ? 'twi' : 'english',
         xml,
-        summary: `Diagnostic non-adherence survey prompt served. Africa's Talking prompts patient for 1=Cost, 2=Side effects, 3=Forgot, 4=Other.`
+        summary: `Diagnostic non-adherence survey prompt served. Africa's Talking prompts patient for 1=Cost, 2=Side effects, 3=Felt better, 4=Forgot, 5=Other.`
       });
     }
 
     // 5. Scenario: Diagnostic Reason Keypress
     if (scenario === 'diagnostic_reason') {
       const xml = await processDiagnosticConfirm(call_event_id || 1, String(dtmf_digits), baseUrl);
-      const reasonLabels = { '1': 'cost', '2': 'side_effects', '3': 'forgot', '4': 'other' };
+      const reasonLabels = {
+        '1': 'cost (financial barrier)',
+        '2': 'side_effects (clinical discomfort)',
+        '3': 'felt_better (symptoms resolved - adherence counseling)',
+        '4': 'forgot (timing/busy)',
+        '5': 'other'
+      };
       return res.json({
         success: true,
         scenario: 'diagnostic_reason',

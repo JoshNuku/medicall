@@ -1,6 +1,6 @@
 export type Language = 'twi' | 'english';
 
-export type PatientStatus = 'active' | 'attention';
+export type PatientStatus = 'active' | 'attention' | 'paused_invalid_phone';
 
 export interface Patient {
   id: number;
@@ -11,6 +11,7 @@ export interface Patient {
   caregiver_notified_at?: string | null;
   enrolled_at: string;
   consent_given: boolean | number;
+  consecutive_failures?: number;
   // Computed / summary fields for UI convenience
   adherence_rate: number | null;
   total_calls?: number;
@@ -62,7 +63,7 @@ export type CallType = 'reminder' | 'retry' | 'relisten' | 'diagnostic';
 
 export type CallOutcome = 'confirmed' | 'not_taken' | 'no_answer' | 'answered_no_keypress' | 'pending' | 'uncalled';
 
-export type DiagnosticReason = 'cost' | 'side_effects' | 'forgot' | 'other';
+export type DiagnosticReason = 'cost' | 'side_effects' | 'felt_better' | 'forgot' | 'other';
 
 export interface CallEvent {
   id: number;
@@ -103,6 +104,9 @@ export interface EscalationAlert {
   resolved_at?: string | null;
   resolved_by?: string | null;
   resolution_notes?: string | null;
+  hours_open?: number;
+  is_overdue?: boolean;
+  escalation_tier?: 'tier_1_pharmacist' | 'tier_2_facility_lead';
 }
 
 export interface DailyAdherence {

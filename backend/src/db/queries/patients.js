@@ -22,6 +22,8 @@ const getAllPatients = async () => {
       p.caregiver_phone, 
       p.enrolled_at, 
       p.consent_given,
+      p.status,
+      p.consecutive_failures,
       latest_call.actual_call_time AS last_call_time,
       latest_call.scheduled_time AS last_scheduled_time,
       latest_call.outcome AS last_call_outcome,
@@ -166,6 +168,21 @@ const deletePatient = async (id) => {
   return patient;
 };
 
+const incrementPatientFailures = async (id) => {
+  await db.prepare('UPDATE patients SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1 WHERE id = ?').run(id);
+  const patient = await getPatientById(id);
+  return patient?.consecutive_failures || 0;
+};
+
+const resetPatientFailures = async (id) => {
+  await db.prepare('UPDATE patients SET consecutive_failures = 0 WHERE id = ?').run(id);
+};
+
+const updatePatientStatus = async (id, status) => {
+  await db.prepare('UPDATE patients SET status = ? WHERE id = ?').run(status, id);
+  return await getPatientById(id);
+};
+
 module.exports = {
   createPatient,
   getAllPatients,
@@ -173,6 +190,9 @@ module.exports = {
   getPatientByPhoneNumber,
   updateCaregiverNotifiedAt,
   resetCaregiverNotifiedAt,
+  incrementPatientFailures,
+  resetPatientFailures,
+  updatePatientStatus,
   updatePatient,
   deletePatient
 };

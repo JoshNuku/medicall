@@ -5,7 +5,8 @@ const getAllActiveMedications = async () => {
     SELECT m.*, p.phone_number, p.name AS patient_name, p.caregiver_phone
     FROM medications m
     JOIN patients p ON m.patient_id = p.id
-    WHERE p.consent_given = 1
+    WHERE p.consent_given = 1 
+      AND COALESCE(p.status, 'active') != 'paused_invalid_phone'
   `).all();
 };
 

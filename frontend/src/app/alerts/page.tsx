@@ -225,7 +225,14 @@ export default function AlertsPage() {
                         </Link>
                       </td>
                       <td className="py-4 px-4">
-                        <Badge variant="alert" alertType={alert.escalation_type} size="sm" />
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="alert" alertType={alert.escalation_type} size="sm" />
+                          {alert.is_overdue && alert.status === 'open' && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              🚨 Overdue (&gt;24h)
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-4 text-xs text-gray-700 max-w-md leading-relaxed">
                         {alert.details}

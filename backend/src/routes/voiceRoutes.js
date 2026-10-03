@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { generateReminderXml, processReminderConfirm } = require('../services/reminderVoiceService');
+const { generateReminderXml, generateNeutralScreeningXml, processReminderConfirm } = require('../services/reminderVoiceService');
 const { getCallEventById, createCallEvent, getRecentCallEventsForMedication, getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
 const { getMedicationById, getMedicationsByPatientId } = require('../db/queries/medications');
 const { getPatientByPhoneNumber, getPatientById } = require('../db/queries/patients');
@@ -43,6 +43,8 @@ const handleReminderCall = async (req, res, next) => {
           const isNotAnswered = req.body.status === 'NotAnswered' || req.body.callSessionState === 'NotAnswered' || req.body.hangupCause === 'USER_BUSY' || req.body.hangupCause === 'NO_ANSWER';
           const outcome = isNotAnswered ? 'no_answer' : 'answered_no_keypress';
           await updateCallOutcome(pending.id, outcome, new Date().toISOString());
+          const { handleCallOutcomeCircuitBreaker } = require('../services/decisionEngine');
+          await handleCallOutcomeCircuitBreaker(patient.id, outcome).catch(() => {});
         }
       }
       res.set('Content-Type', 'text/xml');
@@ -168,6 +170,15 @@ const handleReminderCall = async (req, res, next) => {
       }
     }
 
+    // Stage 1 Privacy Guard: If stage is not explicitly 'instruction', serve neutral screening
+    const isStageInstruction = req.query.stage === 'instruction' || req.body.stage === 'instruction';
+    if (!isStageInstruction && process.env.ENABLE_PRIVACY_SCREENING === 'true') {
+      console.log(`🔒 [Privacy Guard]: Serving Stage 1 neutral screening greeting for Patient #${patientObj?.id || 'unknown'}`);
+      const screeningXml = generateNeutralScreeningXml(callEventId, baseUrl, isEnglish, patientObj?.name);
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send(screeningXml);
+    }
+
     const xml = generateReminderXml(callEventId, audioUrl, baseUrl, sayText);
     res.set('Content-Type', 'text/xml');
     return res.status(200).send(xml);
@@ -176,6 +187,22 @@ const handleReminderCall = async (req, res, next) => {
   }
 };
 
+const handleReminderIdentity = async (req, res, next) => {
+  try {
+    const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
+    if (String(dtmfDigits) === '1') {
+      req.query.stage = 'instruction';
+      return handleReminderCall(req, res, next);
+    }
+    const { buildVoiceResponse, buildSay } = require('../utils/xmlBuilder');
+    res.set('Content-Type', 'text/xml');
+    return res.status(200).send(buildVoiceResponse(buildSay('Thank you. We will call back at another time. Goodbye.')));
+  } catch (err) {
+    next(err);
+  }
+};
+
+router.post('/reminder/identity', handleReminderIdentity);
 router.post('/reminder', handleReminderCall);
 router.post('/', handleReminderCall);
 

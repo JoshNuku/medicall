@@ -5,13 +5,14 @@ const { handleUniversalKeys } = require('./voiceUniversalHandler');
 const { buildVoiceResponse, buildGetDigits, buildSay } = require('../utils/xmlBuilder');
 const { getCloudinaryAudioUrl } = require('./cloudinaryService');
 
-const DIAGNOSTIC_MENU = 'Why were you unable to take your medication? Press 1 for cost, 2 for side effects, 3 if you forgot, 4 for other reasons. Press 9 to repeat or 0 for help.';
+const DIAGNOSTIC_MENU = 'Why were you unable to take your medication? Press 1 for cost, 2 for side effects, 3 if you feel better or symptoms improved, 4 if you forgot, 5 for other reasons. Press 9 to repeat or 0 for help.';
 
 const REASON_MAP = {
   '1': 'cost',
   '2': 'side_effects',
-  '3': 'forgot',
-  '4': 'other'
+  '3': 'felt_better',
+  '4': 'forgot',
+  '5': 'other'
 };
 
 const generateDiagnosticXml = (callEventId, baseUrl, isTwi = false, customSay = null, customAudioUrl = null) => {
@@ -67,6 +68,15 @@ const processDiagnosticConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   const { getPatientById } = require('../db/queries/patients');
   const patient = await getPatientById(callEvent.patient_id);
   const isTwi = (patient?.preferred_language || '').toLowerCase() !== 'english';
+
+  if (reason === 'felt_better') {
+    if (isTwi) {
+      const { buildPlay } = require('../utils/xmlBuilder');
+      const counselingAudio = getCloudinaryAudioUrl('twi_felt_better_counseling.mp3', baseUrl) || getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl);
+      return buildVoiceResponse(buildPlay(counselingAudio));
+    }
+    return buildVoiceResponse(buildSay('We are glad you are feeling better! However, please continue taking your medication as prescribed so your illness does not return. Your pharmacist has been alerted to review your progress. Take care.'));
+  }
 
   if (isTwi) {
     const { buildPlay } = require('../utils/xmlBuilder');

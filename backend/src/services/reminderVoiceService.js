@@ -8,6 +8,36 @@ const { passResponseToAgent } = require('./agent');
 const { handleUniversalKeys } = require('./voiceUniversalHandler');
 const { buildVoiceResponse, buildGetDigits, buildSay, buildPlay } = require('../utils/xmlBuilder');
 const { getCloudinaryAudioUrl } = require('./cloudinaryService');
+const { 
+  getTwiEncouragementAudio, 
+  getEnglishEncouragement, 
+  getTwiEchoConfirmedUndoAudio, 
+  getTwiNeutralScreeningAudio, 
+  getVerbalEchoText 
+} = require('./encouragementService');
+
+const generateNeutralScreeningXml = (callEventId, baseUrl, isEnglish = false, patientName = 'there') => {
+  const callbackUrl = `${baseUrl}/voice/reminder/identity?callEventId=${callEventId || ''}`;
+  if (isEnglish) {
+    const sayText = `Hello, this is MediCall calling for ${patientName}. If this is ${patientName}, press 1 to listen to your health reminder.`;
+    const digitsXml = buildGetDigits({
+      numDigits: 1,
+      timeout: 10,
+      callbackUrl,
+      sayText
+    });
+    return buildVoiceResponse(digitsXml);
+  }
+
+  const screeningAudio = getTwiNeutralScreeningAudio(baseUrl);
+  const digitsXml = buildGetDigits({
+    numDigits: 1,
+    timeout: 10,
+    callbackUrl,
+    playUrl: screeningAudio.url
+  });
+  return buildVoiceResponse(digitsXml);
+};
 
 const generateReminderXml = (callEventId, audioUrl, baseUrl, sayText = null) => {
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId || ''}`;
@@ -178,19 +208,30 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   }
 
   await updateCallOutcome(callEventId, outcome);
+  const { handleCallOutcomeCircuitBreaker } = require('./decisionEngine');
+  await handleCallOutcomeCircuitBreaker(callEvent.patient_id, outcome).catch(() => {});
 
-  const patientForAudio = await getPatientById(callEvent.patient_id);
-  const isTwiCaller = patientForAudio && (patientForAudio.preferred_language || '').toLowerCase() !== 'english';
-
-  if (isTwiCaller) {
-    const audioFile = outcome === CALL_OUTCOMES.CONFIRMED ? 'twi_confirmed.mp3' : 'twi_not_taken_ack.mp3';
-    return buildVoiceResponse(buildPlay(getCloudinaryAudioUrl(audioFile, baseUrl)));
+  if (isTwi) {
+    if (outcome === CALL_OUTCOMES.CONFIRMED) {
+      const echoAudio = getTwiEchoConfirmedUndoAudio(baseUrl);
+      const encouragement = getTwiEncouragementAudio(callEventId, baseUrl);
+      return buildVoiceResponse([buildPlay(echoAudio.url), buildPlay(encouragement.url)]);
+    }
+    return buildVoiceResponse(buildPlay(getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl)));
   }
 
-  return buildVoiceResponse(buildSay(responseMessage));
+  if (outcome === CALL_OUTCOMES.CONFIRMED) {
+    const echoMsg = getVerbalEchoText('1', patient?.name, medication?.drug_name);
+    const encouragementMsg = getEnglishEncouragement(patient?.name, callEventId);
+    return buildVoiceResponse(buildSay(`${echoMsg} ${encouragementMsg}`));
+  }
+
+  const echoMsg = getVerbalEchoText(dtmfDigits, patient?.name, medication?.drug_name);
+  return buildVoiceResponse(buildSay(echoMsg || responseMessage));
 };
 
 module.exports = {
   generateReminderXml,
+  generateNeutralScreeningXml,
   processReminderConfirm
 };

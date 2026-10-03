@@ -9,7 +9,8 @@ const escapeXml = (unsafe) => {
 };
 
 const buildVoiceResponse = (childrenXml) => {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n${childrenXml}\n</Response>`;
+  const content = Array.isArray(childrenXml) ? childrenXml.join('\n') : childrenXml;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n${content}\n</Response>`;
 };
 
 const buildGetDigits = ({ numDigits = 1, timeout = 10, finishOnKey = null, callbackUrl, playUrl, sayText }) => {
