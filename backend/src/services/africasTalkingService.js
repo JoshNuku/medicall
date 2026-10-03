@@ -17,20 +17,7 @@ if (apiKey && apiKey !== 'your_africastalking_api_key') {
   }
 }
 
-const normalizePhoneNumber = (phone) => {
-  if (!phone) return phone;
-  let cleaned = String(phone).replace(/[\s\-\(\)]/g, '');
-  if (cleaned.startsWith('+2330')) {
-    cleaned = '+233' + cleaned.slice(5);
-  } else if (cleaned.startsWith('2330')) {
-    cleaned = '+233' + cleaned.slice(4);
-  } else if (cleaned.startsWith('0') && cleaned.length === 10) {
-    cleaned = '+233' + cleaned.slice(1);
-  } else if (cleaned.startsWith('233') && !cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned;
-  }
-  return cleaned;
-};
+const { normalizePhone } = require('../utils/phoneUtils');
 
 /**
  * Triggers an outbound phone call via Africa's Talking Voice API.
@@ -42,8 +29,8 @@ const makeOutboundCall = async (toPhoneNumber, fromPhoneNumber = process.env.AT_
   }
 
   const cleanDestination = Array.isArray(toPhoneNumber)
-    ? toPhoneNumber.map(normalizePhoneNumber)
-    : [normalizePhoneNumber(toPhoneNumber)];
+    ? toPhoneNumber.map(normalizePhone)
+    : [normalizePhone(toPhoneNumber)];
 
   console.log(`📞 [Africa's Talking] Initiating outbound call to: ${cleanDestination.join(', ')}`);
 

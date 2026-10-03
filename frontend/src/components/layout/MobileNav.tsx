@@ -13,13 +13,16 @@ import {
   Bell,
   Settings,
   HelpCircle,
+  LogOut,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
+import { useAuth } from '@/lib/auth-context';
 
 export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { metrics } = useData();
+  const { user, logout } = useAuth();
 
   const navItems = [
     {
@@ -130,14 +133,26 @@ export const MobileNav: React.FC = () => {
             );
           })}
 
-          <div className="pt-3 mt-2 border-t border-gray-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
-              JN
+          <div className="pt-3 mt-2 border-t border-gray-200/80 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MP'}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-900">{user?.name || 'Pharmacist'}</p>
+                <p className="text-[11px] text-gray-500">{user?.role || 'Clinical Staff'}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-900">Josh Nuku</p>
-              <p className="text-[11px] text-gray-500">Pharmacist Admin</p>
-            </div>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                logout();
+              }}
+              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-500" />
+              <span>Logout</span>
+            </button>
           </div>
         </div>
       )}

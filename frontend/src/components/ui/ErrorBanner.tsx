@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertCircle, RotateCcw } from 'lucide-react';
+import { WifiOff, RotateCcw } from 'lucide-react';
 import { Button } from './Button';
 
 interface ErrorBannerProps {
@@ -11,17 +11,41 @@ interface ErrorBannerProps {
 }
 
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({
-  message = 'Unable to connect to MediCall backend.',
+  message,
   onRetry,
   isRetrying = false,
 }) => {
+  // Normalize technical errors into calm, clean offline messages
+  const cleanMessage = React.useMemo(() => {
+    if (!message) return 'MediCall is currently running in offline mode. Local records remain viewable.';
+    const lower = message.toLowerCase();
+    if (
+      lower.includes('fetch') ||
+      lower.includes('http') ||
+      lower.includes('failed to load') ||
+      lower.includes('network') ||
+      lower.includes('econnrefused') ||
+      lower.includes('connect')
+    ) {
+      return 'Backend service is currently unreachable. Operating in offline mode.';
+    }
+    return message;
+  }, [message]);
+
   return (
-    <div className="bg-rose-50/90 border border-rose-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm text-rose-900 shadow-xs mb-6">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+    <div className="bg-[#FAF9F7] border border-[#E8E6E1] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm text-neutral-800 shadow-xs mb-6">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center shrink-0">
+          <WifiOff className="w-4 h-4 text-amber-700" />
+        </div>
         <div>
-          <span className="font-semibold block">Backend connection issue</span>
-          <span className="text-rose-700 text-xs">{message}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-neutral-900">Offline Mode</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100/70 text-amber-800">
+              Offline
+            </span>
+          </div>
+          <span className="text-neutral-500 text-xs mt-0.5 block">{cleanMessage}</span>
         </div>
       </div>
       {onRetry && (
@@ -29,11 +53,11 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
           variant="secondary"
           size="sm"
           disabled={isRetrying}
-          className="border-rose-200 text-rose-800 hover:bg-rose-100 shrink-0"
+          className="border-neutral-200 text-neutral-700 hover:bg-neutral-100 shrink-0 text-xs"
           icon={<RotateCcw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />}
           onClick={onRetry}
         >
-          {isRetrying ? 'Connecting...' : 'Retry connection'}
+          {isRetrying ? 'Connecting...' : 'Reconnect'}
         </Button>
       )}
     </div>

@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { createPatient } = require('../db/queries/patients');
+const { validatePhone } = require('../utils/phoneUtils');
+
+/**
 
 /**
  * @openapi
@@ -52,7 +55,27 @@ router.post('/', (req, res, next) => {
     if (!phone_number || !name) {
       return res.status(400).json({ error: 'phone_number and name are required', status: 400 });
     }
-    const patient = createPatient({ phone_number, name, preferred_language, caregiver_phone });
+
+    const phoneValidation = validatePhone(phone_number, true);
+    if (!phoneValidation.isValid) {
+      return res.status(400).json({ error: phoneValidation.error, status: 400 });
+    }
+
+    let validCaregiver = null;
+    if (caregiver_phone && String(caregiver_phone).trim()) {
+      const caregiverValidation = validatePhone(caregiver_phone, false);
+      if (!caregiverValidation.isValid) {
+        return res.status(400).json({ error: `Caregiver phone: ${caregiverValidation.error}`, status: 400 });
+      }
+      validCaregiver = caregiverValidation.normalized;
+    }
+
+    const patient = createPatient({
+      phone_number: phoneValidation.normalized,
+      name,
+      preferred_language,
+      caregiver_phone: validCaregiver
+    });
     res.status(201).json({ patient });
   } catch (err) {
     next(err);

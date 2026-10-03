@@ -1,5 +1,5 @@
 const db = require('../connection');
-const normalizePhone = (p) => (p ? String(p).replace(/[\s\-\(\)]/g, '') : '');
+const { normalizePhone } = require('../../utils/phoneUtils');
 
 const createPatient = ({ phone_number, name, preferred_language = 'twi', caregiver_phone = null, consent_given = 1 }) => {
   const cleanPhone = normalizePhone(phone_number);

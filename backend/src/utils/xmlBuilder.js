@@ -14,7 +14,11 @@ const buildVoiceResponse = (childrenXml) => {
 
 const buildGetDigits = ({ numDigits = 1, timeout = 10, finishOnKey = null, callbackUrl, playUrl, sayText }) => {
   const parts = [];
-  if (playUrl) {
+  if (Array.isArray(playUrl)) {
+    playUrl.forEach((u) => {
+      if (u) parts.push(`    <Play url="${escapeXml(u)}"/>`);
+    });
+  } else if (playUrl) {
     parts.push(`    <Play url="${escapeXml(playUrl)}"/>`);
   } else if (sayText) {
     parts.push(`    <Say>${escapeXml(sayText)}</Say>`);

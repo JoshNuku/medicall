@@ -106,7 +106,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                         <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
                           {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? (
                             <div
-                              className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-amber-400'
+                              className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-orange-500'
                                 }`}
                               style={{ width: `${patient.adherence_rate}%` }}
                             />

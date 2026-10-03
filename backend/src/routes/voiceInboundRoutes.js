@@ -13,7 +13,7 @@ const { handleInboundCall, handleInboundSelect } = require('../services/inboundV
 router.post('/inbound', (req, res, next) => {
   try {
     const callerNumber = req.body.callerNumber || req.query.callerNumber;
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
     const xml = handleInboundCall(callerNumber, baseUrl);
 
     res.set('Content-Type', 'text/xml');
@@ -35,7 +35,7 @@ router.post('/inbound/select', (req, res, next) => {
     const patientId = req.query.patientId || req.body.patientId;
     const medId = req.query.medId || req.body.medId;
     const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
 
     const xml = handleInboundSelect(patientId, dtmfDigits, baseUrl, medId);
     res.set('Content-Type', 'text/xml');

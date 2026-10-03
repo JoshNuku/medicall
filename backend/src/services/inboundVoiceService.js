@@ -1,8 +1,11 @@
-const { getPatientByPhoneNumber, getPatientById } = require('../db/queries/patients');
+const fs = require('fs');
+const path = require('path');
+const { getPatientByPhoneNumber, getPatientById, resetCaregiverNotifiedAt } = require('../db/queries/patients');
 const { getMedicationsByPatientId } = require('../db/queries/medications');
-const { createCallEvent } = require('../db/queries/callEvents');
+const { createCallEvent, getLatestPendingCallEventForPatient, updateCallOutcome } = require('../db/queries/callEvents');
 const { createEscalation } = require('../db/queries/escalations');
-const { buildVoiceResponse, buildSay, buildGetDigits } = require('../utils/xmlBuilder');
+const { buildVoiceResponse, buildSay, buildPlay, buildGetDigits } = require('../utils/xmlBuilder');
+const { getRelistenAudioUrl } = require('./audioMergeService');
 
 const handleInboundCall = (callerNumber, baseUrl) => {
   const patient = callerNumber ? getPatientByPhoneNumber(callerNumber) : null;
@@ -23,15 +26,15 @@ const handleInboundCall = (callerNumber, baseUrl) => {
 
   const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
 
-  // If patient has multiple medications, provide IVR menu to choose which one to hear or stay on line
+  // If patient has multiple medications, provide IVR menu to choose which one to hear
   if (medications.length > 1) {
     const medChoices = medications
       .map((m, idx) => (isEnglish ? `Press ${idx + 1} for ${m.drug_name}.` : `Mia ${idx + 1} ma ${m.drug_name}.`))
       .join(' ');
 
     const promptText = isEnglish
-      ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Or stay on the line to hear all instructions. Press 9 to repeat, or Press 0 to speak with your pharmacist.`
-      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Anaa tena so na tie ne nyinaa. Mia nkron sɛ wobɛtie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.`;
+      ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Press 9 to repeat, or Press 0 to speak with your pharmacist.`
+      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Mia nkron sɛ wobɛtie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.`;
 
     const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}`;
     const digitsXml = buildGetDigits({
@@ -43,7 +46,7 @@ const handleInboundCall = (callerNumber, baseUrl) => {
     return buildVoiceResponse(digitsXml);
   }
 
-  // Single active medication: Play instruction immediately followed by keypress trailer
+  // Single active medication: Play relisten audio!
   const activeMed = medications[0];
   const today = new Date().toISOString().split('T')[0];
   createCallEvent({
@@ -52,30 +55,19 @@ const handleInboundCall = (callerNumber, baseUrl) => {
     scheduled_time: new Date().toISOString(),
     actual_call_time: new Date().toISOString(),
     call_type: 'relisten',
-    outcome: 'confirmed',
     attempt_number: 1,
     dose_date: today
   });
 
-  let fullAudioUrl = activeMed.audio_url;
-  if (fullAudioUrl) {
-    if (fullAudioUrl.includes('localhost:3000')) {
-      fullAudioUrl = fullAudioUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
-    } else if (!fullAudioUrl.startsWith('http://') && !fullAudioUrl.startsWith('https://')) {
-      fullAudioUrl = `${baseUrl}${fullAudioUrl.startsWith('/') ? '' : '/'}${fullAudioUrl}`;
-    }
-  }
+  const relistenAudioUrl = getRelistenAudioUrl(activeMed, patient.preferred_language, baseUrl);
+  console.log(`🔊 [INBOUND HELPLINE]: Serving relisten instruction for Patient #${patient.id} (${activeMed.drug_name}): ${relistenAudioUrl}`);
 
-  const trailerText = isEnglish
-    ? 'Press 9 to hear this instruction again, or Press 0 to speak with your pharmacist.'
-    : 'Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.';
-
+  const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${activeMed.id}`;
   const digitsXml = buildGetDigits({
     numDigits: 1,
-    timeout: 10,
-    callbackUrl: `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${activeMed.id}`,
-    playUrl: fullAudioUrl,
-    sayText: trailerText
+    timeout: 12,
+    callbackUrl,
+    playUrl: relistenAudioUrl
   });
   return buildVoiceResponse(digitsXml);
 };
@@ -85,13 +77,29 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
   if (!patient) return buildVoiceResponse(buildSay('Thank you. Goodbye.'));
 
   const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
+  const medications = getMedicationsByPatientId(patient.id);
 
-  // Key 0: Request pharmacist help
+  if (!dtmfDigits || dtmfDigits === 'undefined') {
+    console.log(`ℹ️ [INBOUND HELPLINE]: Call ended / timeout for Patient #${patient.id}`);
+    return buildVoiceResponse('');
+  }
+
+  console.log(`\n==============================================`);
+  console.log(`📱 [INBOUND HELPLINE KEYPRESS]: Key "${dtmfDigits}"`);
+  console.log(`   Patient #${patient.id} (${patient.name}), Med ID: ${medId || 'none'}`);
+  console.log(`==============================================`);
+
+  // 1. Key 0: Request pharmacist help
   if (dtmfDigits === '0') {
     createEscalation({
       patient_id: patient.id,
       escalation_type: 'patient_requested_help'
     });
+    console.log(`✓ [INBOUND HELPLINE]: Escalated to pharmacist (patient_requested_help)`);
+    const ackAudioFile = isEnglish ? 'en_pharmacist_alert.mp3' : 'twi_pharmacist_alert.mp3';
+    if (fs.existsSync(path.join(__dirname, '../../public/audio', ackAudioFile))) {
+      return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${ackAudioFile}`));
+    }
     return buildVoiceResponse(
       buildSay(
         isEnglish
@@ -101,48 +109,99 @@ const handleInboundSelect = (patientId, dtmfDigits, baseUrl, medId = null) => {
     );
   }
 
-  const medications = getMedicationsByPatientId(patient.id);
-
-  // Key 9: Repeat menu
+  // 2. Key 9: Repeat the prescription instruction
   if (dtmfDigits === '9') {
+    console.log(`✓ [INBOUND HELPLINE]: Repeating prescription instruction (Key 9)`);
+    if (medId) {
+      const chosenMed = medications.find(m => m.id === parseInt(medId, 10)) || medications[0];
+      const relistenAudioUrl = getRelistenAudioUrl(chosenMed, patient.preferred_language, baseUrl);
+      const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`;
+      return buildVoiceResponse(buildGetDigits({
+        numDigits: 1,
+        timeout: 12,
+        callbackUrl,
+        playUrl: relistenAudioUrl
+      }));
+    }
     return handleInboundCall(patient.phone_number, baseUrl);
   }
 
-  // Key 1..N: Selected specific medication
-  const index = parseInt(dtmfDigits, 10) - 1;
-  const chosenMed = (index >= 0 && index < medications.length)
-    ? medications[index]
-    : (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
-
-  if (!chosenMed) {
-    return handleInboundCall(patient.phone_number, baseUrl);
-  }
-
-  let fullAudioUrl = chosenMed.audio_url;
-  if (fullAudioUrl) {
-    if (fullAudioUrl.includes('localhost:3000')) {
-      fullAudioUrl = fullAudioUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
-    } else if (!fullAudioUrl.startsWith('http://') && !fullAudioUrl.startsWith('https://')) {
-      fullAudioUrl = `${baseUrl}${fullAudioUrl.startsWith('/') ? '' : '/'}${fullAudioUrl}`;
+  // 3. Multi-medication selection (Key 1..N on initial menu when medId wasn't already selected)
+  if (medications.length > 1 && !medId) {
+    const index = parseInt(dtmfDigits, 10) - 1;
+    if (index >= 0 && index < medications.length) {
+      const chosenMed = medications[index];
+      console.log(`✓ [INBOUND HELPLINE]: Selected medication #${index + 1}: ${chosenMed.drug_name}`);
+      const relistenAudioUrl = getRelistenAudioUrl(chosenMed, patient.preferred_language, baseUrl);
+      const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`;
+      return buildVoiceResponse(buildGetDigits({
+        numDigits: 1,
+        timeout: 12,
+        callbackUrl,
+        playUrl: relistenAudioUrl
+      }));
     }
   }
 
-  const trailerText = isEnglish
-    ? `You just heard instructions for ${chosenMed.drug_name}. Press 9 to hear this again, or Press 0 to speak with your pharmacist.`
-    : `Woatie wo nnuro ${chosenMed.drug_name} ho akwankyerɛ. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.`;
+  // 4. Key 1: Confirm Dose (if caller wishes to confirm adherence during call-back)
+  if (dtmfDigits === '1') {
+    const pending = getLatestPendingCallEventForPatient(patient.id);
+    if (pending) {
+      updateCallOutcome(pending.id, 'confirmed', new Date().toISOString());
+      resetCaregiverNotifiedAt(patient.id);
+    }
+    console.log(`✓ [INBOUND HELPLINE]: Dose marked Confirmed Taken (Key 1)`);
+    const ackAudioFile = isEnglish ? 'en_confirmed.mp3' : 'twi_confirmed.mp3';
+    if (fs.existsSync(path.join(__dirname, '../../public/audio', ackAudioFile))) {
+      return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${ackAudioFile}`));
+    }
+    return buildVoiceResponse(
+      buildSay(
+        isEnglish
+          ? 'Thank you for confirming your medication. Stay healthy!'
+          : 'Medaase. Yɛagye atom sɛ woafa wo nnuro no. Yɛma wo apɔmuden!'
+      )
+    );
+  }
 
-  const digitsXml = buildGetDigits({
+  // 5. Key 2: Dose Not Taken / Caller reports issue
+  if (dtmfDigits === '2') {
+    const pending = getLatestPendingCallEventForPatient(patient.id);
+    if (pending) {
+      updateCallOutcome(pending.id, 'not_taken', new Date().toISOString());
+    }
+    createEscalation({
+      patient_id: patient.id,
+      escalation_type: 'patient_requested_help'
+    });
+    console.log(`✓ [INBOUND HELPLINE]: Dose recorded as Not Taken (Key 2) & pharmacist alerted`);
+    const ackAudioFile = isEnglish ? 'en_side_effects.mp3' : 'twi_not_taken_ack.mp3';
+    if (fs.existsSync(path.join(__dirname, '../../public/audio', ackAudioFile))) {
+      return buildVoiceResponse(buildPlay(`${baseUrl}/audio/${ackAudioFile}`));
+    }
+    return buildVoiceResponse(
+      buildSay(
+        isEnglish
+          ? 'Thank you for letting us know. We have alerted your pharmacist to assist you. Goodbye.'
+          : 'Medaase sɛ woaka akyerɛ yɛn. Yɛbɛbɔ wo duruyɛfoɔ amanneɛ sɛnea ɔbɛboa wo. Nante yie.'
+      )
+    );
+  }
+
+  // 6. Any other key: guide caller with trailer prompt
+  console.log(`⚠️ [INBOUND HELPLINE]: Unrecognized keypress "${dtmfDigits}". Prompting trailer.`);
+  const chosenMed = (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
+  const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}${chosenMed ? `&medId=${chosenMed.id}` : ''}`;
+  const trailerFile = isEnglish ? 'en_keypress_trailer.mp3' : 'twi_keypress_trailer.mp3';
+  return buildVoiceResponse(buildGetDigits({
     numDigits: 1,
     timeout: 10,
-    callbackUrl: `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`,
-    playUrl: fullAudioUrl,
-    sayText: trailerText
-  });
-  return buildVoiceResponse(digitsXml);
+    callbackUrl,
+    playUrl: `${baseUrl}/audio/${trailerFile}`
+  }));
 };
 
 module.exports = {
   handleInboundCall,
   handleInboundSelect
 };
-

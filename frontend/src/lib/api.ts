@@ -2,12 +2,29 @@
  * MediCall Backend API Client
  *
  * Connects directly to the Express + SQLite backend at http://localhost:3000.
- * Supports retries with exponential backoff and structured error reporting.
+ * Supports retries with exponential backoff and friendly offline status reporting.
  */
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   (typeof window !== 'undefined' ? '/api/backend' : 'http://127.0.0.1:3000');
+
+export function formatApiError(err: unknown, fallbackMessage = 'Action could not be completed'): string {
+  if (!err) return fallbackMessage;
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes('offline') ||
+    lower.includes('fetch') ||
+    lower.includes('network') ||
+    lower.includes('http') ||
+    lower.includes('econnrefused') ||
+    lower.includes('failed to load')
+  ) {
+    return 'Offline — backend server is currently unreachable.';
+  }
+  return msg;
+}
 
 async function fetchWithRetry(
   url: string,
@@ -29,21 +46,21 @@ async function fetchWithRetry(
       await new Promise((resolve) => setTimeout(resolve, backoff));
       return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
     }
-    throw err;
+    throw new Error('Offline — unable to reach backend server.');
   }
 }
 
 // 1. Health Check
 export async function checkBackendHealth(): Promise<{ status: string; timestamp: string }> {
   const res = await fetchWithRetry(`${API_BASE_URL}/health`);
-  if (!res.ok) throw new Error(`Health check failed with HTTP ${res.status}`);
+  if (!res.ok) throw new Error('Offline — health check failed.');
   return res.json();
 }
 
 // 2. Patients API
 export async function fetchPatients() {
   const res = await fetchWithRetry(`${API_BASE_URL}/patients`);
-  if (!res.ok) throw new Error(`Failed to load patients (HTTP ${res.status})`);
+  if (!res.ok) throw new Error('Offline — unable to load patients.');
   const data = await res.json();
   return data.patients || [];
 }
@@ -52,7 +69,7 @@ export async function fetchPatientDetail(id: number) {
   const res = await fetchWithRetry(`${API_BASE_URL}/patients/${id}`);
   if (!res.ok) {
     if (res.status === 404) return null;
-    throw new Error(`Failed to load patient #${id} (HTTP ${res.status})`);
+    throw new Error('Offline — unable to load patient details.');
   }
   const data = await res.json();
   return data.patient;
@@ -71,7 +88,8 @@ export async function createPatient(payload: {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to enroll patient (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error(errData.error || 'Could not enroll patient.');
   }
   const data = await res.json();
   return data.patient;
@@ -93,7 +111,8 @@ export async function updatePatientApi(
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to update patient #${id} (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error(errData.error || 'Could not update patient.');
   }
   const data = await res.json();
   return data.patient;
@@ -105,7 +124,8 @@ export async function deletePatientApi(id: number) {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to delete patient #${id} (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error(errData.error || 'Could not delete patient.');
   }
   const data = await res.json();
   return data;
@@ -114,7 +134,7 @@ export async function deletePatientApi(id: number) {
 // 3. Medications API
 export async function fetchPatientMedications(patientId: number) {
   const res = await fetchWithRetry(`${API_BASE_URL}/patients/${patientId}/medications`);
-  if (!res.ok) throw new Error(`Failed to load medications for patient #${patientId}`);
+  if (!res.ok) throw new Error('Offline — unable to load medications.');
   const data = await res.json();
   return data.medications || [];
 }
@@ -170,7 +190,8 @@ export async function createMedication(
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to prescribe medication (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error(errData.error || 'Could not prescribe medication.');
   }
   const data = await res.json();
   return data.medication;
@@ -193,7 +214,8 @@ export async function updateMedicationApi(
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to update medication (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error(errData.error || 'Could not update medication.');
   }
   const data = await res.json();
   return data.medication;
@@ -205,7 +227,8 @@ export async function deleteMedicationApi(patientId: number, medId: number) {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to delete medication (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error(errData.error || 'Could not delete medication.');
   }
   return res.json();
 }
@@ -213,7 +236,7 @@ export async function deleteMedicationApi(patientId: number, medId: number) {
 // 4. Logs API
 export async function fetchPatientLogs(patientId: number) {
   const res = await fetchWithRetry(`${API_BASE_URL}/patients/${patientId}/logs`);
-  if (!res.ok) throw new Error(`Failed to load logs for patient #${patientId}`);
+  if (!res.ok) throw new Error('Offline — unable to load call history.');
   const data = await res.json();
   return data.logs || [];
 }
@@ -224,7 +247,7 @@ export async function fetchInstructionTemplates(category?: string) {
     ? `${API_BASE_URL}/instruction-templates?category=${category}`
     : `${API_BASE_URL}/instruction-templates`;
   const res = await fetchWithRetry(url);
-  if (!res.ok) throw new Error('Failed to load instruction templates');
+  if (!res.ok) throw new Error('Offline — unable to load templates.');
   const data = await res.json();
   return data.templates || [];
 }
@@ -232,7 +255,7 @@ export async function fetchInstructionTemplates(category?: string) {
 // 6. Escalation Alerts API
 export async function fetchAlerts() {
   const res = await fetchWithRetry(`${API_BASE_URL}/alerts`);
-  if (!res.ok) throw new Error('Failed to load alerts');
+  if (!res.ok) throw new Error('Offline — unable to load alerts.');
   const data = await res.json();
   return data.alerts || [];
 }
@@ -243,7 +266,10 @@ export async function resolveAlertApi(alertId: number, resolvedBy: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resolved_by: resolvedBy }),
   });
-  if (!res.ok) throw new Error('Failed to resolve alert');
+  if (!res.ok) {
+    if (res.status >= 500) throw new Error('Offline — backend service unavailable.');
+    throw new Error('Offline — could not resolve alert.');
+  }
   const data = await res.json();
   return data.escalation;
 }
@@ -251,7 +277,7 @@ export async function resolveAlertApi(alertId: number, resolvedBy: string) {
 // 7. Today's Calls API
 export async function fetchTodayCalls() {
   const res = await fetchWithRetry(`${API_BASE_URL}/calls/today`);
-  if (!res.ok) throw new Error('Failed to load today calls');
+  if (!res.ok) throw new Error('Offline — unable to load calls.');
   const data = await res.json();
   return data.calls || [];
 }
@@ -269,7 +295,8 @@ export async function triggerCallApi(payload: {
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || `Failed to trigger call (HTTP ${res.status})`);
+    if (res.status >= 500) throw new Error('Offline — voice gateway is temporarily offline.');
+    throw new Error(errData.error || 'Offline — unable to dispatch call.');
   }
   return res.json();
 }

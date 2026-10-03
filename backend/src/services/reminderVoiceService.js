@@ -10,14 +10,21 @@ const { buildVoiceResponse, buildGetDigits, buildSay, buildPlay } = require('../
 
 const generateReminderXml = (callEventId, audioUrl, baseUrl, sayText = null) => {
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId || ''}`;
-  let fullAudioUrl = audioUrl;
-  if (audioUrl) {
-    if (audioUrl.includes('localhost:3000')) {
-      fullAudioUrl = audioUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
-    } else if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
-      fullAudioUrl = `${baseUrl}${audioUrl.startsWith('/') ? '' : '/'}${audioUrl}`;
+  
+  const resolveUrl = (url) => {
+    if (!url) return '';
+    if (url.includes('localhost:3000')) {
+      return url.replace(/http:\/\/localhost:3000/g, baseUrl);
     }
-  }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    return url;
+  };
+
+  const fullAudioUrl = Array.isArray(audioUrl)
+    ? audioUrl.map(resolveUrl)
+    : resolveUrl(audioUrl);
 
   const digitsXml = buildGetDigits({
     numDigits: 1,

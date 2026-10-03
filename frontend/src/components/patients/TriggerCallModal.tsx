@@ -6,7 +6,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Phone, PhoneCall, CheckCircle2, AlertCircle, Sparkles, Volume2 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
-import { triggerCallApi } from '@/lib/api';
+import { triggerCallApi, formatApiError } from '@/lib/api';
+import { validatePhoneNumber } from '@/lib/phone';
 
 interface TriggerCallModalProps {
   isOpen: boolean;
@@ -37,14 +38,22 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   }, [defaultCallType, isOpen]);
 
   const selectedPatient = patients.find((p) => p.id === Number(selectedPatientId));
+  const isCustomPhone = selectedPatientId === 'custom';
+  const customPhoneValidation = validatePhoneNumber(customPhone, true);
 
   const handleStartCall = async () => {
+    if (isCustomPhone && !customPhoneValidation.isValid) {
+      setCallStatus('error');
+      setStatusMessage(customPhoneValidation.error || 'Please enter a valid phone number.');
+      return;
+    }
+
     setIsCalling(true);
     setCallStatus('idle');
     setStatusMessage('');
 
     try {
-      const phoneToCall = selectedPatient ? selectedPatient.phone_number : customPhone;
+      const phoneToCall = selectedPatient ? selectedPatient.phone_number : customPhoneValidation.normalized!;
       const res = await triggerCallApi({
         patient_id: selectedPatient ? selectedPatient.id : undefined,
         phone_number: phoneToCall,
@@ -63,7 +72,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
       }
     } catch (err: any) {
       setCallStatus('error');
-      setStatusMessage(err?.message || 'Failed to dispatch outbound call.');
+      setStatusMessage(formatApiError(err, 'Failed to dispatch outbound call. Gateway may be offline.'));
     } finally {
       setIsCalling(false);
     }
@@ -161,19 +170,36 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
         {/* Custom Phone Number input if custom selected */}
         {selectedPatientId === 'custom' && (
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-              Recipient Phone Number (E.164)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Recipient Phone Number
+              </label>
+              {customPhoneValidation.isValid && customPhoneValidation.network && (
+                <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+                  {customPhoneValidation.network} ({customPhoneValidation.formatted})
+                </span>
+              )}
+            </div>
             <div className="relative">
               <input
                 type="tel"
                 value={customPhone}
                 onChange={(e) => setCustomPhone(e.target.value)}
                 placeholder="+233546007121"
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/40 focus:border-[#70BF2B]"
+                className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm font-mono text-gray-900 focus:outline-none focus:ring-2 ${
+                  customPhone.trim() && !customPhoneValidation.isValid
+                    ? 'border-amber-300 focus:ring-amber-500/20 focus:border-amber-500'
+                    : 'border-gray-200 focus:ring-[#70BF2B]/40 focus:border-[#70BF2B]'
+                }`}
               />
               <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
+            {customPhone.trim() && !customPhoneValidation.isValid && (
+              <p className="text-[11px] text-amber-600 mt-1 font-medium">
+                {customPhoneValidation.error}
+              </p>
+            )}
           </div>
         )}
 
@@ -297,9 +323,9 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
           <Button
             variant="primary"
             onClick={handleStartCall}
-            disabled={isCalling}
+            disabled={isCalling || (isCustomPhone && !customPhoneValidation.isValid)}
             icon={<Phone className={`w-4 h-4 ${isCalling ? 'animate-bounce' : ''}`} />}
-            className="bg-[#70BF2B] hover:bg-[#62A825] text-white font-semibold"
+            className="bg-[#70BF2B] hover:bg-[#62A825] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCalling ? 'Dialing Phone...' : 'Start Live Call'}
           </Button>

@@ -15,6 +15,7 @@ import { CallTimeline } from '@/components/patients/CallTimeline';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { formatApiError } from '@/lib/api';
 import {
   ArrowLeft,
   Plus,
@@ -33,6 +34,11 @@ import {
   Stethoscope,
   Calendar,
   FileText,
+  Sparkles,
+  Mic,
+  Volume2,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function PatientDetailPage() {
@@ -58,6 +64,12 @@ export default function PatientDetailPage() {
   const logs = getPatientLogs(patientId);
 
   const [isPrescribeOpen, setIsPrescribeOpen] = useState(false);
+  const [prescribeInitialMode, setPrescribeInitialMode] = useState<'template' | 'recorded'>('template');
+
+  const openPrescribeModal = (mode: 'template' | 'recorded' = 'template') => {
+    setPrescribeInitialMode(mode);
+    setIsPrescribeOpen(true);
+  };
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [callModalType, setCallModalType] = useState<'reminder' | 'diagnostic'>('reminder');
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
@@ -92,7 +104,7 @@ export default function PatientDetailPage() {
       setTimeout(() => setToastMessage(null), 3500);
       setEditingMedId(null);
     } catch (err) {
-      setToastMessage(`Failed to update: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setToastMessage(formatApiError(err, 'Failed to update medication.'));
       setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setIsMutating(false);
@@ -108,7 +120,7 @@ export default function PatientDetailPage() {
       setTimeout(() => setToastMessage(null), 3500);
       setDeletingMedId(null);
     } catch (err) {
-      setToastMessage(`Failed to delete: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setToastMessage(formatApiError(err, 'Failed to delete medication.'));
       setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setIsMutating(false);
@@ -308,20 +320,18 @@ export default function PatientDetailPage() {
             patient.adherence_rate !== null
               ? patient.adherence_rate >= 80
                 ? 'bg-[#70BF2B] text-white'
-                : 'bg-[#FFF9F2] border border-[#F6D8B8] text-gray-900'
+                : 'bg-[#DE6600] text-white'
               : 'bg-white border border-[#ECECEC] text-gray-900'
           }`}
         >
-          {patient.adherence_rate !== null && patient.adherence_rate >= 80 && (
+          {patient.adherence_rate !== null && (
             <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-white/10 pointer-events-none blur-lg" />
           )}
           <div className="flex items-center justify-between mb-2 relative z-10">
             <span
               className={`text-xs font-semibold uppercase tracking-wider ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                patient.adherence_rate !== null
                   ? 'text-white/90'
-                  : patient.adherence_rate !== null
-                  ? 'text-amber-800'
                   : 'text-gray-400'
               }`}
             >
@@ -329,10 +339,8 @@ export default function PatientDetailPage() {
             </span>
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                patient.adherence_rate !== null
                   ? 'bg-white/20 text-white'
-                  : patient.adherence_rate !== null
-                  ? 'bg-amber-100 text-amber-700'
                   : 'bg-[#F0F9EB] text-[#70BF2B]'
               }`}
             >
@@ -342,10 +350,8 @@ export default function PatientDetailPage() {
           <div className="relative z-10">
             <div
               className={`text-3xl font-bold tracking-tight ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
+                patient.adherence_rate !== null
                   ? 'text-white'
-                  : patient.adherence_rate !== null
-                  ? 'text-amber-950'
                   : 'text-gray-900'
               }`}
             >
@@ -353,10 +359,8 @@ export default function PatientDetailPage() {
             </div>
             <p
               className={`text-xs mt-1 font-medium ${
-                patient.adherence_rate !== null && patient.adherence_rate >= 80
-                  ? 'text-white/85'
-                  : patient.adherence_rate !== null
-                  ? 'text-amber-800 font-semibold flex items-center gap-1.5'
+                patient.adherence_rate !== null
+                  ? 'text-white/90 font-medium'
                   : 'text-gray-500'
               }`}
             >
@@ -426,24 +430,38 @@ export default function PatientDetailPage() {
             </p>
           </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setIsPrescribeOpen(true)}
-          >
-            Add medication
-          </Button>
+          {medications.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => openPrescribeModal('template')}
+            >
+              Add medication
+            </Button>
+          )}
         </div>
 
         {medications.length === 0 ? (
-          <EmptyState
-            icon={<Pill className="w-6 h-6 text-[#70BF2B]" />}
-            title="No active medications"
-            description="Prescribe a medication regimen with verified Twi templates or recorded audio to start reminder calls."
-            actionText="+ Prescribe medication"
-            onAction={() => setIsPrescribeOpen(true)}
-          />
+          <div className="bg-white border border-[#EAEAEA] rounded-2xl py-12 px-6 text-center flex flex-col items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-[#F8F9FA] border border-[#ECECEC] flex items-center justify-center text-gray-400 mb-3">
+              <Pill className="w-5 h-5 stroke-[1.5]" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-900">
+              No active medications
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500 max-w-sm mt-1 mb-5 leading-relaxed">
+              Prescribe a medication regimen with verified Twi templates or recorded audio to start reminder calls.
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => openPrescribeModal('template')}
+            >
+              Prescribe medication
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {medications.map((med) => (
@@ -737,6 +755,7 @@ export default function PatientDetailPage() {
       {/* Prescribe Medication Modal */}
       <PrescribeMedicationModal
         isOpen={isPrescribeOpen}
+        initialMode={prescribeInitialMode}
         onClose={() => {
           setIsPrescribeOpen(false);
           loadPatientDetails(patient.id);

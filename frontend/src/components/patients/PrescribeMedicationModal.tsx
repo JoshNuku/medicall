@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { AudioPlayer } from './AudioPlayer';
 import { useData } from '@/lib/data-context';
+import { formatApiError } from '@/lib/api';
 import {
   ShieldCheck,
   Mic,
@@ -25,6 +26,7 @@ interface PrescribeMedicationModalProps {
   patientId: number;
   patientName: string;
   patientLanguage?: 'twi' | 'english';
+  initialMode?: 'template' | 'recorded';
 }
 
 export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> = ({
@@ -34,22 +36,26 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
   patientId,
   patientName,
   patientLanguage = 'twi',
+  initialMode = 'template',
 }) => {
   const { templates, prescribeMedication } = useData();
 
-  const [mode, setMode] = useState<'template' | 'recorded'>('template');
+  const [mode, setMode] = useState<'template' | 'recorded'>(initialMode);
   const isPatientEnglish = (patientLanguage || '').toLowerCase() === 'english';
   const [language, setLanguage] = useState<'twi' | 'english'>(isPatientEnglish ? 'english' : 'twi');
   const hasInitializedLangRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (isOpen && !hasInitializedLangRef.current) {
-      setLanguage(isPatientEnglish ? 'english' : (patientLanguage || 'twi'));
-      hasInitializedLangRef.current = true;
+    if (isOpen) {
+      if (initialMode) setMode(initialMode);
+      if (!hasInitializedLangRef.current) {
+        setLanguage(isPatientEnglish ? 'english' : (patientLanguage || 'twi'));
+        hasInitializedLangRef.current = true;
+      }
     } else if (!isOpen) {
       hasInitializedLangRef.current = false;
     }
-  }, [isOpen, patientLanguage, isPatientEnglish]);
+  }, [isOpen, initialMode, patientLanguage, isPatientEnglish]);
 
   // Shared fields
   const [drugName, setDrugName] = useState('');
@@ -405,8 +411,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
       onSuccess?.(savedDrugName);
       onClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to prescribe medication in backend.';
-      setError(message);
+      setError(formatApiError(err, 'Failed to prescribe medication. Server may be offline.'));
     } finally {
       setIsSubmitting(false);
     }

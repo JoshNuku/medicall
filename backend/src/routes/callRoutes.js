@@ -5,6 +5,7 @@ const { getPatientById, getPatientByPhoneNumber } = require('../db/queries/patie
 const { getMedicationsByPatientId } = require('../db/queries/medications');
 const { makeOutboundCall } = require('../services/africasTalkingService');
 const { preGenerateReminderAudio, generateDiagnosticAudio } = require('../services/reminderPipelineService');
+const { validatePhone } = require('../utils/phoneUtils');
 
 /**
  * @openapi
@@ -57,6 +58,12 @@ router.post('/trigger', async (req, res, next) => {
       return res.status(400).json({ error: 'Phone number or valid patient ID is required' });
     }
 
+    const phoneValidation = validatePhone(targetPhone, true);
+    if (!phoneValidation.isValid) {
+      return res.status(400).json({ error: phoneValidation.error, status: 400 });
+    }
+    const validatedPhone = phoneValidation.normalized;
+
     const patientLang = (patient?.preferred_language || 'english').toUpperCase();
     console.log(`\n======================================================`);
     console.log(`🚀 [FRONTEND TRIGGER]: Live Outbound Call Requested [Mode: ${call_type.toUpperCase()}]`);
@@ -87,11 +94,13 @@ router.post('/trigger', async (req, res, next) => {
 
     let generatedCallAudio = null;
 
-    // Pre-generate AI audio depending on call type
+    // Pre-generate AI audio depending on call type (only for template-based prescriptions)
     if (patient && medicationId) {
-      try {
-        if (call_type === 'reminder') {
-          console.log(`\n🤖 [AI PIPELINE]: Generating personalized reminder for Patient #${patient.id}...`);
+      const med = getMedicationById(medicationId);
+      if (med && med.instruction_source !== 'recorded') {
+        try {
+          if (call_type === 'reminder') {
+            console.log(`\n🤖 [AI PIPELINE]: Generating personalized reminder for Patient #${patient.id}...`);
           const audioResult = await preGenerateReminderAudio({
             patientId: patient.id,
             medicationId: medicationId,
@@ -114,8 +123,9 @@ router.post('/trigger', async (req, res, next) => {
             console.log(`   ✓ Diagnostic audio generated and attached: ${generatedCallAudio}`);
           }
         }
-      } catch (genErr) {
-        console.warn('⚠️ [Call Trigger] AI Audio generation notice:', genErr.message);
+        } catch (genErr) {
+          console.warn('⚠️ [Call Trigger] AI Audio generation notice:', genErr.message);
+        }
       }
     }
 
@@ -129,8 +139,8 @@ router.post('/trigger', async (req, res, next) => {
       audio_url: generatedCallAudio
     });
 
-    console.log(`\n📞 [TELEPHONY]: Dialing ${targetPhone} via Africa's Talking (${call_type})...`);
-    const callResult = await makeOutboundCall(targetPhone);
+    console.log(`\n📞 [TELEPHONY]: Dialing ${validatedPhone} via Africa's Talking (${call_type})...`);
+    const callResult = await makeOutboundCall(validatedPhone);
     console.log(`✓ [TELEPHONY RESULT]:`, JSON.stringify(callResult, null, 2));
     console.log(`======================================================\n`);
 

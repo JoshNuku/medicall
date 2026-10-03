@@ -28,7 +28,7 @@ const { getPatientByPhoneNumber } = require('../db/queries/patients');
  *               type: string
  *               example: "<Response><GetDigits timeout='10' numDigits='1' callbackUrl='...'><Play url='...'/></GetDigits></Response>"
  */
-const handleReminderCall = (req, res, next) => {
+const handleReminderCall = async (req, res, next) => {
   try {
     if (req.body.isActive === '0' || req.body.status === 'Completed') {
       const destPhone = req.body.destinationNumber;
@@ -56,7 +56,7 @@ const handleReminderCall = (req, res, next) => {
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
     const { getLatestPendingCallEventForPatient } = require('../db/queries/callEvents');
 
     // Inbound call auto-detection: If someone is dialing our helpline number
@@ -131,7 +131,24 @@ const handleReminderCall = (req, res, next) => {
     let audioUrl = null;
     let sayText = null;
 
-    if (isEnglish) {
+    if (medication?.instruction_source === 'recorded' && medication?.audio_url) {
+      let fileUrl = medication.audio_url;
+      if (fileUrl.endsWith('.webm')) {
+        const { prepareRecordedMedicationAudio } = require('../services/audioMergeService');
+        try {
+          const upgraded = await prepareRecordedMedicationAudio(fileUrl, isEnglish ? 'english' : 'twi');
+          if (upgraded) {
+            fileUrl = upgraded;
+            const db = require('../db/connection');
+            db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(fileUrl, medication.id);
+          }
+        } catch (_) {}
+      }
+      audioUrl = fileUrl.startsWith('http')
+        ? fileUrl
+        : `${baseUrl}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+      console.log(`🔊 [VOICE ROUTE]: Serving recorded voice note with embedded Khaya AI keypad prompt: ${audioUrl}`);
+    } else if (isEnglish) {
       const { getLatestAssistantMessage } = require('../db/queries/agentConversations');
       const latestMsg = patientObj ? getLatestAssistantMessage(patientObj.id) : null;
       if (isAiAgentEnabled) {
@@ -144,7 +161,7 @@ const handleReminderCall = (req, res, next) => {
       console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
     } else {
       // For Twi reminder calls: use pre-generated reminder audio, or medication audio, or fallback to default
-      const candidateAudio = medication?.reminder_audio_url || (medication?.instruction_source === 'recorded' ? medication.audio_url : null);
+      const candidateAudio = medication?.reminder_audio_url || medication?.audio_url;
       if (candidateAudio) {
         audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
         console.log(`🔊 [VOICE ROUTE]: Serving personalized Asante Twi reminder audio (${audioUrl})`);
@@ -209,7 +226,7 @@ const handleReminderConfirm = async (req, res, next) => {
     }
 
     const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
 
     const xml = await processReminderConfirm(callEventId, dtmfDigits, baseUrl);
     res.set('Content-Type', 'text/xml');

@@ -3,8 +3,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, Bell, ChevronRight, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, Bell, ChevronRight, AlertTriangle, ArrowRight, CheckCircle2, LogOut } from 'lucide-react';
 import { useData } from '@/lib/data-context';
+import { useAuth } from '@/lib/auth-context';
 
 interface TopHeaderProps {
   onToggleSidebar?: () => void;
@@ -12,11 +13,19 @@ interface TopHeaderProps {
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
   const { metrics, alerts } = useData();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const initials = useMemo(() => {
+    if (!user?.name) return 'MP';
+    const parts = user.name.split(' ').filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return user.name.slice(0, 2).toUpperCase();
+  }, [user?.name]);
 
   const openAlerts = useMemo(() => {
     return alerts.filter((a) => a.status === 'open').slice(0, 4);
@@ -211,11 +220,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
             className="flex items-center gap-2.5 cursor-pointer py-1 px-1.5 rounded-xl hover:bg-gray-50 transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
-              JN
+              {initials}
             </div>
             <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-gray-900 leading-tight">Josh Nuku</div>
-              <div className="text-[11px] text-gray-400 font-normal leading-tight">Pharmacist Admin</div>
+              <div className="text-xs font-semibold text-gray-900 leading-tight">
+                {user?.name || 'Pharmacist'}
+              </div>
+              <div className="text-[11px] text-gray-400 font-normal leading-tight">
+                {user?.role || 'Clinical Staff'}
+              </div>
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
           </div>
@@ -223,8 +236,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#ECECEC] z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-xs">
               <div className="px-3.5 py-2 border-b border-gray-100">
-                <p className="font-semibold text-gray-900">Josh Nuku</p>
-                <p className="text-[11px] text-gray-400">nukujosh119@gmail.com</p>
+                <p className="font-semibold text-gray-900">{user?.name || 'Healthcare Worker'}</p>
+                <p className="text-[11px] text-gray-400 truncate">{user?.email || 'Logged in'}</p>
               </div>
               <div className="py-1">
                 <Link
@@ -249,20 +262,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
                   Clinical Alerts
                 </Link>
                 <div className="my-1 border-t border-gray-100" />
-                <Link
-                  href="/settings"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="block px-3.5 py-2 text-gray-700 hover:bg-[#F8F9FA] hover:text-gray-900 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    logout();
+                  }}
+                  className="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 cursor-pointer font-medium"
                 >
-                  Settings
-                </Link>
-                <Link
-                  href="/support"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="block px-3.5 py-2 text-gray-700 hover:bg-[#F8F9FA] hover:text-gray-900 transition-colors"
-                >
-                  Support
-                </Link>
+                  <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
           )}

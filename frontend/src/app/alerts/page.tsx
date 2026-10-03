@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { TableRowSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { formatApiError } from '@/lib/api';
 import { EscalationAlert } from '@/lib/types';
 import {
   AlertTriangle,
@@ -66,7 +67,7 @@ export default function AlertsPage() {
       setResolvingAlert(null);
       setTimeout(() => setToastMessage(null), 4000);
     } catch (err: any) {
-      setResolveError(err?.message || 'Failed to resolve alert in backend.');
+      setResolveError(formatApiError(err, 'Failed to resolve alert. Server may be offline.'));
     } finally {
       setIsSubmitting(false);
     }

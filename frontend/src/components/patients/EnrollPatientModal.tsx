@@ -8,6 +8,8 @@ import { Language } from '@/lib/types';
 import { UserPlus, Phone, Globe, HeartHandshake } from 'lucide-react';
 
 import { useData } from '@/lib/data-context';
+import { validatePhoneNumber, formatPhoneDisplay } from '@/lib/phone';
+import { formatApiError } from '@/lib/api';
 
 interface EnrollPatientModalProps {
   isOpen: boolean;
@@ -34,14 +36,25 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Live validation calculations
+  const phoneValidation = validatePhoneNumber(phoneNumber, true);
+  const isCaregiverFilled = Boolean(caregiverPhone.trim());
+  const caregiverValidation = validatePhoneNumber(caregiverPhone, false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Patient name is required.');
       return;
     }
-    if (phoneNumber.trim().length < 9) {
-      setError('A valid phone number is required for voice calls.');
+
+    if (!phoneValidation.isValid) {
+      setError(phoneValidation.error || 'A valid Ghanaian phone number is required.');
+      return;
+    }
+
+    if (isCaregiverFilled && !caregiverValidation.isValid) {
+      setError(`Caregiver phone: ${caregiverValidation.error || 'Invalid phone number format.'}`);
       return;
     }
 
@@ -51,9 +64,9 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
     try {
       const payload = {
         name: name.trim(),
-        phone_number: phoneNumber.trim(),
+        phone_number: phoneValidation.normalized!,
         preferred_language: preferredLanguage,
-        caregiver_phone: caregiverPhone.trim() || undefined,
+        caregiver_phone: caregiverValidation.normalized || undefined,
       };
 
       let createdPatient: any = null;
@@ -75,7 +88,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
         router.push(`/patients/${createdPatient.id}?enrolled=true`);
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to enroll patient in backend.');
+      setError(formatApiError(err, 'Could not enroll patient. Server may be offline.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -112,9 +125,17 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
 
         {/* Phone Number */}
         <div>
-          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-            Phone number (Voice calls) *
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Phone number (Voice calls) *
+            </label>
+            {phoneValidation.isValid && phoneValidation.network && (
+              <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+                {phoneValidation.network} ({phoneValidation.formatted})
+              </span>
+            )}
+          </div>
           <div className="relative">
             <input
               type="tel"
@@ -122,13 +143,24 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               placeholder="+233 24 000 0000"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono transition-all"
+              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 font-mono transition-all ${
+                phoneNumber.trim() && phoneNumber.trim() !== '+233' && !phoneValidation.isValid
+                  ? 'border-amber-300 focus:ring-amber-500/20 focus:border-amber-500'
+                  : 'border-gray-200 focus:ring-emerald-500/20 focus:border-emerald-600'
+              }`}
             />
             <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">
-            Automated reminder voice calls and SMS alerts will be placed to this line.
-          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-[11px] text-gray-400">
+              Automated reminder voice calls and SMS alerts will be placed to this line.
+            </p>
+            {phoneNumber.trim() && phoneNumber.trim() !== '+233' && !phoneValidation.isValid && (
+              <span className="text-[11px] text-amber-600 font-medium">
+                {phoneValidation.error?.split('.')[0]}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Preferred Language */}
@@ -164,22 +196,41 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
 
         {/* Caregiver Phone */}
         <div>
-          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-            Caregiver phone (Optional)
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Caregiver phone (Optional)
+            </label>
+            {isCaregiverFilled && caregiverValidation.isValid && caregiverValidation.network && (
+              <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+                {caregiverValidation.network} ({caregiverValidation.formatted})
+              </span>
+            )}
+          </div>
           <div className="relative">
             <input
               type="tel"
               placeholder="+233 50 123 4567"
               value={caregiverPhone}
               onChange={(e) => setCaregiverPhone(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono transition-all"
+              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 font-mono transition-all ${
+                isCaregiverFilled && !caregiverValidation.isValid
+                  ? 'border-amber-300 focus:ring-amber-500/20 focus:border-amber-500'
+                  : 'border-gray-200 focus:ring-emerald-500/20 focus:border-emerald-600'
+              }`}
             />
             <HeartHandshake className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">
-            Receives SMS notifications if the patient misses repeated reminder calls.
-          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-[11px] text-gray-400">
+              Receives SMS notifications if the patient misses repeated reminder calls.
+            </p>
+            {isCaregiverFilled && !caregiverValidation.isValid && (
+              <span className="text-[11px] text-amber-600 font-medium">
+                {caregiverValidation.error?.split('.')[0]}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}

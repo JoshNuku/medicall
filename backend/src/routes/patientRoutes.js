@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getAllPatients, getPatientById, updatePatient, deletePatient } = require('../db/queries/patients');
+const { validatePhone } = require('../utils/phoneUtils');
 
 /**
  * @openapi
@@ -110,11 +111,34 @@ router.put('/:id', (req, res, next) => {
     if (!existing) return res.status(404).json({ error: 'Patient not found', status: 404 });
 
     const { name, phone_number, preferred_language, caregiver_phone, consent_given } = req.body;
+    
+    let validPhone = undefined;
+    if (phone_number !== undefined) {
+      const phoneValidation = validatePhone(phone_number, true);
+      if (!phoneValidation.isValid) {
+        return res.status(400).json({ error: phoneValidation.error, status: 400 });
+      }
+      validPhone = phoneValidation.normalized;
+    }
+
+    let validCaregiver = undefined;
+    if (caregiver_phone !== undefined) {
+      if (caregiver_phone && String(caregiver_phone).trim()) {
+        const caregiverValidation = validatePhone(caregiver_phone, false);
+        if (!caregiverValidation.isValid) {
+          return res.status(400).json({ error: `Caregiver phone: ${caregiverValidation.error}`, status: 400 });
+        }
+        validCaregiver = caregiverValidation.normalized;
+      } else {
+        validCaregiver = null;
+      }
+    }
+
     const updated = updatePatient(id, {
       name,
-      phone_number,
+      phone_number: validPhone,
       preferred_language,
-      caregiver_phone,
+      caregiver_phone: validCaregiver,
       consent_given
     });
 

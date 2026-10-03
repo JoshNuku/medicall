@@ -13,6 +13,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Patient } from '@/lib/types';
 import { TableRowSkeleton, Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { formatApiError } from '@/lib/api';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   UserPlus,
@@ -168,7 +169,7 @@ export default function PatientsPage() {
               onClick={() => setStatusFilter('attention')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 statusFilter === 'attention'
-                  ? 'bg-amber-500 text-white shadow-xs font-semibold'
+                  ? 'bg-orange-500 text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -464,8 +465,9 @@ export default function PatientsPage() {
                   setToastMessage(`Patient "${name}" and all associated records deleted.`);
                   setTimeout(() => setToastMessage(null), 4000);
                 } catch (err: unknown) {
-                  const msg = err instanceof Error ? err.message : 'Failed to delete patient';
-                  alert(msg);
+                  const msg = formatApiError(err, 'Failed to delete patient. Server may be offline.');
+                  setToastMessage(msg);
+                  setTimeout(() => setToastMessage(null), 4000);
                 } finally {
                   setIsDeleting(false);
                 }

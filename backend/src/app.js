@@ -19,6 +19,7 @@ const medicationMutateRoutes = require('./routes/medicationMutateRoutes');
 const templateRoutes = require('./routes/templateRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const callRoutes = require('./routes/callRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API Routes
+app.use('/auth', generalLimiter, authRoutes);
+app.use('/api/auth', generalLimiter, authRoutes);
 app.use('/health', generalLimiter, healthRoutes);
 app.use('/patients/:id/medications', generalLimiter, medicationCreateRoutes);
 app.use('/patients/:id/medications', generalLimiter, medicationListRoutes);

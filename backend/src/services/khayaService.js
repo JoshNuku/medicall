@@ -86,60 +86,17 @@ const adjustAudioTempo = (inputPath, outputPath, tempo = 0.88) => {
   });
 };
 
+const { synthesizeSpeech } = require('./ttsService');
+
 /**
- * Synthesizes Twi text into speech using Khaya AI TTS API v2,
- * then slows down the speech tempo slightly (0.88x) for clear patient comprehension.
+ * Synthesizes Twi text into speech using the Lab Subscription Platform TTS API (model_type: 'ss', speaker: 'PT').
  */
-const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'female', tempo = 0.88) => {
-  if (!textTwi || !KHAYA_API_KEY) return null;
-
-  const audioDir = path.join(__dirname, '../../public/audio');
-  if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
-
-  const outputName = filename || `khaya_${Date.now()}_${Math.random().toString(36).substring(7)}.mp3`;
-  const finalFilePath = path.join(audioDir, outputName);
-  const tempRawPath = path.join(audioDir, `temp_raw_${Date.now()}_${outputName}`);
-
-  try {
-    const response = await fetch(KHAYA_TTS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': KHAYA_API_KEY,
-        'x-api-key': KHAYA_API_KEY
-      },
-      body: JSON.stringify({
-        text: textTwi,
-        language: 'twi',
-        speaker_id: speakerId,
-        format: 'mp3'
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Khaya AI TTS] Failed (${response.status}):`, errorText);
-      return null;
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = Buffer.from(arrayBuffer);
-
-    if (ffmpeg) {
-      fs.writeFileSync(tempRawPath, audioBuffer);
-      await adjustAudioTempo(tempRawPath, finalFilePath, tempo);
-    } else {
-      fs.writeFileSync(finalFilePath, audioBuffer);
-    }
-
-    return `/audio/${outputName}`;
-  } catch (err) {
-    console.error('[Khaya AI TTS] Error:', err.message);
-    return null;
-  }
+const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'PT', tempo = 0.88) => {
+  return synthesizeSpeech(textTwi, filename, speakerId, tempo);
 };
 
 module.exports = {
   translateEnglishToTwi,
   synthesizeTwiSpeech
 };
+

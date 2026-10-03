@@ -86,7 +86,7 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
             <span className="text-gray-600 font-medium">Confirmed ({overallRate || 0}%)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
             <span className="text-gray-600 font-medium">Pending Retries ({Math.max(0, Math.round((overallRate || 0) * 0.08))}%)</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -126,7 +126,7 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
                         ? 'bg-[#70BF2B] group-hover:bg-[#62A825]'
                         : item.rate >= 85
                         ? 'bg-[#70BF2B]/85 group-hover:bg-[#70BF2B]'
-                        : 'bg-amber-400/90 group-hover:bg-amber-500'
+                        : 'bg-orange-400/90 group-hover:bg-orange-500'
                     }`}
                     style={{ height: barHeight }}
                   />

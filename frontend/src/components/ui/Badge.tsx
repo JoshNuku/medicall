@@ -34,7 +34,7 @@ export const Badge: React.FC<BadgeProps> = ({
   if (variant === 'outcome' && outcome) {
     const config = {
       confirmed: { icon: Check, label: 'Confirmed', shell: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-      not_taken: { icon: X, label: 'Not taken', shell: 'bg-amber-50 text-amber-700 border-amber-200' },
+      not_taken: { icon: X, label: 'Not taken', shell: 'bg-orange-50 text-orange-700 border-orange-200' },
       no_answer: { icon: PhoneOff, label: 'No answer', shell: 'bg-rose-50 text-rose-700 border-rose-200' },
       answered_no_keypress: { icon: Minus, label: 'No keypress', shell: 'bg-slate-100 text-slate-700 border-slate-200' },
       pending: { icon: Minus, label: 'In progress', shell: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -55,7 +55,7 @@ export const Badge: React.FC<BadgeProps> = ({
   if (variant === 'status' && status) {
     const config = {
       active: { label: 'Active', shell: 'bg-[#EEF9E5] text-[#2F5F17] border border-[#C9E7A7]' },
-      attention: { label: 'Attention', shell: 'bg-[#FFF7ED] text-[#8C5400] border border-[#F1D3A4]' },
+      attention: { label: 'Attention', shell: 'bg-orange-50 text-orange-700 border-orange-200' },
       resolved: { label: 'Resolved', shell: 'bg-slate-100 text-slate-700 border-slate-200' },
       open: { label: 'Open', shell: 'bg-rose-50 text-rose-700 border-rose-200' },
     }[status];

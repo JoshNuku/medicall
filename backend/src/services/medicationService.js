@@ -50,6 +50,10 @@ const registerMedication = async ({
       const synthesizedUrl = await synthesizeTwiSpeech(assembledTwiText);
       finalAudioUrl = synthesizedUrl || (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';
     }
+  } else if (instructionSource === 'recorded' && audioFileUrl) {
+    // Process recorded audio: convert from webm/wav to telephony-compliant MP3 and append Khaya keypad prompt
+    const { prepareRecordedMedicationAudio } = require('./audioMergeService');
+    finalAudioUrl = await prepareRecordedMedicationAudio(audioFileUrl, selectedLang);
   } else if (!finalAudioUrl) {
     finalAudioUrl = isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3';
   }

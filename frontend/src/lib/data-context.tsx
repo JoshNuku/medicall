@@ -180,10 +180,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAdherenceHistory(safeHistory);
       setTemplates(templatesRes || []);
     } catch (err: any) {
-      console.error('Error fetching backend data:', err);
+      console.warn('Backend unavailable (operating offline):', err?.message || err);
       setIsBackendOnline(false);
       if (!silent) {
-        setError(err?.message || 'Could not connect to MediCall backend');
+        setError('Offline — backend service is currently unreachable.');
       }
     } finally {
       if (!silent) setIsLoading(false);
