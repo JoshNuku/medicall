@@ -33,6 +33,16 @@ router.get('/', (req, res, next) => {
   try {
     const patientId = parseInt(req.params.id, 10);
     const medications = getMedicationsByPatientId(patientId);
+
+    // Auto-heal missing reminder_audio_url in background so subsequent refreshes have distinct audio
+    medications.forEach((med) => {
+      if (!med.reminder_audio_url && med.instruction_source === 'template') {
+        const { generateDoseReminderAudio } = require('../services/reminderPipelineService');
+        generateDoseReminderAudio({ patientId: med.patient_id, medicationId: med.id })
+          .catch((err) => console.warn(`[Auto-Heal Reminder Audio Med #${med.id}]:`, err.message));
+      }
+    });
+
     res.json({ medications });
   } catch (err) {
     next(err);

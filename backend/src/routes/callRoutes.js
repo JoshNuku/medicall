@@ -92,43 +92,7 @@ router.post('/trigger', async (req, res, next) => {
       }
     }
 
-    let generatedCallAudio = null;
-
-    // Pre-generate AI audio depending on call type (only for template-based prescriptions)
-    if (patient && medicationId) {
-      const med = getMedicationById(medicationId);
-      if (med && med.instruction_source !== 'recorded') {
-        try {
-          if (call_type === 'reminder') {
-            console.log(`\n🤖 [AI PIPELINE]: Generating personalized reminder for Patient #${patient.id}...`);
-          const audioResult = await preGenerateReminderAudio({
-            patientId: patient.id,
-            medicationId: medicationId,
-            speakerId: 'female'
-          });
-          if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
-            generatedCallAudio = audioResult;
-            const db = require('../db/connection');
-            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, medicationId);
-          }
-        } else if (call_type === 'diagnostic') {
-          console.log(`\n🩺 [DIAGNOSTIC PIPELINE]: Synthesizing AI diagnostic audio evaluation for Patient #${patient.id}...`);
-          const diagAudio = await generateDiagnosticAudio({
-            patientId: patient.id,
-            medicationId: medicationId,
-            speakerId: 'female'
-          });
-          if (typeof diagAudio === 'string' && diagAudio.startsWith('/audio/')) {
-            generatedCallAudio = diagAudio;
-            console.log(`   ✓ Diagnostic audio generated and attached: ${generatedCallAudio}`);
-          }
-        }
-        } catch (genErr) {
-          console.warn('⚠️ [Call Trigger] AI Audio generation notice:', genErr.message);
-        }
-      }
-    }
-
+    // 1. Create immediate Call Event record with outcome 'pending'
     const callEvent = createCallEvent({
       patient_id: patient ? patient.id : 1,
       medication_id: medicationId || 1,
@@ -136,18 +100,70 @@ router.post('/trigger', async (req, res, next) => {
       call_type: call_type === 'diagnostic' ? 'diagnostic' : 'reminder',
       attempt_number: 1,
       dose_date: new Date().toISOString().split('T')[0],
-      audio_url: generatedCallAudio
+      audio_url: null
     });
 
-    console.log(`\n📞 [TELEPHONY]: Dialing ${validatedPhone} via Africa's Talking (${call_type})...`);
-    const callResult = await makeOutboundCall(validatedPhone);
-    console.log(`✓ [TELEPHONY RESULT]:`, JSON.stringify(callResult, null, 2));
-    console.log(`======================================================\n`);
-
+    // 2. Respond immediately to the client (<50ms) so UI is completely non-blocking
     res.json({
       status: 'success',
       callEvent,
-      result: callResult
+      message: 'Call initiated. AI agent is personalizing voice prompt and dialing patient in the background.'
+    });
+
+    // 3. Dispatch Agent Personalization & Telephony in background
+    setImmediate(async () => {
+      let generatedCallAudio = null;
+      const db = require('../db/connection');
+
+      if (patient && medicationId) {
+        const med = getMedicationById(medicationId);
+        if (med && med.instruction_source !== 'recorded') {
+          try {
+            if (call_type === 'reminder') {
+              console.log(`\n🤖 [AI PIPELINE]: Background generating personalized reminder for Patient #${patient.id}...`);
+              const audioResult = await preGenerateReminderAudio({
+                patientId: patient.id,
+                medicationId: medicationId,
+                speakerId: 'female'
+              });
+              if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+                generatedCallAudio = audioResult;
+                try {
+                  db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, medicationId);
+                } catch (_) {}
+              }
+            } else if (call_type === 'diagnostic') {
+              console.log(`\n🩺 [DIAGNOSTIC PIPELINE]: Background synthesizing AI diagnostic audio for Patient #${patient.id}...`);
+              const diagAudio = await generateDiagnosticAudio({
+                patientId: patient.id,
+                medicationId: medicationId,
+                speakerId: 'female'
+              });
+              if (typeof diagAudio === 'string' && diagAudio.startsWith('/audio/')) {
+                generatedCallAudio = diagAudio;
+                console.log(`   ✓ Diagnostic audio generated and attached: ${generatedCallAudio}`);
+              }
+            }
+          } catch (genErr) {
+            console.warn('⚠️ [Call Trigger Background] AI Audio generation notice:', genErr.message);
+          }
+        }
+      }
+
+      if (generatedCallAudio) {
+        try {
+          db.prepare('UPDATE call_events SET audio_url = ? WHERE id = ?').run(generatedCallAudio, callEvent.id);
+        } catch (_) {}
+      }
+
+      try {
+        console.log(`\n📞 [TELEPHONY]: Dialing ${validatedPhone} via Africa's Talking (${call_type})...`);
+        const callResult = await makeOutboundCall(validatedPhone);
+        console.log(`✓ [TELEPHONY RESULT]:`, JSON.stringify(callResult, null, 2));
+      } catch (telephonyErr) {
+        console.error(`⚠️ [TELEPHONY DISPATCH ERROR]:`, telephonyErr.message);
+      }
+      console.log(`======================================================\n`);
     });
   } catch (err) {
     next(err);

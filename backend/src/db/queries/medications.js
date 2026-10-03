@@ -9,6 +9,7 @@ const createMedication = ({
   timing_template_id = null,
   audio_url,
   reminder_audio_url = null,
+  audio_status = 'ready',
   schedule_times,
   duration_days,
   is_chronic = 0,
@@ -18,8 +19,8 @@ const createMedication = ({
     INSERT INTO medications (
       patient_id, drug_name, instruction_source,
       dosage_template_id, frequency_template_id, timing_template_id,
-      audio_url, reminder_audio_url, schedule_times, duration_days, is_chronic, language
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      audio_url, reminder_audio_url, audio_status, schedule_times, duration_days, is_chronic, language
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const info = stmt.run(
@@ -31,6 +32,7 @@ const createMedication = ({
     timing_template_id,
     audio_url,
     reminder_audio_url,
+    audio_status || 'ready',
     schedule_times,
     duration_days,
     is_chronic ? 1 : 0,
@@ -63,7 +65,7 @@ const updateMedicationSchedule = (id, schedule_times) => {
 };
 
 const updateMedication = (id, fields) => {
-  const allowed = ['drug_name', 'schedule_times', 'duration_days', 'is_chronic', 'audio_url', 'reminder_audio_url'];
+  const allowed = ['drug_name', 'schedule_times', 'duration_days', 'is_chronic', 'audio_url', 'reminder_audio_url', 'audio_status'];
   const updates = [];
   const values = [];
   for (const key of allowed) {

@@ -297,15 +297,32 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                           : `Full Prescription Instructions (${medLangLabel})`)
                         : `Daily Dose Reminder (${medLangLabel})`;
 
+                      const twiNumberWords: Record<number, string> = {
+                        1: 'baako',
+                        2: 'mmienu',
+                        3: 'mmiɛnsa',
+                        4: 'nnan',
+                        5: 'nnum',
+                        6: 'nsia',
+                        7: 'nson',
+                        8: 'nwɔtwe',
+                        9: 'nkron',
+                        10: 'du',
+                        14: 'dunan',
+                        21: 'aduonu baako',
+                        28: 'aduonu nwɔtwe',
+                        30: 'aduasa',
+                      };
+
                       const spokenText = isPrescriptionTrack
                         ? (med.instruction_source === 'recorded'
                           ? undefined
                           : isMedEnglish
                             ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'} ${med.frequency_label || 'twice daily'} ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. For questions or side effects, press 0 anytime to reach your pharmacist.`
-                            : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Sɛ worete nka bɔne bi a, mia 0 na kasa kyerɛ wo duruyɛfoɔ.`)
+                            : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : (twiNumberWords[med.duration_days] || med.duration_days)}. Sɛ worete nka bɔne bi a, mia hwee na kasa kyerɛ wo duruyɛfoɔ.`)
                         : (isMedEnglish
                           ? `Hello ${audioPreviewPatient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
-                          : `Meda wo akye ${audioPreviewPatient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`);
+                          : `Meda wo akye ${audioPreviewPatient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia baako sɛ woanom. Mia mmienu sɛ woamfa. Mia nkron sɛ wobɛtie bio, anaa mia hwee ma wo duruyɛfoɔ.`);
 
                       return (
                         <div className="space-y-2.5">

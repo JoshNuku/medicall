@@ -64,8 +64,8 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
         setCallStatus('success');
         setStatusMessage(
           callType === 'diagnostic'
-            ? `AI Diagnostic call queued successfully! Handset will ring shortly. Test pressing 1 (Cost barrier), 2 (Side effects), 3 (Forgot), 4 (Other), or 0 (Help).`
-            : `Outbound reminder call queued successfully! Handset will ring shortly. Test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`
+            ? `AI Diagnostic call initiated in background! The agent is personalizing the prompt and dialing ${phoneToCall}. Test pressing 1 (Cost), 2 (Side effects), 3 (Forgot), 4 (Other), or 0 (Help).`
+            : `Outbound reminder call initiated in background! The agent is personalizing the prompt and dialing ${phoneToCall}. Test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`
         );
       } else {
         throw new Error(res.message || 'Call failed to dispatch');

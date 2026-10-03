@@ -148,6 +148,83 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
 };
 
 /**
+ * Generates the distinct outbound daily dose reminder prompt audio.
+ * Matches the outbound call script:
+ * "Meda wo akye [Name], yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro [Drug]: [Dosage] [Timing]. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ."
+ * Updates medications.reminder_audio_url in SQLite.
+ */
+const generateDoseReminderAudio = async ({ patientId, medicationId, speakerId = 'PT' }) => {
+  const { getTemplateById } = require('../db/queries/templates');
+  const medication = getMedicationById(medicationId);
+  if (!medication) return null;
+
+  if (medication.instruction_source === 'recorded') {
+    return medication.reminder_audio_url || medication.audio_url;
+  }
+
+  const patient = getPatientById(patientId);
+  const lang = (medication.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
+  const isEnglish = lang === 'english' || lang === 'en';
+  const patientName = patient ? patient.name : 'there';
+  const drugName = medication.drug_name || 'your medication';
+
+  const dosage = medication.dosage_template_id ? getTemplateById(medication.dosage_template_id) : null;
+  const timing = medication.timing_template_id ? getTemplateById(medication.timing_template_id) : null;
+
+const convertDigitsToTwiWords = (text) => {
+  if (!text) return text;
+  return text
+    .replace(/\b1\b/g, 'baako')
+    .replace(/\b2\b/g, 'mmienu')
+    .replace(/\b3\b/g, 'mmiɛnsa')
+    .replace(/\b4\b/g, 'nnan')
+    .replace(/\b5\b/g, 'nnum')
+    .replace(/\b6\b/g, 'nsia')
+    .replace(/\b7\b/g, 'nson')
+    .replace(/\b8\b/g, 'nwɔtwe')
+    .replace(/\b9\b/g, 'nkron')
+    .replace(/\b0\b/g, 'hwee');
+};
+
+  let reminderScript = '';
+  if (isEnglish) {
+    const dosageLabel = dosage ? (dosage.text_en || dosage.label_english) : '1 tablet';
+    const timingLabel = timing ? (timing.text_en || timing.label_english) : 'after meals';
+    reminderScript = `Hello ${patientName}, this is your MediCall reminder to take your ${drugName} now: ${dosageLabel} ${timingLabel}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`;
+  } else {
+    const dosageText = dosage ? dosage.text_twi : 'Fa baa baako';
+    const timingText = timing ? timing.text_twi : 'sɛ wodidi wie a';
+    reminderScript = `Meda wo akye ${patientName}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${drugName}: ${dosageText} ${timingText}. Mia baako sɛ woanom. Mia mmienu sɛ woamfa. Mia nkron sɛ wobɛtie bio, anaa mia hwee ma wo duruyɛfoɔ.`;
+  }
+
+  try {
+    console.log(`🎙️ [DOSE REMINDER SYNTHESIS]: Generating distinct daily dose reminder audio...`);
+    console.log(`   Text: "${reminderScript}"`);
+    const filename = `reminder_patient_${patientId}_med_${medicationId}_${Date.now()}.mp3`;
+    let audioUrl = null;
+    if (isEnglish) {
+      audioUrl = await synthesizeEnglishSpeech(reminderScript, filename);
+    } else {
+      const speechText = convertDigitsToTwiWords(reminderScript);
+      audioUrl = await synthesizeTwiSpeech(speechText, filename, speakerId);
+    }
+
+    if (audioUrl) {
+      console.log(`✓ Daily dose reminder audio ready: ${audioUrl}`);
+      const db = require('../db/connection');
+      try {
+        db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
+      } catch (_) {}
+      return audioUrl;
+    }
+  } catch (err) {
+    console.error('[Dose Reminder Audio Synthesis Error]:', err.message);
+  }
+
+  return (dosage && dosage.audio_url) || (isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3');
+};
+
+/**
  * Synthesizes English speech by chunking into sentence segments to respect Google TTS length limits.
  */
 const synthesizeEnglishSpeech = async (text, filename) => {
@@ -279,6 +356,7 @@ const cleanupOldAudioFiles = (maxAgeHours = 24) => {
 module.exports = {
   preGenerateReminderAudio,
   generateFullPrescriptionAudio,
+  generateDoseReminderAudio,
   generateDiagnosticAudio,
   cleanupOldAudioFiles
 };

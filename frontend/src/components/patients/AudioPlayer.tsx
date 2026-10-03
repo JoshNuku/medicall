@@ -12,6 +12,7 @@ interface AudioPlayerProps {
   compact?: boolean;
   spokenText?: string;
   appendKeypressTrailer?: boolean;
+  isGenerating?: boolean;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -22,6 +23,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   compact = false,
   spokenText,
   appendKeypressTrailer = false,
+  isGenerating = false,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
@@ -441,7 +443,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div className="flex items-center gap-2 min-w-0">
           <Badge variant="language" language={language} />
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
-          {isPlayingTrailer ? (
+          {isGenerating ? (
+            <span className="inline-flex items-center gap-1.5 text-[10px] text-amber-800 bg-amber-50 font-medium px-2 py-0.5 rounded-md border border-amber-200/80 animate-pulse shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+              Generating audio in background...
+            </span>
+          ) : isPlayingTrailer ? (
             <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-2 py-0.5 rounded-md animate-pulse shrink-0">
               Playing Keypress Menu...
             </span>

@@ -17,6 +17,8 @@ const registerMedication = async ({
   language
 }) => {
   let finalAudioUrl = audioFileUrl;
+  let finalReminderAudioUrl = null;
+  let initialAudioStatus = 'ready';
 
   const patient = patientId ? getPatientById(patientId) : null;
   // If pharmacist explicitly selected language during prescription, respect that choice; otherwise fall back to patient's preferred language
@@ -37,25 +39,22 @@ const registerMedication = async ({
       } else {
         finalAudioUrl = '/audio/default-reminder-en.mp3';
       }
+      finalReminderAudioUrl = finalAudioUrl;
+      initialAudioStatus = 'ready';
     } else {
-      const twiPhrases = [
-        dosage ? dosage.text_twi : '',
-        freq ? freq.text_twi : '',
-        timing ? timing.text_twi : ''
-      ].filter(Boolean);
-
-      const assembledTwiText = `Fa wo nnuro ${drugName}. ${twiPhrases.join('. ')}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`;
-
-      // Attempt Khaya TTS synthesis, or fallback to relative template audio
-      const synthesizedUrl = await synthesizeTwiSpeech(assembledTwiText);
-      finalAudioUrl = synthesizedUrl || (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';
+      // Instant template fallback so record is functional immediately
+      finalAudioUrl = (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';
+      finalReminderAudioUrl = '/audio/default-reminder.mp3';
+      initialAudioStatus = 'generating'; // Will be synthesized in background
     }
   } else if (instructionSource === 'recorded' && audioFileUrl) {
-    // Process recorded audio: convert from webm/wav to telephony-compliant MP3 and append Khaya keypad prompt
-    const { prepareRecordedMedicationAudio } = require('./audioMergeService');
-    finalAudioUrl = await prepareRecordedMedicationAudio(audioFileUrl, selectedLang);
+    // Set immediate raw recording so it's instantly playable, then process FFmpeg merge in background
+    finalAudioUrl = audioFileUrl;
+    finalReminderAudioUrl = audioFileUrl;
+    initialAudioStatus = 'generating';
   } else if (!finalAudioUrl) {
     finalAudioUrl = isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3';
+    initialAudioStatus = 'ready';
   }
 
   const createdMed = createMedication({
@@ -66,19 +65,50 @@ const registerMedication = async ({
     frequency_template_id: frequencyTemplateId || null,
     timing_template_id: timingTemplateId || null,
     audio_url: finalAudioUrl,
+    reminder_audio_url: finalReminderAudioUrl,
+    audio_status: initialAudioStatus,
     schedule_times: scheduleTimes,
     duration_days: parseInt(durationDays, 10) || 7,
     is_chronic: isChronic ? 1 : 0,
     language: isEnglish ? 'english' : 'twi'
   });
 
-  // Pre-generate full prescription audio immediately in background/pipeline if needed
-  if (instructionSource === 'template' && patientId && createdMed) {
-    const { generateFullPrescriptionAudio } = require('./reminderPipelineService');
-    generateFullPrescriptionAudio({
-      patientId,
-      medicationId: createdMed.id
-    }).catch(err => console.warn('⚠️ [Prescription Audio Pre-Gen Notice]:', err.message));
+  // Background Async Processing (Non-blocking: returns HTTP 201 in <50ms)
+  if (initialAudioStatus === 'generating' && createdMed) {
+    setImmediate(async () => {
+      const db = require('../db/connection');
+      try {
+        if (instructionSource === 'template') {
+          console.log(`\n⚡ [BACKGROUND TASK] Starting audio synthesis for Med #${createdMed.id} (${drugName})...`);
+          const { generateFullPrescriptionAudio, generateDoseReminderAudio } = require('./reminderPipelineService');
+          
+          await Promise.allSettled([
+            generateFullPrescriptionAudio({ patientId, medicationId: createdMed.id }),
+            generateDoseReminderAudio({ patientId, medicationId: createdMed.id })
+          ]);
+
+          db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
+          console.log(`✓ [BACKGROUND TASK] Completed audio synthesis for Med #${createdMed.id}`);
+        } else if (instructionSource === 'recorded' && audioFileUrl) {
+          console.log(`\n⚡ [BACKGROUND TASK] Starting recorded audio conversion for Med #${createdMed.id}...`);
+          const { prepareRecordedMedicationAudio } = require('./audioMergeService');
+          const mergedUrl = await prepareRecordedMedicationAudio(audioFileUrl, selectedLang);
+          
+          const path = require('path');
+          const fs = require('fs');
+          const baseName = path.basename(audioFileUrl).replace(/\.[^/.]+$/, '').replace(/^(recording_|converted_|merged_|relisten_)/, '');
+          const relistenPath = `/audio/relisten_${baseName}.mp3`;
+          const relistenAudio = fs.existsSync(path.join(__dirname, '../../public', relistenPath)) ? relistenPath : mergedUrl;
+
+          db.prepare('UPDATE medications SET audio_url = ?, reminder_audio_url = ?, audio_status = ? WHERE id = ?')
+            .run(relistenAudio, mergedUrl, 'ready', createdMed.id);
+          console.log(`✓ [BACKGROUND TASK] Completed recorded audio merge for Med #${createdMed.id}`);
+        }
+      } catch (bgErr) {
+        console.error(`⚠️ [BACKGROUND TASK ERROR] Med #${createdMed.id}:`, bgErr.message);
+        db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
+      }
+    });
   }
 
   return createdMed;

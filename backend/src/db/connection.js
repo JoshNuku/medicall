@@ -29,6 +29,10 @@ try {
   db.exec("ALTER TABLE call_events ADD COLUMN audio_url TEXT;");
 } catch (_) {}
 
+try {
+  db.exec("ALTER TABLE medications ADD COLUMN audio_status TEXT DEFAULT 'ready';");
+} catch (_) {}
+
 db.transaction = (fn) => (...args) => {
   db.exec('BEGIN');
   try {

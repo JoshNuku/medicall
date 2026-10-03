@@ -169,15 +169,17 @@ export default function PatientDetailPage() {
     }
   }, [searchParams, patient?.name]);
 
+  const isAnyMedGenerating = (medications || []).some((m) => m.audio_status === 'generating');
+
   useEffect(() => {
     if (patientId) {
       loadPatientDetails(patientId);
       const interval = setInterval(() => {
         loadPatientDetails(patientId);
-      }, 4000);
+      }, isAnyMedGenerating ? 2000 : 4000);
       return () => clearInterval(interval);
     }
-  }, [patientId, loadPatientDetails]);
+  }, [patientId, loadPatientDetails, isAnyMedGenerating]);
 
   if (isGlobalLoading && !patient) {
     return (
@@ -649,7 +651,7 @@ export default function PatientDetailPage() {
 
                     const effectiveAudioUrl = isPrescriptionTrack
                       ? (med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'))
-                      : (med.reminder_audio_url || med.audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'));
+                      : (med.reminder_audio_url || (isMedEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3'));
 
                     const title = isPrescriptionTrack
                       ? (med.instruction_source === 'recorded'
@@ -657,15 +659,32 @@ export default function PatientDetailPage() {
                           : `Full Prescription Instructions (${medLangLabel})`)
                       : `Daily Dose Reminder (${medLangLabel})`;
 
+                    const twiNumberWords: Record<number, string> = {
+                      1: 'baako',
+                      2: 'mmienu',
+                      3: 'mmiɛnsa',
+                      4: 'nnan',
+                      5: 'nnum',
+                      6: 'nsia',
+                      7: 'nson',
+                      8: 'nwɔtwe',
+                      9: 'nkron',
+                      10: 'du',
+                      14: 'dunan',
+                      21: 'aduonu baako',
+                      28: 'aduonu nwɔtwe',
+                      30: 'aduasa',
+                    };
+
                     const spokenText = isPrescriptionTrack
                       ? (med.instruction_source === 'recorded'
                           ? undefined
                           : isMedEnglish
                           ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'} ${med.frequency_label || 'twice daily'} ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press 9 to repeat, or Press 0 for your pharmacist.`
-                          : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : med.duration_days}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`)
+                          : `Saa nnuro yi yɛ ${med.drug_name}. Fa ${med.dosage_label || 'baa baako'} ${med.frequency_label || 'da biara mprenu'} ${med.timing_label || 'sɛ wodidi wie a'}. Nnuro yi bɛkɔ so nnafua ${med.is_chronic ? 'dodoɔ biara' : (twiNumberWords[med.duration_days] || med.duration_days)}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`)
                       : (isMedEnglish
                           ? `Hello ${patient.name}, this is your MediCall reminder to take your ${med.drug_name} now: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`
-                          : `Meda wo akye ${patient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia 1 sɛ woanom. Mia 2 sɛ woamfa. Mia 9 sɛ wobɛtie bio, anaa mia 0 ma wo duruyɛfoɔ.`);
+                          : `Meda wo akye ${patient.name}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${med.drug_name}: ${med.dosage_label || 'Fa baa baako'} ${med.timing_label || 'sɛ wodidi wie a'}. Mia baako sɛ woanom. Mia mmienu sɛ woamfa. Mia nkron sɛ wobɛtie bio, anaa mia hwee ma wo duruyɛfoɔ.`);
 
                     return (
                       <div className="space-y-2.5">
@@ -713,14 +732,31 @@ export default function PatientDetailPage() {
                           </button>
                         </div>
 
+                        {/* Background Audio Generation Notice if in progress */}
+                        {med.audio_status === 'generating' && (
+                          <div className="flex items-center justify-between px-3 py-2 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 animate-in fade-in">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                              <span className="font-semibold">AI Voice Generating</span>
+                              <span className="text-amber-400">&middot;</span>
+                              <span className="text-amber-800 text-[11px]">Synthesizing authentic Twi prompt in background (~10-15s)</span>
+                            </div>
+                            <span className="text-[10px] font-mono font-medium text-amber-800 bg-white/90 px-2 py-0.5 rounded border border-amber-200 shrink-0">
+                              Auto-refreshing
+                            </span>
+                          </div>
+                        )}
+
                         {/* Single Unified Audio Player */}
                         <AudioPlayer
+                          key={`${med.id}-${activeTrack}-${effectiveAudioUrl}`}
                           title={title}
                           language={isMedEnglish ? 'english' : 'twi'}
-                          durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 12}
+                          durationSeconds={isPrescriptionTrack ? (med.instruction_source === 'recorded' ? 24 : 18) : 15}
                           spokenText={spokenText}
                           audioUrl={effectiveAudioUrl}
                           appendKeypressTrailer={isPrescriptionTrack && med.instruction_source === 'recorded'}
+                          isGenerating={med.audio_status === 'generating'}
                         />
 
                         {/* Expandable Spoken Script */}
