@@ -760,21 +760,21 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-              Call schedule times (HH:MM) *
+              Call schedule times (24-Hour Format: HH:MM) *
             </label>
             <div className="relative">
               <input
                 type="text"
                 required
-                placeholder="08:00, 20:00"
+                placeholder="08:00, 13:30, 20:00"
                 value={scheduleTimes}
                 onChange={(e) => setScheduleTimes(e.target.value)}
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all"
               />
               <Clock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
-            <p className="text-[11px] text-gray-400 mt-1">
-              Comma-separated reminder times (e.g. 08:00, 20:00)
+            <p className="text-[11px] text-emerald-700 bg-emerald-50/70 border border-emerald-200/50 rounded-lg px-2 py-1 mt-1.5 font-medium">
+              💡 Use 24-hour format (e.g. 08:00 for morning, 13:30 for 1:30 PM, 20:00 for evening).
             </p>
           </div>
 

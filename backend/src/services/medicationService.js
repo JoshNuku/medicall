@@ -70,11 +70,23 @@ const registerMedication = async ({
 
   // Pre-generate full prescription audio immediately in background/pipeline if needed
   if (instructionSource === 'template' && patientId && createdMed) {
-    const { generateFullPrescriptionAudio } = require('./reminderPipelineService');
-    generateFullPrescriptionAudio({
-      patientId,
-      medicationId: createdMed.id
-    }).catch(err => console.warn('⚠️ [Prescription Audio Pre-Gen Notice]:', err.message));
+    if (process.env.ENABLE_AI_AGENT === 'true') {
+      const { preGenerateReminderAudio } = require('./reminderPipelineService');
+      preGenerateReminderAudio({ patientId, medicationId: createdMed.id, speakerId: 'female' })
+        .then((audioResult) => {
+          if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+            const db = require('../db/connection');
+            db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioResult, createdMed.id);
+          }
+        })
+        .catch((err) => console.warn('⚠️ [Prescription AI Audio Pre-Gen]:', err.message));
+    } else {
+      const { generateFullPrescriptionAudio } = require('./reminderPipelineService');
+      generateFullPrescriptionAudio({
+        patientId,
+        medicationId: createdMed.id
+      }).catch(err => console.warn('⚠️ [Prescription Audio Pre-Gen Notice]:', err.message));
+    }
   }
 
   return createdMed;

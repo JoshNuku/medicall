@@ -17,7 +17,7 @@ const runSchedulerCycle = async (now = new Date()) => {
   const todayDate = now.toISOString().split('T')[0];
   const medications = getAllActiveMedications();
 
-  // 1. Pre-generate AI reminder audio 10 mins before call to avoid telephony latency
+  // 1. Pre-generate AI reminder audio 10 mins before call to avoid telephony latency (sequential queue)
   if (process.env.ENABLE_AI_AGENT === 'true') {
     for (const med of medications) {
       if (med.instruction_source === 'recorded') continue;
@@ -32,8 +32,7 @@ const runSchedulerCycle = async (now = new Date()) => {
           });
           if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
             const db = require('../db/connection');
-            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
-            med.reminder_audio_url = audioResult;
+            db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioResult, med.id);
           }
         } catch (err) {
           console.error(`[Pre-Gen Error Med ${med.id}]:`, err.message);
@@ -49,46 +48,46 @@ const runSchedulerCycle = async (now = new Date()) => {
 
     if (hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
 
-    // Ensure reminder audio / agent message is generated if not already done 10 mins prior
-    if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded') {
-      const isEnglish = (med.language || '').toLowerCase() === 'english';
-      const needsGen = isEnglish || !med.reminder_audio_url;
-      if (needsGen) {
+    try {
+      // Immediately create call_event to prevent duplicates
+      const callEvent = createCallEvent({
+        patient_id: med.patient_id,
+        medication_id: med.id,
+        scheduled_time: now.toISOString(),
+        call_type: 'reminder',
+        attempt_number: 1,
+        dose_date: todayDate
+      });
+
+      console.log(`\n⏰ [CRON SCHEDULER]: Automated reminder call triggered for ${med.patient_name} (${med.phone_number})...`);
+
+      // Ensure dynamic AI reminder audio is fresh before placing call
+      if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded') {
         try {
-          console.log(`🤖 [CRON CALL-TIME AGENT]: Generating reminder audio for Patient #${med.patient_id} (Med #${med.id})...`);
           const audioResult = await preGenerateReminderAudio({
             patientId: med.patient_id,
             medicationId: med.id,
             speakerId: 'female'
           });
-          if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
             const db = require('../db/connection');
-            db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
-            med.reminder_audio_url = audioResult;
+            db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioResult, med.id);
           }
-        } catch (genErr) {
-          console.warn(`⚠️ [Call Time Audio Notice Med ${med.id}]:`, genErr.message);
+        } catch (preErr) {
+          console.warn('⚠️ [Cron Pre-call Audio notice]:', preErr.message);
         }
       }
-    }
 
-    // Immediately create call_event to prevent duplicates
-    const callEvent = createCallEvent({
-      patient_id: med.patient_id,
-      medication_id: med.id,
-      scheduled_time: now.toISOString(),
-      call_type: 'reminder',
-      attempt_number: 1,
-      dose_date: todayDate
-    });
+      // Trigger outbound voice call
+      await makeOutboundCall(med.phone_number);
 
-    // Trigger outbound voice call
-    await makeOutboundCall(med.phone_number);
-
-    // Optional companion SMS (configurable flag)
-    if (process.env.ENABLE_REMINDER_SMS === 'true') {
-      const smsMsg = `MediCall reminder: Please take your ${med.drug_name} now.`;
-      await sendSms(med.phone_number, smsMsg);
+      // Optional companion SMS (configurable flag)
+      if (process.env.ENABLE_REMINDER_SMS === 'true') {
+        const smsMsg = `MediCall reminder: Please take your ${med.drug_name} now.`;
+        await sendSms(med.phone_number, smsMsg);
+      }
+    } catch (callErr) {
+      console.error(`❌ [Cron Call Error for ${med.patient_name}]:`, callErr.message);
     }
   }
 
