@@ -88,7 +88,12 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
         router.push(`/patients/${createdPatient.id}?enrolled=true`);
       }
     } catch (err: any) {
-      setError(formatApiError(err, 'Could not enroll patient. Server may be offline.'));
+      const msg = err?.message || 'Could not enroll patient.';
+      if (msg.toLowerCase().includes('already enrolled') || msg.toLowerCase().includes('phone')) {
+        setError(msg);
+      } else {
+        setError(formatApiError(err, 'Could not enroll patient.'));
+      }
     } finally {
       setIsSubmitting(false);
     }
