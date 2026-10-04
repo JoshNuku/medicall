@@ -8,7 +8,13 @@ import { AdherenceCard } from '@/components/dashboard/AdherenceCard';
 import { CallsCard } from '@/components/dashboard/CallsCard';
 import { AlertPreview } from '@/components/dashboard/AlertPreview';
 import { RecentPatients } from '@/components/dashboard/RecentPatients';
-import { MetricSkeleton } from '@/components/ui/Skeleton';
+import {
+  MetricSkeleton,
+  AdherenceCardSkeleton,
+  CallsCardSkeleton,
+  AlertPreviewSkeleton,
+  RecentPatientsSkeleton,
+} from '@/components/ui/Skeleton';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { EnrollPatientModal } from '@/components/patients/EnrollPatientModal';
 import { TriggerCallModal } from '@/components/patients/TriggerCallModal';
@@ -160,21 +166,29 @@ export default function DashboardPage() {
       {/* Main Two-Column Analytics Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-7">
-          <AdherenceCard
-            overallRate={metrics.overall_adherence}
-            history={adherenceHistory}
-          />
+          {isLoading ? (
+            <AdherenceCardSkeleton />
+          ) : (
+            <AdherenceCard
+              overallRate={metrics.overall_adherence}
+              history={adherenceHistory}
+            />
+          )}
         </div>
         <div className="lg:col-span-5">
-          <CallsCard calls={todayCalls} />
+          {isLoading ? (
+            <CallsCardSkeleton />
+          ) : (
+            <CallsCard calls={todayCalls} />
+          )}
         </div>
       </div>
 
       {/* Row 4: Needs Attention Escalations */}
-      <AlertPreview alerts={alerts} />
+      {isLoading ? <AlertPreviewSkeleton /> : <AlertPreview alerts={alerts} />}
 
       {/* Row 5: Recent Patients Table */}
-      <RecentPatients patients={patients} />
+      {isLoading ? <RecentPatientsSkeleton /> : <RecentPatients patients={patients} />}
 
       {/* Modals */}
       <EnrollPatientModal
