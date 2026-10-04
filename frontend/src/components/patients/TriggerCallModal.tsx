@@ -109,11 +109,13 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
               onClick={() => setCallType('reminder')}
               className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                 callType === 'reminder'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-gray-900 ring-1 ring-[#70BF2B]'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#55941E] ring-1 ring-[#70BF2B]'
                   : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-2 font-semibold text-xs text-gray-900 mb-0.5">
+              <div className={`flex items-center gap-2 font-semibold text-xs mb-0.5 ${
+                callType === 'reminder' ? 'text-[#55941E]' : 'text-gray-900'
+              }`}>
                 Medication Reminder
               </div>
               <p className="text-[11px] text-gray-500">
