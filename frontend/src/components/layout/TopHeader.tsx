@@ -3,10 +3,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, Bell, ChevronRight, AlertTriangle, ArrowRight, CheckCircle2, LogOut, Sparkles } from 'lucide-react';
+import { ChevronDown, Bell, ChevronRight, AlertTriangle, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { useAuth } from '@/lib/auth-context';
 import { VoiceAssistantModal } from '@/components/patients/VoiceAssistantModal';
+import { LogoutButton } from '@/components/layout/LogoutButton';
 
 interface TopHeaderProps {
   onToggleSidebar?: () => void;
@@ -14,13 +15,33 @@ interface TopHeaderProps {
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
   const { metrics, alerts } = useData();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const previousScrollY = useRef(0);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - previousScrollY.current;
+
+      if (currentScrollY <= 80 || scrollDelta < -4) {
+        setIsHeaderVisible(true);
+      } else if (scrollDelta > 4) {
+        setIsHeaderVisible(false);
+      }
+
+      previousScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const initials = useMemo(() => {
     if (!user?.name) return 'MP';
@@ -92,7 +113,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
   }, [pathname]);
 
   return (
-    <header className="hidden md:flex h-16 bg-white border-b border-[#EAEAEA] px-4 sm:px-6 md:px-8 items-center justify-between sticky top-0 z-30 select-none">
+    <header className={`hidden md:flex h-16 bg-white border-b border-[#EAEAEA] px-4 sm:px-6 md:px-8 items-center justify-between sticky top-0 z-30 select-none transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onToggleSidebar}
@@ -253,39 +274,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
                 <p className="text-[11px] text-gray-400 truncate">{user?.email || 'Logged in'}</p>
               </div>
               <div className="py-1">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="block px-3.5 py-2 text-gray-700 hover:bg-[#F8F9FA] hover:text-gray-900 transition-colors"
-                >
-                  Dashboard Overview
-                </Link>
-                <Link
-                  href="/patients"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="block px-3.5 py-2 text-gray-700 hover:bg-[#F8F9FA] hover:text-gray-900 transition-colors"
-                >
-                  Patients Directory
-                </Link>
-                <Link
-                  href="/alerts"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="block px-3.5 py-2 text-gray-700 hover:bg-[#F8F9FA] hover:text-gray-900 transition-colors"
-                >
-                  Clinical Alerts
-                </Link>
-                <div className="my-1 border-t border-gray-100" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    logout();
-                  }}
+                <LogoutButton
                   className="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 cursor-pointer font-medium"
-                >
-                  <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Sign Out</span>
-                </button>
+                  iconClassName="w-3.5 h-3.5 text-rose-500"
+                  label="Sign Out"
+                  onLogout={() => setIsProfileOpen(false)}
+                />
               </div>
             </div>
           )}

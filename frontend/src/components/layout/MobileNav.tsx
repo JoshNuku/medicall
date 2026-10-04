@@ -13,16 +13,16 @@ import {
   Bell,
   Settings,
   HelpCircle,
-  LogOut,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { useAuth } from '@/lib/auth-context';
+import { LogoutButton } from '@/components/layout/LogoutButton';
 
 export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { metrics } = useData();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const navItems = [
     {
@@ -49,12 +49,6 @@ export const MobileNav: React.FC = () => {
       href: '/settings',
       icon: Settings,
       active: pathname === '/settings',
-    },
-    {
-      name: 'Support',
-      href: '/support',
-      icon: HelpCircle,
-      active: pathname === '/support',
     },
   ];
 
@@ -97,43 +91,7 @@ export const MobileNav: React.FC = () => {
       {/* Mobile Drawer Menu */}
       {isOpen && (
         <div className="border-t border-gray-100 bg-[#FAF9F6] px-4 py-3 space-y-1 animate-in slide-in-from-top-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  item.active
-                    ? 'bg-[#70BF2B] text-white font-semibold'
-                    : 'text-gray-700 hover:bg-[#F6FAF1] border border-transparent'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon
-                    className={`w-4 h-4 ${
-                      item.active ? 'text-white stroke-[2.2]' : 'text-gray-500'
-                    }`}
-                  />
-                  <span>{item.name}</span>
-                </div>
-                {item.badge !== undefined && (
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                      item.active
-                        ? 'bg-white text-[#70BF2B]'
-                        : 'bg-rose-50 text-rose-700 border border-rose-200'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-
-          <div className="pt-3 mt-2 border-t border-gray-200/80 flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
                 {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MP'}
@@ -143,19 +101,63 @@ export const MobileNav: React.FC = () => {
                 <p className="text-[11px] text-gray-500">{user?.role || 'Clinical Staff'}</p>
               </div>
             </div>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                logout();
-              }}
+            <LogoutButton
               className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-500" />
-              <span>Logout</span>
-            </button>
+              iconClassName="w-3.5 h-3.5 text-rose-500"
+              onLogout={() => setIsOpen(false)}
+            />
           </div>
+
+          <Link
+            href="/support"
+            onClick={() => setIsOpen(false)}
+            className={`mt-2 flex items-center gap-3 border-t border-gray-200/80 px-3.5 py-2.5 pt-3 rounded-xl text-sm font-medium transition-colors ${
+              pathname === '/support'
+                ? 'bg-[#70BF2B] text-white font-semibold'
+                : 'text-gray-700 hover:bg-[#F6FAF1]'
+            }`}
+          >
+            <HelpCircle
+              className={`w-4 h-4 ${
+                pathname === '/support' ? 'text-white stroke-[2.2]' : 'text-gray-500'
+              }`}
+            />
+            <span>Support</span>
+          </Link>
         </div>
       )}
+
+      <nav
+        aria-label="Primary navigation"
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-[#EBEAE5] bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 pt-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors ${
+                  item.active ? 'text-[#55941E]' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <span className="relative">
+                  <Icon className={`h-5 w-5 ${item.active ? 'stroke-[2.4]' : ''}`} />
+                  {item.badge !== undefined && (
+                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold leading-none text-white">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
+                </span>
+                <span className="truncate">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
     </header>
   );
 };

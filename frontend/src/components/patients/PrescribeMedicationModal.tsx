@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Pill,
   Check,
+  Plus,
+  X,
 } from 'lucide-react';
 
 interface PrescribeMedicationModalProps {
@@ -59,7 +61,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
 
   // Shared fields
   const [drugName, setDrugName] = useState('');
-  const [scheduleTimes, setScheduleTimes] = useState('08:00, 20:00');
+  const [scheduleTimes, setScheduleTimes] = useState(['08:00', '20:00']);
   const [durationDays, setDurationDays] = useState(7);
   const [isChronic, setIsChronic] = useState(false);
 
@@ -367,7 +369,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           frequency_label: selectedFrequency?.label_english,
           timing_label: selectedTiming?.label_english,
           assembled_twi: promptToSave,
-          schedule_times: scheduleTimes,
+          schedule_times: scheduleTimes.join(', '),
           duration_days: isChronic ? 90 : durationDays,
           is_chronic: isChronic,
           language: effectiveLanguage,
@@ -395,7 +397,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
           frequency_label: 'As instructed by pharmacist',
           timing_label: 'Recorded clinical instruction',
           assembled_twi: effectiveLanguage === 'english' ? 'Voice instruction recorded in English.' : 'Voice instruction recorded by pharmacist.',
-          schedule_times: scheduleTimes,
+          schedule_times: scheduleTimes.join(', '),
           duration_days: isChronic ? 90 : durationDays,
           is_chronic: isChronic,
           audioFile,
@@ -767,19 +769,54 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
               Call schedule times (24-Hour Format: HH:MM) *
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                required
-                placeholder="08:00, 13:30, 20:00"
-                value={scheduleTimes}
-                onChange={(e) => setScheduleTimes(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all"
-              />
-              <Clock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+            <div className="space-y-2">
+              {scheduleTimes.map((time, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <label htmlFor={`schedule-time-${index}`} className="sr-only">
+                    Reminder time {index + 1}
+                  </label>
+                  <div className="relative min-w-0 flex-1">
+                    <Clock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      id={`schedule-time-${index}`}
+                      type="time"
+                      required
+                      value={time}
+                      onChange={(event) => {
+                        setScheduleTimes((times) =>
+                          times.map((currentTime, currentIndex) =>
+                            currentIndex === index ? event.target.value : currentTime
+                          )
+                        );
+                      }}
+                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-3.5 text-sm font-mono transition-all focus:border-[#70BF2B] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={`Remove reminder time ${index + 1}`}
+                    disabled={scheduleTimes.length === 1}
+                    onClick={() =>
+                      setScheduleTimes((times) => times.filter((_, timeIndex) => timeIndex !== index))
+                    }
+                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                disabled={scheduleTimes.length >= 4}
+                onClick={() => setScheduleTimes((times) => [...times, ''])}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#55941E] transition-colors hover:bg-[#F0F9EB] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add reminder time
+              </button>
             </div>
-            <p className="text-[11px] text-emerald-700 bg-emerald-50/70 border border-emerald-200/50 rounded-lg px-2 py-1 mt-1.5 font-medium">
-              💡 Use 24-hour format (e.g. 08:00 for morning, 13:30 for 1:30 PM, 20:00 for evening).
+            <p className="text-[11px] text-gray-500 mt-1.5">
+              Select 24-hour reminder times for automated adherence calls.
             </p>
           </div>
 

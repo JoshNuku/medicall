@@ -90,9 +90,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
         {/* Minimalist Gateway Status */}
         <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#F8F9FA] border border-[#EAEAEA] rounded-xl text-xs">
           <div className="flex items-center gap-2 text-gray-700">
-            <span className="w-2 h-2 rounded-full bg-[#70BF2B] shrink-0" />
             <span className="font-semibold text-gray-900">Voice Adherence Call</span>
-            <span className="text-gray-300">&middot;</span>
             <span className="text-gray-500">Twi &amp; English IVR</span>
           </div>
           <span className="text-[11px] font-semibold text-[#55941E] bg-[#F0F9EB] px-2 py-0.5 rounded-md border border-[#70BF2B]/30">
@@ -111,12 +109,13 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
               onClick={() => setCallType('reminder')}
               className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                 callType === 'reminder'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-gray-900 ring-1 ring-[#70BF2B]'
+                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#55941E] ring-1 ring-[#70BF2B]'
                   : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-2 font-semibold text-xs text-gray-900 mb-0.5">
-                <span className="w-2 h-2 rounded-full bg-[#70BF2B]" />
+              <div className={`flex items-center gap-2 font-semibold text-xs mb-0.5 ${
+                callType === 'reminder' ? 'text-[#55941E]' : 'text-gray-900'
+              }`}>
                 Medication Reminder
               </div>
               <p className="text-[11px] text-gray-500">
@@ -129,12 +128,13 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
               onClick={() => setCallType('diagnostic')}
               className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                 callType === 'diagnostic'
-                  ? 'bg-amber-50 border-amber-500 text-gray-900 ring-1 ring-amber-500'
+                  ? 'bg-amber-50 border-amber-600 text-amber-800 ring-1 ring-amber-600'
                   : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-2 font-semibold text-xs text-gray-900 mb-0.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <div className={`flex items-center gap-2 font-semibold text-xs mb-0.5 ${
+                callType === 'diagnostic' ? 'text-amber-800' : 'text-gray-900'
+              }`}>
                 AI Diagnostic Call
               </div>
               <p className="text-[11px] text-gray-500">
