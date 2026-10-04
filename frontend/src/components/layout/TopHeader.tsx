@@ -120,14 +120,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
         {/* AI Voice Assistant Trigger Button */}
         <button
           onClick={() => setIsVoiceModalOpen(true)}
-          className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-50 to-emerald-100/80 border border-emerald-300/80 text-emerald-800 hover:from-emerald-100 hover:to-emerald-200 text-xs font-semibold shadow-xs hover:shadow-sm transition-all group cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 text-emerald-800 text-xs font-medium transition-colors group cursor-pointer"
           title="Open AI Voice Prescription Assistant"
         >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
-          </span>
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
           <span className="hidden sm:inline">AI Voice Assistant</span>
           <span className="sm:hidden">AI Voice</span>
         </button>
