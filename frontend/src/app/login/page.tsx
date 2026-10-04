@@ -201,8 +201,9 @@ function LoginForm() {
 
       {/* Forgot Password Hint Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 border border-gray-100 shadow-xl space-y-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end justify-center z-50 animate-in fade-in md:items-center md:p-4">
+          <div className="bg-white rounded-t-3xl md:max-w-sm w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border border-gray-100 shadow-xl space-y-4 animate-slide-in-up md:rounded-2xl md:pb-6 md:animate-slide-in-right">
+            <div className="mx-auto -mt-3 mb-4 h-1 w-10 rounded-full bg-[#D8D8D2] md:hidden" />
             <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#70BF2B] flex items-center justify-center border border-[#70BF2B]/20">
               <CheckCircle2 className="w-5 h-5" />
             </div>

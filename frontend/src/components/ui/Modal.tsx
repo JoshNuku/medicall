@@ -37,10 +37,10 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const maxWidthClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-xl',
-    xl: 'max-w-2xl',
+    sm: 'md:max-w-md',
+    md: 'md:max-w-lg',
+    lg: 'md:max-w-xl',
+    xl: 'md:max-w-2xl',
   }[maxWidth];
 
   return (
@@ -51,13 +51,13 @@ export const Modal: React.FC<ModalProps> = ({
         onClick={onClose}
       />
 
-      {/* Side Pane Sheet Container */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 z-10 w-full sm:w-auto">
+      <div className="pointer-events-none fixed inset-0 z-10 flex items-end justify-center md:justify-end">
         <div
-          className={`w-full ${maxWidthClasses} bg-white shadow-2xl border-l border-[#EAEAEA] flex flex-col h-full transform transition ease-in-out duration-300 animate-in slide-in-from-right`}
+          className={`pointer-events-auto flex h-[min(92dvh,48rem)] w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up md:h-full md:max-h-full ${maxWidthClasses} md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
           role="dialog"
           aria-modal="true"
         >
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[#D8D8D2] md:hidden" />
           {/* Side Pane Header */}
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-start justify-between bg-white shrink-0">
             <div className="pr-4">
@@ -76,7 +76,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Scrollable Side Pane Body */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 overscroll-contain">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 overscroll-contain">
             {children}
           </div>
         </div>

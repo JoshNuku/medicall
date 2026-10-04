@@ -53,7 +53,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
       {isConfirmationOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 px-0 backdrop-blur-[2px] md:items-center md:px-4"
             onClick={() => setIsConfirmationOpen(false)}
           >
             <div
@@ -61,9 +61,10 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
               aria-modal="true"
               aria-labelledby={`${dialogId}-title`}
               aria-describedby={`${dialogId}-description`}
-              className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl"
+              className="w-full rounded-t-3xl border border-gray-100 bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl animate-slide-in-up md:max-w-sm md:rounded-2xl md:pb-5 md:animate-slide-in-right"
               onClick={(event) => event.stopPropagation()}
             >
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#D8D8D2] md:hidden" />
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">
                 <LogOut className="h-5 w-5" />
               </div>
