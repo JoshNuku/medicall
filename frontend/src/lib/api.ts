@@ -330,6 +330,39 @@ export async function testTtsProviderApi(provider: 'lab' | 'khaya', text?: strin
   return res.json();
 }
 
+// 10. AI Voice Dictation API
+export async function dictatePrescriptionApi(audioBlob: Blob, language = 'en', patientId?: number) {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'dictation.webm');
+  formData.append('language', language);
+  if (patientId) formData.append('patientId', String(patientId));
+
+  const res = await fetch(`${API_BASE_URL}/ai/dictate`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Voice processing failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function extractPrescriptionApi(transcript: string, patientId?: number) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/ai/extract`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript, patientId }),
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Extraction failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 export interface SystemHealthData {
   status: string;
   timestamp: string;
@@ -390,4 +423,3 @@ export async function simulateVoiceWebhookApi(payload: {
   if (!res.ok) throw new Error('Simulation failed.');
   return res.json();
 }
-

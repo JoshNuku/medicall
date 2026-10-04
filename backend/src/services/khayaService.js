@@ -45,6 +45,45 @@ const translateEnglishToTwi = async (englishText) => {
   }
 };
 
+/**
+ * Translates Twi text to English using Khaya AI / Ghana NLP Translation API.
+ */
+const translateTwiToEnglish = async (twiText) => {
+  if (!twiText) return null;
+  if (!KHAYA_API_KEY) {
+    console.warn('[Khaya AI] KHAYA_API_KEY is not set in .env');
+    return null;
+  }
+
+  try {
+    const response = await fetch(KHAYA_TRANSLATE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': KHAYA_API_KEY,
+        'x-api-key': KHAYA_API_KEY
+      },
+      body: JSON.stringify({
+        in: twiText,
+        lang: 'tw-en'
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Khaya AI Twi-to-English Translation] Failed (${response.status}):`, errorText);
+      return null;
+    }
+
+    const data = await response.json().catch(async () => await response.text());
+    if (typeof data === 'string') return data.trim();
+    return data.out || data.translated_text || data.text || JSON.stringify(data);
+  } catch (err) {
+    console.error('[Khaya AI Twi-to-English Translation] Error:', err.message);
+    return null;
+  }
+};
+
 let ffmpeg = null;
 try {
   ffmpeg = require('fluent-ffmpeg');
@@ -97,6 +136,7 @@ const synthesizeTwiSpeech = async (textTwi, filename = null, speakerId = 'PT', t
 
 module.exports = {
   translateEnglishToTwi,
+  translateTwiToEnglish,
   synthesizeTwiSpeech
 };
 
