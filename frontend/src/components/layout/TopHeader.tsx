@@ -3,9 +3,10 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, Bell, ChevronRight, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, Bell, ChevronRight, AlertTriangle, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { useAuth } from '@/lib/auth-context';
+import { VoiceAssistantModal } from '@/components/patients/VoiceAssistantModal';
 import { LogoutButton } from '@/components/layout/LogoutButton';
 
 interface TopHeaderProps {
@@ -18,6 +19,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
   const pathname = usePathname();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const previousScrollY = useRef(0);
@@ -136,6 +138,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+        {/* AI Voice Assistant Trigger Button */}
+        <button
+          onClick={() => setIsVoiceModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 text-emerald-800 text-xs font-medium transition-colors group cursor-pointer"
+          title="Open AI Voice Prescription Assistant"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="hidden sm:inline">AI Voice Assistant</span>
+          <span className="sm:hidden">AI Voice</span>
+        </button>
+
         {/* Notification Bell with Dropdown */}
         <div className="relative" ref={notifRef}>
           <button
@@ -272,6 +285,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
           )}
         </div>
       </div>
+
+      <VoiceAssistantModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+      />
     </header>
   );
 };

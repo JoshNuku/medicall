@@ -58,7 +58,9 @@ const handleReminderCall = async (req, res, next) => {
     const callerPhone = req.body.callerNumber;
     const destPhone = req.body.destinationNumber;
     const atNumber = process.env.AT_VOICE_PHONE_NUMBER;
-    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
+    const incomingHost = req.get('host');
+    const dynamicBase = incomingHost ? `${req.protocol}://${incomingHost}` : null;
+    const baseUrl = (process.env.BASE_URL || (dynamicBase && !dynamicBase.includes('localhost') ? dynamicBase : null) || dynamicBase || 'http://localhost:3000').trim().replace(/\/+$/, '');
 
     // Inbound call auto-detection: If someone is dialing our helpline number
     const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
@@ -153,17 +155,21 @@ const handleReminderCall = async (req, res, next) => {
       if (isAiAgentEnabled) {
         sayText = (latestMsg && latestMsg.content)
           ? latestMsg.content
-          : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you are taking it now. Press 2 for side effects. Press 3 for cost issues. Press 4 for an earlier reminder. Press 9 to repeat, or Press 0 for your pharmacist.`;
+          : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you are taking it now. Press 2 for side effects. Press 3 for cost issues. Press 4 for an earlier reminder. Press 6 to repeat, or Press 0 for your pharmacist.`;
       } else {
-        sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you have taken your medication. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`;
+        sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you have taken your medication. Press 2 if not taken. Press 6 to repeat, or Press 0 for your pharmacist.`;
       }
       console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
     } else {
-      // For Twi reminder calls: use pre-generated reminder audio, or medication audio, or fallback to default
+      // For Twi reminder calls: use personalized AI reminder audio, or pre-generated reminder audio, or fallback to default
       const candidateAudio = medication?.reminder_audio_url || medication?.audio_url;
       if (candidateAudio) {
         audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
-        console.log(`🔊 [VOICE ROUTE]: Serving personalized Asante Twi reminder audio (${audioUrl})`);
+        if (medication && medication.instruction_source === 'recorded') {
+          console.log(`🎙️ [VOICE ROUTE]: Serving Pharmacist Custom Voice Note (${audioUrl})`);
+        } else {
+          console.log(`🔊 [VOICE ROUTE]: Serving Personalized Asante Twi Audio (${audioUrl})`);
+        }
       } else {
         audioUrl = `${baseUrl}/audio/default-reminder.mp3`;
         console.log(`🔊 [VOICE ROUTE]: Serving default Asante Twi template reminder audio (${audioUrl})`);
@@ -250,7 +256,9 @@ const handleReminderConfirm = async (req, res, next) => {
     }
 
     const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
-    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
+    const incomingHost = req.get('host');
+    const dynamicBase = incomingHost ? `${req.protocol}://${incomingHost}` : null;
+    const baseUrl = (process.env.BASE_URL || (dynamicBase && !dynamicBase.includes('localhost') ? dynamicBase : null) || dynamicBase || 'http://localhost:3000').trim().replace(/\/+$/, '');
 
     const xml = await processReminderConfirm(callEventId, dtmfDigits, baseUrl);
     res.set('Content-Type', 'text/xml');

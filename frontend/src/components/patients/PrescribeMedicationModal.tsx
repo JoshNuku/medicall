@@ -767,7 +767,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-              Call schedule times (HH:MM) *
+              Call schedule times (24-Hour Format: HH:MM) *
             </label>
             <div className="space-y-2">
               {scheduleTimes.map((time, index) => (
@@ -815,6 +815,9 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 Add reminder time
               </button>
             </div>
+            <p className="text-[11px] text-gray-500 mt-1.5">
+              Select 24-hour reminder times for automated adherence calls.
+            </p>
           </div>
 
           <div>

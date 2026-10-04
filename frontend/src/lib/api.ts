@@ -330,6 +330,82 @@ export async function testTtsProviderApi(provider: 'lab' | 'khaya', text?: strin
   return res.json();
 }
 
+// 9b. ASR Speech-to-Text Engine Provider Settings API
+export async function fetchAsrProviderApi() {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/asr-provider`);
+  if (!res.ok) throw new Error('Offline — unable to load ASR settings.');
+  return res.json();
+}
+
+export async function updateAsrProviderApi(provider: 'groq' | 'lab') {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/asr-provider`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to switch ASR provider.');
+  }
+  return res.json();
+}
+
+export async function testAsrProviderApi(provider: 'groq' | 'lab') {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/asr-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to test ASR provider.');
+  }
+  return res.json();
+}
+
+// 10. AI Voice Dictation API
+export async function dictatePrescriptionApi(audioBlob: Blob, language = 'en', patientId?: number) {
+  const formData = new FormData();
+  let filename = 'dictation.webm';
+  if (audioBlob instanceof File && audioBlob.name) {
+    filename = audioBlob.name;
+  } else if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
+    filename = 'dictation.m4a';
+  } else if (audioBlob.type.includes('wav')) {
+    filename = 'dictation.wav';
+  } else if (audioBlob.type.includes('ogg')) {
+    filename = 'dictation.ogg';
+  }
+  formData.append('audio', audioBlob, filename);
+  formData.append('language', language);
+  if (patientId) formData.append('patientId', String(patientId));
+
+  const res = await fetch(`${API_BASE_URL}/ai/dictate`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Voice processing failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function extractPrescriptionApi(transcript: string, patientId?: number) {
+  const res = await fetchWithRetry(`${API_BASE_URL}/ai/extract`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript, patientId }),
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Extraction failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 export interface SystemHealthData {
   status: string;
   timestamp: string;
@@ -390,4 +466,3 @@ export async function simulateVoiceWebhookApi(payload: {
   if (!res.ok) throw new Error('Simulation failed.');
   return res.json();
 }
-

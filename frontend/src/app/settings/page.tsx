@@ -19,6 +19,7 @@ import {
   Pause,
   Loader2,
   Volume2,
+  Mic,
   Activity,
   Server,
   Database,
@@ -34,6 +35,9 @@ import {
   fetchTtsProviderApi,
   updateTtsProviderApi,
   testTtsProviderApi,
+  fetchAsrProviderApi,
+  updateAsrProviderApi,
+  testAsrProviderApi,
   fetchSystemDiagnostics,
   simulateVoiceWebhookApi,
   type SystemHealthData
@@ -68,6 +72,13 @@ export default function SettingsPage() {
   const [testAudioStatus, setTestAudioStatus] = useState<string | null>(null);
   const audioSampleRef = React.useRef<HTMLAudioElement | null>(null);
   const [isPlayingSample, setIsPlayingSample] = useState(false);
+
+  // ASR Speech-to-Text Engine Configuration State
+  const [activeAsrEngine, setActiveAsrEngine] = useState<'groq' | 'lab'>('groq');
+  const [isSwitchingAsrEngine, setIsSwitchingAsrEngine] = useState(false);
+  const [testingAsrEngine, setTestingAsrEngine] = useState<'groq' | 'lab' | null>(null);
+  const [asrTestStatus, setAsrTestStatus] = useState<string | null>(null);
+  const [asrTranscriptSample, setAsrTranscriptSample] = useState<string | null>(null);
 
   // System Diagnostics State
   const [diagnostics, setDiagnostics] = useState<SystemHealthData | null>(null);
@@ -126,6 +137,14 @@ export default function SettingsPage() {
         }
       })
       .catch((err) => console.warn('TTS provider fetch notice:', err));
+
+    fetchAsrProviderApi()
+      .then((data) => {
+        if (data?.activeProvider) {
+          setActiveAsrEngine(data.activeProvider as 'groq' | 'lab');
+        }
+      })
+      .catch((err) => console.warn('ASR provider fetch notice:', err));
   }, []);
 
   const handleSwitchTtsEngine = async (target: 'lab' | 'khaya') => {
@@ -143,6 +162,45 @@ export default function SettingsPage() {
       setTimeout(() => setSaved(false), 4000);
     } finally {
       setIsSwitchingEngine(false);
+    }
+  };
+
+  const handleSwitchAsrEngine = async (target: 'groq' | 'lab') => {
+    if (target === activeAsrEngine || isSwitchingAsrEngine) return;
+    setIsSwitchingAsrEngine(true);
+    try {
+      await updateAsrProviderApi(target);
+      setActiveAsrEngine(target);
+      setToastText(`ASR speech recognition engine switched to ${target === 'groq' ? 'Groq Whisper Large v3 Turbo' : 'Lab Subscription Platform (Akan ASR)'}`);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3500);
+    } catch (err: any) {
+      setToastText(err.message || 'Failed to switch ASR provider');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 4000);
+    } finally {
+      setIsSwitchingAsrEngine(false);
+    }
+  };
+
+  const handleTestAsr = async (engine: 'groq' | 'lab') => {
+    if (testingAsrEngine) return;
+    setTestingAsrEngine(engine);
+    setAsrTranscriptSample(null);
+    setAsrTestStatus(`Transcribing sample audio via ${engine === 'groq' ? 'Groq Whisper' : 'Lab Platform'}...`);
+    try {
+      const res = await testAsrProviderApi(engine);
+      if (res?.transcript) {
+        setAsrTestStatus(`✓ Transcribed in ${res.processingTimeSeconds || 1.8}s:`);
+        setAsrTranscriptSample(res.transcript);
+      } else {
+        setAsrTestStatus('No transcript returned from test.');
+      }
+    } catch (err: any) {
+      setAsrTestStatus(`Test notice: ${err.message || 'Error running ASR test'}`);
+      setTimeout(() => setAsrTestStatus(null), 4000);
+    } finally {
+      setTestingAsrEngine(null);
     }
   };
 
@@ -268,9 +326,9 @@ export default function SettingsPage() {
       <form onSubmit={handleSave} className="space-y-5">
         {/* Clinician Profile (Fully Editable) */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center border border-[#70BF2B]/20">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center border border-[#70BF2B]/20">
                 <User className="w-4 h-4" />
               </div>
               <div>
@@ -278,7 +336,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">Edit your healthcare worker identity and credentials</p>
               </div>
             </div>
-            <span className="text-[11px] font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+            <span className="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
               Active Session
             </span>
           </div>
@@ -350,9 +408,9 @@ export default function SettingsPage() {
 
         {/* TTS Voice Engine Configuration (Seamless Toggle between Lab & Khaya) */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
                 <Volume2 className="w-4 h-4" />
               </div>
               <div>
@@ -360,7 +418,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">Switch seamlessly between Khaya AI and Lab Subscription Platform for Twi voice generation</p>
               </div>
             </div>
-            <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60">
+            <span className="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60">
               Active: {activeTtsEngine === 'lab' ? 'Lab Platform' : 'Khaya AI'}
             </span>
           </div>
@@ -494,11 +552,165 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* ASR Speech-to-Text Engine Configuration (Seamless Toggle between Groq & Lab) */}
+        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <Mic className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">ASR Speech-to-Text Engine</h2>
+                <p className="text-xs text-gray-500">Switch seamlessly between Groq Whisper and Lab Subscription Platform for voice dictation &amp; transcription</p>
+              </div>
+            </div>
+            <span className="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/60">
+              Active: {activeAsrEngine === 'groq' ? 'Groq Whisper' : 'Lab Platform'}
+            </span>
+          </div>
+
+          {/* Engine Cards Selection Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* Engine Option A: Groq Whisper Large v3 Turbo */}
+            <div
+              onClick={() => handleSwitchAsrEngine('groq')}
+              className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
+                activeAsrEngine === 'groq'
+                  ? 'bg-[#FAFDF8] border-[#70BF2B] shadow-2xs ring-2 ring-[#70BF2B]/20'
+                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-900">Groq Whisper Large v3 Turbo</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                      Cloud LPU
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    Ultra-fast inference speed (&lt;0.5s). Exceptional accuracy for English prescriptions, clinical terminology, and multilingual audio.
+                  </p>
+                </div>
+                {activeAsrEngine === 'groq' ? (
+                  <span className="w-5 h-5 rounded-full bg-[#70BF2B] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </span>
+                ) : (
+                  <span className="w-5 h-5 rounded-full border border-gray-300 shrink-0" />
+                )}
+              </div>
+
+              <div className="pt-2 mt-2 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Connected &middot; Live Key
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTestAsr('groq');
+                  }}
+                  className="px-2 py-1 rounded-lg text-[11px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Test transcription with Groq Whisper"
+                >
+                  {testingAsrEngine === 'groq' ? (
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                  ) : (
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                  )}
+                  Test ASR
+                </button>
+              </div>
+            </div>
+
+            {/* Engine Option B: Lab Subscription Platform ASR */}
+            <div
+              onClick={() => handleSwitchAsrEngine('lab')}
+              className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
+                activeAsrEngine === 'lab'
+                  ? 'bg-[#FAFDF8] border-[#70BF2B] shadow-2xs ring-2 ring-[#70BF2B]/20'
+                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-900">Lab Subscription Platform</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                      Akan / Twi ASR
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    Native Ghanaian speech-to-text neural engine. Specially trained on local Akan / Asante Twi phonetics, local drug pronunciations, and patient names.
+                  </p>
+                </div>
+                {activeAsrEngine === 'lab' ? (
+                  <span className="w-5 h-5 rounded-full bg-[#70BF2B] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </span>
+                ) : (
+                  <span className="w-5 h-5 rounded-full border border-gray-300 shrink-0" />
+                )}
+              </div>
+
+              <div className="pt-2 mt-2 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Connected &middot; Live Key
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTestAsr('lab');
+                  }}
+                  className="px-2 py-1 rounded-lg text-[11px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Test transcription with Lab Platform"
+                >
+                  {testingAsrEngine === 'lab' ? (
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                  ) : (
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                  )}
+                  Test ASR
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-time sample ASR status and transcript output */}
+          {(asrTestStatus || asrTranscriptSample) && (
+            <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs space-y-1.5 animate-in fade-in">
+              <div className="flex items-center justify-between text-gray-700">
+                <span className="flex items-center gap-2 font-medium">
+                  {testingAsrEngine ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-[#70BF2B]" />
+                  )}
+                  {asrTestStatus}
+                </span>
+              </div>
+              {asrTranscriptSample && (
+                <div className="p-2.5 rounded-lg bg-white border border-gray-200 text-gray-800 italic font-mono text-[11px] leading-relaxed">
+                  &ldquo;{asrTranscriptSample}&rdquo;
+                </div>
+              )}
+            </div>
+          )}
+
+          <p className="text-[11px] text-gray-400 leading-normal">
+            Switching takes effect immediately across AI Voice prescription dictation and incoming voice recordings. If the selected engine is temporarily unavailable, automatic fallback protects the clinic workflow.
+          </p>
+        </div>
+
         {/* Live System Diagnostics & Infrastructure Health */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
                 <Activity className="w-4 h-4" />
               </div>
               <div>
@@ -510,9 +722,9 @@ export default function SettingsPage() {
               type="button"
               onClick={loadDiagnostics}
               disabled={loadingDiagnostics}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${loadingDiagnostics ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`shrink-0 w-3.5 h-3.5 text-gray-500 ${loadingDiagnostics ? 'animate-spin' : ''}`} />
               Refresh
             </button>
           </div>

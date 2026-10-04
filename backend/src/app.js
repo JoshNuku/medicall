@@ -22,6 +22,7 @@ const callRoutes = require('./routes/callRoutes');
 const authRoutes = require('./routes/authRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const voiceSimulateRoutes = require('./routes/voiceSimulateRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const helmet = require('helmet');
 
@@ -73,6 +74,7 @@ app.use('/instruction-templates', generalLimiter, templateRoutes);
 app.use('/alerts', generalLimiter, alertRoutes);
 app.use('/calls', generalLimiter, callRoutes);
 app.use('/settings', generalLimiter, settingsRoutes);
+app.use('/ai', generalLimiter, aiRoutes);
 
 // Africa's Talking Voice Webhook Routes
 app.use('/voice', generalLimiter, voiceSimulateRoutes);
