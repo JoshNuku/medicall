@@ -13,16 +13,16 @@ import {
   Bell,
   Settings,
   HelpCircle,
-  LogOut,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { useAuth } from '@/lib/auth-context';
+import { LogoutButton } from '@/components/layout/LogoutButton';
 
 export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { metrics } = useData();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const navItems = [
     {
@@ -91,10 +91,27 @@ export const MobileNav: React.FC = () => {
       {/* Mobile Drawer Menu */}
       {isOpen && (
         <div className="border-t border-gray-100 bg-[#FAF9F6] px-4 py-3 space-y-1 animate-in slide-in-from-top-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MP'}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-900">{user?.name || 'Pharmacist'}</p>
+                <p className="text-[11px] text-gray-500">{user?.role || 'Clinical Staff'}</p>
+              </div>
+            </div>
+            <LogoutButton
+              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+              iconClassName="w-3.5 h-3.5 text-rose-500"
+              onLogout={() => setIsOpen(false)}
+            />
+          </div>
+
           <Link
             href="/support"
             onClick={() => setIsOpen(false)}
-            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+            className={`mt-2 flex items-center gap-3 border-t border-gray-200/80 px-3.5 py-2.5 pt-3 rounded-xl text-sm font-medium transition-colors ${
               pathname === '/support'
                 ? 'bg-[#70BF2B] text-white font-semibold'
                 : 'text-gray-700 hover:bg-[#F6FAF1]'
@@ -107,28 +124,6 @@ export const MobileNav: React.FC = () => {
             />
             <span>Support</span>
           </Link>
-
-          <div className="pt-3 mt-2 border-t border-gray-200/80 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MP'}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-900">{user?.name || 'Pharmacist'}</p>
-                <p className="text-[11px] text-gray-500">{user?.role || 'Clinical Staff'}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                logout();
-              }}
-              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-500" />
-              <span>Logout</span>
-            </button>
-          </div>
         </div>
       )}
 
@@ -162,6 +157,7 @@ export const MobileNav: React.FC = () => {
           })}
         </div>
       </nav>
+
     </header>
   );
 };
