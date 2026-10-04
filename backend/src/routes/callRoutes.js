@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getTodayCallEvents, createCallEvent } = require('../db/queries/callEvents');
-const { getPatientById, getPatientByPhoneNumber } = require('../db/queries/patients');
+const { getPatientById, getPatientByPhoneNumber, createPatient } = require('../db/queries/patients');
 const { getMedicationsByPatientId, createMedication, getMedicationById } = require('../db/queries/medications');
 const { makeOutboundCall } = require('../services/africasTalkingService');
 const { preGenerateReminderAudio, generateDiagnosticAudio } = require('../services/reminderPipelineService');
@@ -64,6 +64,20 @@ router.post('/trigger', async (req, res, next) => {
     }
     const validatedPhone = phoneValidation.normalized;
 
+    // If caller entered a custom phone number not yet in the system, auto-enroll as demo patient
+    if (!patient) {
+      patient = await getPatientByPhoneNumber(validatedPhone);
+      if (!patient) {
+        console.log(`ℹ️ [TEST CALL TRIGGER]: Phone ${validatedPhone} not found in database. Auto-enrolling demo patient record...`);
+        patient = await createPatient({
+          name: 'Demo Caller',
+          phone_number: validatedPhone,
+          preferred_language: 'english',
+          consent_given: 1
+        });
+      }
+    }
+
     const patientLang = (patient?.preferred_language || 'english').toUpperCase();
     console.log(`\n======================================================`);
     console.log(`🚀 [FRONTEND TRIGGER]: Live Outbound Call Requested [Mode: ${call_type.toUpperCase()}]`);
@@ -91,10 +105,10 @@ router.post('/trigger', async (req, res, next) => {
       }
     }
 
-    // 1. Create immediate Call Event record with outcome 'pending'
+    // 1. Create immediate Call Event record with outcome 'pending' using verified foreign keys
     const callEvent = await createCallEvent({
-      patient_id: patient ? patient.id : 1,
-      medication_id: medicationId || 1,
+      patient_id: patient.id,
+      medication_id: medicationId,
       scheduled_time: new Date().toISOString(),
       call_type: call_type === 'diagnostic' ? 'diagnostic' : 'reminder',
       attempt_number: 1,

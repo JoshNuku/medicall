@@ -31,9 +31,13 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
 
   const maxRate = 100;
 
-  if (!history || history.length === 0) {
+  const hasRecordedCalls = useMemo(() => {
+    return history && history.length > 0 && history.some((item) => item.total_doses > 0);
+  }, [history]);
+
+  if (!history || history.length === 0 || (!hasRecordedCalls && overallRate === 0)) {
     return (
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full min-h-[290px]">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900 tracking-tight">Adherence Overview</h2>
           <div className="relative">
@@ -62,7 +66,7 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
   }
 
   return (
-    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs">
+    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs min-h-[320px]">
       <div>
         <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-3">
           <h2 className="text-sm sm:text-base font-semibold text-gray-900 tracking-tight">Adherence Overview</h2>
@@ -86,12 +90,8 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
             <span className="text-gray-600 font-medium">Confirmed ({overallRate || 0}%)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-orange-400 shrink-0" />
-            <span className="text-gray-600 font-medium">Pending Retries ({Math.max(0, Math.round((overallRate || 0) * 0.08))}%)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
             <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-rose-400 shrink-0" />
-            <span className="text-gray-600 font-medium">Missed ({Math.max(0, 100 - (overallRate || 0))}%)</span>
+            <span className="text-gray-600 font-medium">Missed / Barrier ({Math.max(0, 100 - (overallRate || 0))}%)</span>
           </div>
         </div>
       </div>

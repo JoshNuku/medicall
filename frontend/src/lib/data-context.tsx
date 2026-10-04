@@ -82,110 +82,177 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [isBackendOnline, setIsBackendOnline] = useState(true);
 
-  // Compute 7-day adherence dynamically or from calls
+  // Compute 7-day adherence dynamically strictly from authentic call records
   const [adherenceHistory, setAdherenceHistory] = useState<DailyAdherence[]>([]);
 
   const buildDerivedAdherenceHistory = useCallback((patientList: Patient[], allCalls: CallEvent[] = []) => {
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    if (!patientList.length && !allCalls.length) {
-      return Array.from({ length: 7 }, (_, idx) => ({
-        day: labels[idx],
-        date: new Date(Date.now() - (6 - idx) * 86400000).toISOString().split('T')[0],
-        rate: 0,
-        confirmed_doses: 0,
-        total_doses: 0,
-      }));
-    }
+    const historyDays: DailyAdherence[] = [];
+    const now = new Date();
 
-    const averaged = labels.map((day, idx) => {
-      const baseRate = patientList.length
-        ? Math.round(patientList.reduce((sum, patient) => sum + (patient.adherence_rate || 0), 0) / patientList.length)
-        : 0;
-      const variance = (idx % 4) * 2 - 3;
-      const rate = patientList.length ? Math.max(0, Math.min(100, baseRate + variance)) : 0;
-      const total_doses = patientList.length ? patientList.length * 6 : 0;
-      const confirmed_doses = Math.round((rate / 100) * total_doses);
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
 
-      return {
-        day,
-        date: new Date(Date.now() - (6 - idx) * 86400000).toISOString().split('T')[0],
+      // Match calls for this specific day
+      const dayCalls = allCalls.filter((c) => {
+        const callDate =
+          c.dose_date ||
+          (c.scheduled_time ? c.scheduled_time.split('T')[0] : '') ||
+          (c.actual_call_time ? c.actual_call_time.split('T')[0] : '');
+        return callDate === dateStr;
+      });
+
+      // Filter to calls that have reached a clinical outcome
+      const evaluatedCalls = dayCalls.filter(
+        (c) => c.outcome && c.outcome !== 'pending' && c.outcome !== 'uncalled'
+      );
+      const confirmedCalls = evaluatedCalls.filter((c) => c.outcome === 'confirmed');
+
+      const total_doses = evaluatedCalls.length;
+      const confirmed_doses = confirmedCalls.length;
+      const rate = total_doses > 0 ? Math.round((confirmed_doses / total_doses) * 100) : 0;
+
+      historyDays.push({
+        day: dayLabel,
+        date: dateStr,
         rate,
         confirmed_doses,
         total_doses,
-      };
-    });
+      });
+    }
 
-    return averaged;
+    return historyDays;
   }, []);
 
   const loadInitialData = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
     setError(null);
-    try {
-      // 1. Verify health on initial non-silent load
-      if (!silent) {
-        await api.checkBackendHealth();
+    const startTime = Date.now();
+    const minLoadingTime = silent ? 0 : 800; // Prolong skeleton cleanly to avoid sudden flash of fallback numbers
+
+    const maxAttempts = silent ? 1 : 3;
+    let success = false;
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        if (!silent && attempt === 1) {
+          await api.checkBackendHealth();
+          setIsBackendOnline(true);
+        }
+
+        // Fetch all real data in parallel from Express backend
+        const [patientsRes, alertsRes, callsRes, templatesRes] = await Promise.all([
+          api.fetchPatients(),
+          api.fetchAlerts(),
+          api.fetchTodayCalls().catch(() => []),
+          api.fetchInstructionTemplates().catch(() => []),
+        ]);
+
+        // Normalize patients with computed fields
+        const formattedPatients: Patient[] = (patientsRes || []).map((p: any) => {
+          const realRate = p.adherence_rate !== null && p.adherence_rate !== undefined ? Number(p.adherence_rate) : null;
+          return {
+            ...p,
+            adherence_rate: realRate,
+            total_calls: p.total_calls ? Number(p.total_calls) : 0,
+            status: p.status || (realRate !== null && realRate < 80 ? 'attention' : 'active'),
+            current_medication_name: p.current_medication_name || 'Prescribed Regimen',
+            next_call_time: p.next_call_time || null,
+            active_medications_count: p.active_medications_count !== undefined ? Number(p.active_medications_count) : 0,
+          };
+        });
+
+        // Map human labels for alerts if missing
+        const formattedAlerts: EscalationAlert[] = (alertsRes || []).map((a: any) => {
+          const labels: Record<string, string> = {
+            pharmacist_cost: 'Cost barrier',
+            health_worker_side_effect: 'Side effects',
+            repeated_forgetting: 'Repeated forgetting',
+            same_day_multiple_misses: 'Multiple missed doses',
+            patient_requested_help: 'Help requested',
+            general_attention: 'Attention',
+          };
+          return {
+            ...a,
+            human_label: labels[a.escalation_type] || a.escalation_type.replace(/_/g, ' '),
+            details: a.details || 'Escalation flagged by clinical automated phone check-in.',
+          };
+        });
+
+        const safeCalls = callsRes || [];
+        const safeHistory = buildDerivedAdherenceHistory(formattedPatients, safeCalls);
+
+        setPatients((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(formattedPatients)) return prev;
+          return formattedPatients;
+        });
+        setAlerts(formattedAlerts);
+        setTodayCalls(safeCalls);
+        setAdherenceHistory(safeHistory);
+        setTemplates(templatesRes || []);
+
         setIsBackendOnline(true);
+        setError(null);
+        success = true;
+
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(
+              'medicall_cached_data_v1',
+              JSON.stringify({
+                patients: formattedPatients,
+                alerts: formattedAlerts,
+                todayCalls: safeCalls,
+              })
+            );
+          } catch (_) {}
+        }
+
+        break;
+      } catch (err: any) {
+        lastError = err;
+        if (attempt < maxAttempts) {
+          // Keep skeleton active during retry delay
+          await new Promise((r) => setTimeout(r, 700));
+        }
       }
+    }
 
-      // 2. Fetch all real data in parallel from Express backend
-      const [patientsRes, alertsRes, callsRes, templatesRes] = await Promise.all([
-        api.fetchPatients(),
-        api.fetchAlerts(),
-        api.fetchTodayCalls().catch(() => []),
-        api.fetchInstructionTemplates().catch(() => []),
-      ]);
-
-      // Normalize patients with computed fields
-      const formattedPatients: Patient[] = (patientsRes || []).map((p: any) => {
-        const realRate = p.adherence_rate !== null && p.adherence_rate !== undefined ? Number(p.adherence_rate) : null;
-        return {
-          ...p,
-          adherence_rate: realRate,
-          total_calls: p.total_calls ? Number(p.total_calls) : 0,
-          status: p.status || (realRate !== null && realRate < 80 ? 'attention' : 'active'),
-          current_medication_name: p.current_medication_name || 'Prescribed Regimen',
-          next_call_time: p.next_call_time || null,
-          active_medications_count: p.active_medications_count !== undefined ? Number(p.active_medications_count) : 0,
-        };
-      });
-
-      // Map human labels for alerts if missing
-      const formattedAlerts: EscalationAlert[] = (alertsRes || []).map((a: any) => {
-        const labels: Record<string, string> = {
-          pharmacist_cost: 'Cost barrier',
-          health_worker_side_effect: 'Side effects',
-          repeated_forgetting: 'Repeated forgetting',
-          same_day_multiple_misses: 'Multiple missed doses',
-          patient_requested_help: 'Help requested',
-          general_attention: 'Attention',
-        };
-        return {
-          ...a,
-          human_label: labels[a.escalation_type] || a.escalation_type.replace(/_/g, ' '),
-          details: a.details || 'Escalation flagged by clinical automated phone check-in.',
-        };
-      });
-
-      const safeCalls = callsRes || [];
-      const safeHistory = buildDerivedAdherenceHistory(formattedPatients, safeCalls);
-
-      setPatients((prev) => {
-        if (JSON.stringify(prev) === JSON.stringify(formattedPatients)) return prev;
-        return formattedPatients;
-      });
-      setAlerts(formattedAlerts);
-      setTodayCalls(safeCalls);
-      setAdherenceHistory(safeHistory);
-      setTemplates(templatesRes || []);
-    } catch (err: any) {
-      console.warn('Backend unavailable (operating offline):', err?.message || err);
+    if (!success) {
+      console.warn('Backend unavailable (operating offline):', lastError?.message || lastError);
       setIsBackendOnline(false);
       if (!silent) {
         setError("You're offline");
       }
-    } finally {
-      if (!silent) setIsLoading(false);
+    }
+
+    if (!silent) {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < minLoadingTime) {
+        await new Promise((r) => setTimeout(r, minLoadingTime - elapsed));
+      }
+      setIsLoading(false);
+    }
+  }, [buildDerivedAdherenceHistory]);
+
+  // Hydrate from cache immediately on mount so previous values are available before network sync
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('medicall_cached_data_v1');
+        if (raw) {
+          const cached = JSON.parse(raw);
+          if (cached && Array.isArray(cached.patients) && cached.patients.length > 0) {
+            setPatients(cached.patients);
+            if (cached.alerts) setAlerts(cached.alerts);
+            if (cached.todayCalls) setTodayCalls(cached.todayCalls);
+            setAdherenceHistory(buildDerivedAdherenceHistory(cached.patients, cached.todayCalls || []));
+          }
+        }
+      } catch (_) {}
     }
   }, [buildDerivedAdherenceHistory]);
 
