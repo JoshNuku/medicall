@@ -154,10 +154,21 @@ async function runSmokeTests() {
 
   // 5. IVR Telephony Simulation (Reminder Call Flow)
   console.log('\n[5/6] Testing IVR Telephony Simulator (Outbound Call Prompt)...');
+  let testPatientId = 1;
+  try {
+    const pRes = await query('SELECT p.id FROM patients p JOIN medications m ON m.patient_id = p.id LIMIT 1');
+    const pRows = pRes.rows || pRes;
+    if (pRows && pRows[0]?.id) {
+      testPatientId = pRows[0].id;
+    }
+  } catch (err) {
+    // fallback to 1
+  }
+
   try {
     const simRes = await makeLocalRequest('/voice/simulate', 'POST', {
       scenario: 'outbound_reminder_prompt',
-      patient_id: 1
+      patient_id: testPatientId
     });
     assert(simRes.status === 200, 'IVR simulator returned HTTP 200');
     assert(typeof simRes.body?.xml === 'string' && simRes.body?.xml.includes('<Response>'), 'Valid Africa\'s Talking XML returned');
@@ -171,7 +182,7 @@ async function runSmokeTests() {
   try {
     const dtmfRes = await makeLocalRequest('/voice/simulate', 'POST', {
       scenario: 'dtmf_keypress',
-      patient_id: 1,
+      patient_id: testPatientId,
       dtmf_digits: '1'
     });
     assert(dtmfRes.status === 200, 'DTMF simulation returned HTTP 200');
