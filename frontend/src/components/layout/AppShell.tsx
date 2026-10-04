@@ -60,7 +60,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FA] w-full overflow-x-hidden">
         <MobileNav />
         <TopHeader />
-        <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3.5 pb-24 sm:p-6 sm:pb-24 md:p-8 max-w-7xl w-full mx-auto">
           {children}
         </main>
       </div>
