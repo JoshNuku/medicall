@@ -13,16 +13,19 @@ import {
   Bell,
   Settings,
   HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { useAuth } from '@/lib/auth-context';
 import { LogoutButton } from '@/components/layout/LogoutButton';
+import { VoiceAssistantModal } from '@/components/patients/VoiceAssistantModal';
 
 export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { metrics } = useData();
   const { user } = useAuth();
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   const navItems = [
     {
@@ -67,6 +70,13 @@ export const MobileNav: React.FC = () => {
         </Link>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsVoiceModalOpen(true)}
+            className="p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-full border border-emerald-200 transition-colors"
+            aria-label="Open AI Voice Assistant"
+          >
+            <Sparkles className="w-5 h-5" />
+          </button>
           <Link
             href="/alerts"
             className="p-2 text-gray-500 hover:text-gray-900 relative rounded-lg hover:bg-gray-100"
@@ -158,6 +168,10 @@ export const MobileNav: React.FC = () => {
         </div>
       </nav>
 
+      <VoiceAssistantModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+      />
     </header>
   );
 };

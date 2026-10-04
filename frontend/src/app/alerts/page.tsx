@@ -92,12 +92,12 @@ export default function AlertsPage() {
         subtitle="Automated voice-call adherence escalations requiring clinician review"
         badge={
           openCount > 0 ? (
-            <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
               {openCount} Open
             </span>
           ) : (
-            <span className="text-xs font-semibold text-[#55941E] bg-[#F0F9EB] border border-[#70BF2B]/30 px-2.5 py-1 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-[#55941E] bg-[#F0F9EB] border border-[#70BF2B]/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               All Clear
             </span>
           )

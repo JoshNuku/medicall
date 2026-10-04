@@ -326,9 +326,9 @@ export default function SettingsPage() {
       <form onSubmit={handleSave} className="space-y-5">
         {/* Clinician Profile (Fully Editable) */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center border border-[#70BF2B]/20">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center border border-[#70BF2B]/20">
                 <User className="w-4 h-4" />
               </div>
               <div>
@@ -336,7 +336,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">Edit your healthcare worker identity and credentials</p>
               </div>
             </div>
-            <span className="text-[11px] font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+            <span className="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] font-medium text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
               Active Session
             </span>
           </div>
@@ -408,9 +408,9 @@ export default function SettingsPage() {
 
         {/* TTS Voice Engine Configuration (Seamless Toggle between Lab & Khaya) */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
                 <Volume2 className="w-4 h-4" />
               </div>
               <div>
@@ -418,7 +418,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">Switch seamlessly between Khaya AI and Lab Subscription Platform for Twi voice generation</p>
               </div>
             </div>
-            <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60">
+            <span className="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60">
               Active: {activeTtsEngine === 'lab' ? 'Lab Platform' : 'Khaya AI'}
             </span>
           </div>
@@ -554,9 +554,9 @@ export default function SettingsPage() {
 
         {/* ASR Speech-to-Text Engine Configuration (Seamless Toggle between Groq & Lab) */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
                 <Mic className="w-4 h-4" />
               </div>
               <div>
@@ -564,7 +564,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">Switch seamlessly between Groq Whisper and Lab Subscription Platform for voice dictation &amp; transcription</p>
               </div>
             </div>
-            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/60">
+            <span className="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/60">
               Active: {activeAsrEngine === 'groq' ? 'Groq Whisper' : 'Lab Platform'}
             </span>
           </div>
@@ -708,9 +708,9 @@ export default function SettingsPage() {
 
         {/* Live System Diagnostics & Infrastructure Health */}
         <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
                 <Activity className="w-4 h-4" />
               </div>
               <div>
@@ -722,9 +722,9 @@ export default function SettingsPage() {
               type="button"
               onClick={loadDiagnostics}
               disabled={loadingDiagnostics}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${loadingDiagnostics ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`shrink-0 w-3.5 h-3.5 text-gray-500 ${loadingDiagnostics ? 'animate-spin' : ''}`} />
               Refresh
             </button>
           </div>
