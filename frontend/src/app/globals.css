@@ -129,3 +129,16 @@ html, body {
 .animate-slide-in-right {
   animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

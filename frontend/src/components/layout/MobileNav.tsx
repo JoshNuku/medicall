@@ -72,10 +72,10 @@ export const MobileNav: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsVoiceModalOpen(true)}
-            className="p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-full border border-emerald-200 transition-colors"
+            className="p-1.5 text-[#447817] bg-[#F0F9EB] hover:bg-[#E5F5D8] rounded-full border border-[#70BF2B]/30 transition-colors"
             aria-label="Open AI Voice Assistant"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-5 h-5 text-[#55941E]" />
           </button>
           <Link
             href="/alerts"
