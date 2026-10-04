@@ -3,7 +3,7 @@ const { sendChatCompletion } = require('./groqClient');
 const { getPatientByPhoneNumber, getPatientById } = require('../db/queries/patients');
 const { getTemplatesByCategory } = require('../db/queries/templates');
 
-const DEFAULT_MODEL = process.env.GROQ_LLM_MODEL || 'openai/gpt-oss-20b';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || process.env.GROQ_LLM_MODEL || 'openai/gpt-oss-120b';
 
 const SYSTEM_PROMPT = `You are a clinical transcription assistant for MediCall, a medication adherence platform in Ghana.
 Your job is to parse a spoken prescription/enrollment dictation from a healthcare worker/pharmacist and extract structured clinical data for a form.
@@ -101,7 +101,7 @@ const parseDictation = async (transcript, context = {}) => {
 
   // Cross-reference with database for existing patient
   if (context.patientId) {
-    const existing = getPatientById(context.patientId);
+    const existing = await getPatientById(context.patientId);
     if (existing) {
       parsed.patient = {
         ...parsed.patient,
@@ -115,7 +115,7 @@ const parseDictation = async (transcript, context = {}) => {
       parsed.action = 'prescribe_only';
     }
   } else if (parsed.patient && parsed.patient.phone_number) {
-    const existing = getPatientByPhoneNumber(parsed.patient.phone_number);
+    const existing = await getPatientByPhoneNumber(parsed.patient.phone_number);
     if (existing) {
       parsed.patient.is_existing = true;
       parsed.patient.id = existing.id;

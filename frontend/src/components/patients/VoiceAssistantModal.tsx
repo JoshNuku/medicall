@@ -35,7 +35,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   defaultPatientId,
 }) => {
   const router = useRouter();
-  const { templates, enrollPatient, prescribeMedication, refetch } = useData();
+  const { patients, templates, enrollPatient, prescribeMedication, refetch } = useData();
 
   // Mode & Audio state
   const [isRecording, setIsRecording] = useState(false);
@@ -51,6 +51,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const [assumptions, setAssumptions] = useState<string[]>([]);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [isExistingPatient, setIsExistingPatient] = useState(false);
+  const [matchedPatientId, setMatchedPatientId] = useState<number | null>(null);
 
   // Extracted Form State
   const [patientName, setPatientName] = useState('');
@@ -87,6 +88,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       setAssumptions([]);
       setMissingFields([]);
       setIsExistingPatient(false);
+      setMatchedPatientId(defaultPatientId || null);
       setPatientName('');
       setPhoneNumber('+233 ');
       setCaregiverPhone('');
@@ -100,7 +102,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     } else {
       stopRecording();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultPatientId]);
 
   // Clean up timer
   useEffect(() => {
@@ -113,7 +115,19 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      let mimeType = 'audio/webm';
+      if (typeof MediaRecorder.isTypeSupported === 'function') {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -124,7 +138,8 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const actualType = mediaRecorder.mimeType || mimeType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: actualType });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
         // Stop all audio tracks
@@ -183,6 +198,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
       // Auto-populate patient details
       if (data.patient) {
+        if (data.patient.id) setMatchedPatientId(data.patient.id);
         if (data.patient.name) setPatientName(data.patient.name);
         if (data.patient.phone_number) setPhoneNumber(data.patient.phone_number);
         if (data.patient.preferred_language) {
@@ -218,7 +234,21 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       setError('Please provide a medication name.');
       return;
     }
-    if (!isExistingPatient && !defaultPatientId && (!patientName.trim() || phoneNumber.trim().length < 9)) {
+
+    let targetPatientId = defaultPatientId || matchedPatientId;
+
+    // If still not identified, search patients list by normalized phone number
+    if (!targetPatientId && patients && phoneNumber) {
+      const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
+      const matched = patients.find(
+        (p) => p.phone_number.replace(/[\s\-\(\)]/g, '') === cleanPhone
+      );
+      if (matched) {
+        targetPatientId = matched.id;
+      }
+    }
+
+    if (!targetPatientId && !isExistingPatient && (!patientName.trim() || phoneNumber.trim().length < 9)) {
       setError('Patient name and valid phone number are required to enroll.');
       return;
     }
@@ -227,9 +257,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     setError(null);
 
     try {
-      let targetPatientId = defaultPatientId;
-
-      // 1. Create or match patient if not already existing
+      // 1. Create patient only if not already existing in system
       if (!targetPatientId) {
         const patientRes = await enrollPatient({
           name: patientName.trim(),

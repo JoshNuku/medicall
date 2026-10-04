@@ -24,6 +24,7 @@ const transcribeWithKhaya = async (filePath) => {
   if (ext === '.wav') contentType = 'audio/wav';
   else if (ext === '.webm') contentType = 'audio/webm';
   else if (ext === '.ogg') contentType = 'audio/ogg';
+  else if (ext === '.m4a' || ext === '.mp4') contentType = 'audio/mp4';
 
   const url = `${KHAYA_ASR_URL}?language=twi`;
 

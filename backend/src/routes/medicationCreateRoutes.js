@@ -74,7 +74,7 @@ router.post('/', upload.single('audio'), async (req, res, next) => {
       timingTemplateId: timing_template_id ? parseInt(timing_template_id, 10) : null,
       scheduleTimes: schedule_times,
       durationDays: duration_days,
-      isChronic: is_chronic === 'true' || is_chronic === true || is_chronic === 1,
+      isChronic: is_chronic === 'true' || is_chronic === true || is_chronic === 1 || is_chronic === '1',
       audioFileUrl,
       language
     });

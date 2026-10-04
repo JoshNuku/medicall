@@ -333,7 +333,17 @@ export async function testTtsProviderApi(provider: 'lab' | 'khaya', text?: strin
 // 10. AI Voice Dictation API
 export async function dictatePrescriptionApi(audioBlob: Blob, language = 'en', patientId?: number) {
   const formData = new FormData();
-  formData.append('audio', audioBlob, 'dictation.webm');
+  let filename = 'dictation.webm';
+  if (audioBlob instanceof File && audioBlob.name) {
+    filename = audioBlob.name;
+  } else if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
+    filename = 'dictation.m4a';
+  } else if (audioBlob.type.includes('wav')) {
+    filename = 'dictation.wav';
+  } else if (audioBlob.type.includes('ogg')) {
+    filename = 'dictation.ogg';
+  }
+  formData.append('audio', audioBlob, filename);
   formData.append('language', language);
   if (patientId) formData.append('patientId', String(patientId));
 

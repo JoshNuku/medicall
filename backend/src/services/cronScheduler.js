@@ -96,7 +96,7 @@ const runSchedulerCycle = async (now = new Date()) => {
   // 3. Handle retries
   const callsNeedingRetry = await getCallsNeedingRetry();
   if (callsNeedingRetry.length > 0) {
-    processRetries(callsNeedingRetry);
+    await processRetries(callsNeedingRetry);
   }
 };
 

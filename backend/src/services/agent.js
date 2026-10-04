@@ -4,7 +4,7 @@ const { addConversationMessage } = require('../db/queries/agentConversations');
 const { getPatientFullContext, buildSystemPrompt, buildDiagnosticSystemPrompt } = require('./agentContextService');
 const decisionEngine = require('./decisionEngine');
 
-const DEFAULT_MODEL = process.env.GROQ_MODEL || 'gpt-oss-120B';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 /**
  * Core Agent loop with Groq API and optional tool calling.
