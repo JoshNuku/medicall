@@ -11,17 +11,12 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  Clock,
   Pill,
   User,
-  Phone,
-  Calendar,
   X,
   Upload,
-  ArrowRight,
   Info
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 
 interface VoiceAssistantModalProps {
   isOpen: boolean;
@@ -110,6 +105,26 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  // Handle escape key and lock body scroll when open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen, onClose]);
 
   const startRecording = async () => {
     setError(null);
@@ -303,488 +318,510 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const timings = templates.filter((t) => t.category === 'timing');
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/40 via-white to-white shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/80 shadow-xs shrink-0">
-              <Sparkles className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-gray-900 tracking-tight">
-                  AI Voice Prescription Assistant
-                </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                  AI Powered
-                </span>
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Subtle Backdrop Overlay */}
+      <div
+        className="fixed inset-0 bg-black/25 backdrop-blur-[2px] transition-opacity duration-200"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Slide-over Side Modal / Pane */}
+      <div
+        className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 z-50 pointer-events-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="voice-pane-title"
+      >
+        <div className="w-screen max-w-lg md:max-w-xl bg-white shadow-2xl border-l border-neutral-200/80 flex flex-col h-full pointer-events-auto animate-slide-in-right">
+          
+          {/* Header */}
+          <div className="px-6 py-4.5 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                <Sparkles className="w-4 h-4" />
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Dictate prescription details naturally; AI extracts and fills the form for you.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {error && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-rose-800 text-xs animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* STEP 1: VOICE RECORDING STUDIO */}
-          {step === 'record' && (
-            <div className="flex flex-col items-center justify-center py-4 text-center space-y-6">
-              {/* Language Selection Selector */}
-              <div className="inline-flex items-center p-1 bg-gray-100/90 rounded-2xl border border-gray-200/80 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setPreferredLanguage('english')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    preferredLanguage === 'english'
-                      ? 'bg-white text-gray-900 shadow-xs border border-gray-200/60'
-                      : 'text-gray-500 hover:text-gray-900'
-                  }`}
-                >
-                  <span className="text-xs">🇬🇧</span>
-                  <span>English</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreferredLanguage('twi')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    preferredLanguage === 'twi'
-                      ? 'bg-white text-emerald-900 shadow-xs border border-emerald-200/70'
-                      : 'text-gray-500 hover:text-gray-900'
-                  }`}
-                >
-                  <span className="text-xs">🇬🇭</span>
-                  <span>Asante Twi</span>
-                </button>
-              </div>
-
-              {/* Tactile Microphone Recording Stage */}
-              <div className="relative flex flex-col items-center justify-center py-2">
-                {/* Ambient Halo & Pulse Rings */}
-                {isRecording && (
-                  <>
-                    <div className="absolute w-40 h-40 rounded-full bg-rose-400/20 animate-ping" />
-                    <div className="absolute w-32 h-32 rounded-full bg-rose-500/25 animate-pulse" />
-                  </>
-                )}
-
-                <button
-                  type="button"
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={isProcessing}
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center text-white transition-all transform shadow-xl cursor-pointer border-4 border-white ${
-                    isRecording
-                      ? 'bg-rose-500 hover:bg-rose-600 scale-105 shadow-rose-500/35 ring-4 ring-rose-400/30'
-                      : isProcessing
-                      ? 'bg-gray-700 cursor-not-allowed shadow-gray-700/25 ring-4 ring-gray-200'
-                      : 'bg-[#70BF2B] hover:bg-[#62A825] hover:scale-105 shadow-[#70BF2B]/35 ring-4 ring-[#70BF2B]/20 active:scale-95'
-                  }`}
-                  aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-                >
-                  {isProcessing ? (
-                    <RefreshCw className="w-9 h-9 animate-spin text-white" />
-                  ) : isRecording ? (
-                    <Square className="w-8 h-8 fill-white text-white" />
-                  ) : (
-                    <Mic className="w-10 h-10 text-white stroke-[2.2]" />
-                  )}
-                </button>
-
-                {/* Animated Waveform Visualizer when recording */}
-                {isRecording && (
-                  <div className="flex items-center gap-1 h-6 mt-4">
-                    {[40, 70, 100, 60, 95, 50, 85].map((h, i) => (
-                      <span
-                        key={i}
-                        className="w-1 bg-rose-500 rounded-full animate-wave-bar"
-                        style={{ height: `${h}%`, animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Status Message & Live Duration Counter */}
               <div>
-                {isProcessing ? (
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-900 flex items-center justify-center gap-2">
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                      Processing Audio...
-                    </p>
-                    <p className="text-xs text-gray-500">Transcribing speech and extracting prescription schema...</p>
-                  </div>
-                ) : isRecording ? (
-                  <div className="space-y-1.5">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-full text-xs font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                      Listening: {Math.floor(recordDuration / 60)}:{(recordDuration % 60).toString().padStart(2, '0')}
-                    </div>
-                    <p className="text-xs text-gray-500">Click the red square button when done speaking</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-gray-900 tracking-tight">Click to start dictating</h3>
-                    <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
-                      Speak naturally: patient name, phone number, medication, frequency, and times.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Spoken Prompt Example & File Upload */}
-              {!isRecording && !isProcessing && (
-                <div className="w-full max-w-lg bg-gray-50/80 border border-gray-100 rounded-2xl p-4 text-left space-y-2.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Info className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Example Dictation ({preferredLanguage === 'english' ? 'English' : 'Asante Twi'}):</span>
-                  </div>
-                  <p className="text-xs text-gray-600 italic bg-white p-3 rounded-xl border border-gray-100 shadow-2xs leading-relaxed font-sans">
-                    {preferredLanguage === 'english'
-                      ? '“Patient is Samuel Boateng, phone 0536287642. I am prescribing 1 tablet of Paracetamol three times daily after meals for 7 days.”'
-                      : '“Yarefoɔ no din de Samuel Boateng, n’ahemfie fon nɔma ne 0536287642. Ɔbɛnom Paracetamol 500mg borɔfo baako mprɛnsa da biara.”'}
-                  </p>
-
-                  <div className="pt-2 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100">
-                    <span>Or upload a pre-recorded audio file:</span>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept="audio/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-8 gap-1.5 text-xs text-gray-700"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-gray-500" />
-                      Upload Audio
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STEP 2: REVIEW & CONFIRM EXTRACTED FORM */}
-          {step === 'review' && (
-            <form onSubmit={handleSave} className="space-y-6">
-              {/* Spoken Transcript Card */}
-              <div className="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    AI Spoken Transcript
+                <div className="flex items-center gap-2">
+                  <h2 id="voice-pane-title" className="text-sm font-semibold text-neutral-900 tracking-tight">
+                    Voice Prescription Assistant
+                  </h2>
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    AI
                   </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {step === 'record'
+                    ? 'Dictate prescription details or upload audio'
+                    : step === 'review'
+                    ? 'Review extracted fields before confirming'
+                    : 'Prescription complete'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-neutral-400 hover:text-neutral-700 p-1.5 rounded-lg hover:bg-neutral-100 transition-colors cursor-pointer"
+              aria-label="Close side panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Scrollable Content Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {error && (
+              <div className="p-3 bg-rose-50 border border-rose-200/80 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
+              </div>
+            )}
+
+            {/* STEP 1: MINIMALIST VOICE RECORDING PANE */}
+            {step === 'record' && (
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-6">
+                {/* Language Selection Segmented Control */}
+                <div className="inline-flex items-center p-1 bg-neutral-100/80 rounded-2xl border border-neutral-200/70 shadow-2xs">
                   <button
                     type="button"
-                    onClick={() => setStep('record')}
-                    className="text-xs text-emerald-700 font-semibold hover:underline flex items-center gap-1"
+                    onClick={() => setPreferredLanguage('english')}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      preferredLanguage === 'english'
+                        ? 'bg-white text-neutral-900 shadow-2xs border border-neutral-200/60'
+                        : 'text-neutral-500 hover:text-neutral-900'
+                    }`}
                   >
-                    <RefreshCw className="w-3 h-3" />
-                    Record Again
+                    <span className="text-[10px] font-bold text-neutral-500">GB</span>
+                    <span>English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreferredLanguage('twi')}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      preferredLanguage === 'twi'
+                        ? 'bg-white text-neutral-900 shadow-2xs border border-neutral-200/60'
+                        : 'text-neutral-500 hover:text-neutral-900'
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold text-neutral-500">GH</span>
+                    <span>Asante Twi</span>
                   </button>
                 </div>
-                <p className="text-xs text-gray-800 bg-white p-3 rounded-xl border border-emerald-100/80 leading-relaxed font-sans shadow-xs">
-                  &ldquo;{rawTranscript}&rdquo;
-                </p>
 
-                {/* Assumptions / Hints */}
-                {assumptions.length > 0 && (
-                  <div className="pt-1 flex flex-wrap gap-1.5">
-                    {assumptions.map((assump, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 text-[11px] bg-amber-50 border border-amber-200 text-amber-900 px-2.5 py-1 rounded-lg font-medium"
+                {/* Tactile Microphone & Recording Stage */}
+                <div className="relative flex flex-col items-center justify-center py-4">
+                  {isRecording ? (
+                    <div className="relative flex flex-col items-center justify-center">
+                      {/* Pastel Pink Halo */}
+                      <div className="w-32 h-32 rounded-full bg-rose-100/70 flex items-center justify-center relative">
+                        <div className="absolute inset-0 rounded-full bg-rose-200/40 animate-ping" />
+                        <button
+                          type="button"
+                          onClick={stopRecording}
+                          disabled={isProcessing}
+                          className="relative w-20 h-20 rounded-full flex items-center justify-center text-white bg-rose-500 hover:bg-rose-600 transition-all transform shadow-lg shadow-rose-500/25 cursor-pointer active:scale-95 border-2 border-white"
+                          aria-label="Stop recording"
+                        >
+                          <Square className="w-7 h-7 fill-white text-white rounded-xs" />
+                        </button>
+                      </div>
+
+                      {/* Equalizer Waveform beneath button */}
+                      <div className="flex items-center gap-1 h-5 mt-4">
+                        {[40, 70, 100, 60, 95, 50, 85].map((h, i) => (
+                          <span
+                            key={i}
+                            className="w-1 bg-rose-500 rounded-full animate-wave-bar"
+                            style={{ height: `${h}%`, animationDelay: `${i * 0.15}s` }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative flex flex-col items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={startRecording}
+                        disabled={isProcessing}
+                        className={`relative w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform shadow-md cursor-pointer border-3 border-white ${
+                          isProcessing
+                            ? 'bg-neutral-800 cursor-not-allowed shadow-neutral-800/20'
+                            : 'bg-[#70BF2B] hover:bg-[#62A825] hover:scale-105 shadow-[#70BF2B]/30 ring-4 ring-[#70BF2B]/15 active:scale-95'
+                        }`}
+                        aria-label="Start recording"
                       >
-                        <Info className="w-3 h-3 text-amber-600 shrink-0" />
-                        {assump}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Section 1: Patient Information */}
-              <div className="border border-gray-100 rounded-2xl p-4 space-y-3 bg-gray-50/30">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-gray-600" />
-                    1. Patient Information
-                  </h3>
-                  {isExistingPatient && (
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      Existing Patient Matched
-                    </span>
+                        {isProcessing ? (
+                          <RefreshCw className="w-8 h-8 animate-spin text-white" />
+                        ) : (
+                          <Mic className="w-8 h-8 text-white stroke-[2.2]" />
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Patient Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      placeholder="e.g. Samuel Mensah"
-                      required
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    />
-                  </div>
+                {/* Status Message & Live Duration Counter */}
+                <div>
+                  {isProcessing ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-neutral-900 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                        Processing Audio...
+                      </p>
+                      <p className="text-xs text-neutral-500">Transcribing speech and extracting prescription data</p>
+                    </div>
+                  ) : isRecording ? (
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-rose-50 border border-rose-200/80 text-rose-600 rounded-full text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                        Listening: {Math.floor(recordDuration / 60)}:{(recordDuration % 60).toString().padStart(2, '0')}
+                      </div>
+                      <p className="text-xs text-neutral-500">Click the red square button when done speaking</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-semibold text-neutral-900">Click to start dictating</h3>
+                      <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                        Speak naturally: patient name, phone number, medication, frequency, and times.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Phone Number (Ghana +233)
-                    </label>
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="+233XXXXXXXXX"
-                      required
-                      className="w-full h-9 px-3 text-xs font-mono bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    />
-                  </div>
+                {/* Spoken Prompt Example & File Upload */}
+                {!isRecording && !isProcessing && (
+                  <div className="w-full bg-neutral-50/80 border border-neutral-200/60 rounded-2xl p-4 text-left space-y-2.5">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                      <Info className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Example Dictation ({preferredLanguage === 'english' ? 'English' : 'Asante Twi'}):</span>
+                    </div>
+                    <p className="text-xs text-neutral-700 italic bg-white p-3 rounded-xl border border-neutral-200/50 shadow-2xs leading-relaxed font-sans">
+                      {preferredLanguage === 'english'
+                        ? '“Patient is Samuel Boateng, phone 0536287642. I am prescribing 1 tablet of Paracetamol three times daily after meals for 7 days.”'
+                        : '“Yarefoɔ no din de Samuel Boateng, n’ahemfie fon nɔma ne 0536287642. Ɔbɛnom Paracetamol 500mg borɔfo baako mprɛnsa da biara.”'}
+                    </p>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Call Reminder Language
-                    </label>
-                    <select
-                      value={preferredLanguage}
-                      onChange={(e) => setPreferredLanguage(e.target.value as 'english' | 'twi')}
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                    <div className="pt-2 flex items-center justify-between text-xs text-neutral-500 border-t border-neutral-200/50">
+                      <span>Or upload a pre-recorded audio file:</span>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="audio/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-white hover:text-neutral-900 text-xs font-medium transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-neutral-500" />
+                        Upload Audio
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 2: MINIMALIST REVIEW & CONFIRM FORM */}
+            {step === 'review' && (
+              <form id="voice-assistant-form" onSubmit={handleSave} className="space-y-5">
+                {/* Spoken Transcript Card */}
+                <div className="bg-neutral-50 border border-neutral-200/70 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-neutral-900 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Extracted from Voice
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setStep('record')}
+                      className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <option value="english">English (Standard Voice)</option>
-                      <option value="twi">Asante Twi (Khaya Voice)</option>
-                    </select>
+                      <RefreshCw className="w-3 h-3" />
+                      Record Again
+                    </button>
+                  </div>
+                  <p className="text-xs text-neutral-700 bg-white p-3 rounded-xl border border-neutral-200/60 leading-relaxed font-sans shadow-2xs">
+                    &ldquo;{rawTranscript}&rdquo;
+                  </p>
+
+                  {/* Assumptions / Hints */}
+                  {assumptions.length > 0 && (
+                    <div className="pt-1 flex flex-wrap gap-1.5">
+                      {assumptions.map((assump, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 text-[11px] bg-amber-50 border border-amber-200 text-amber-900 px-2 py-0.5 rounded-md font-medium"
+                        >
+                          <Info className="w-3 h-3 text-amber-600 shrink-0" />
+                          {assump}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 1: Patient Information */}
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-100">
+                    <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-neutral-500" />
+                      1. Patient Details
+                    </h3>
+                    {isExistingPatient && (
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Existing Patient Matched
+                      </span>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Caregiver Phone (Optional)
-                    </label>
-                    <input
-                      type="tel"
-                      value={caregiverPhone}
-                      onChange={(e) => setCaregiverPhone(e.target.value)}
-                      placeholder="+233XXXXXXXXX"
-                      className="w-full h-9 px-3 text-xs font-mono bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Patient Full Name
+                      </label>
+                      <input
+                        type="text"
+                        value={patientName}
+                        onChange={(e) => setPatientName(e.target.value)}
+                        placeholder="e.g. Samuel Mensah"
+                        required
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="+233XXXXXXXXX"
+                        required
+                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Call Language
+                      </label>
+                      <select
+                        value={preferredLanguage}
+                        onChange={(e) => setPreferredLanguage(e.target.value as 'english' | 'twi')}
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      >
+                        <option value="english">English (Standard)</option>
+                        <option value="twi">Asante Twi (Khaya)</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Caregiver Phone (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={caregiverPhone}
+                        onChange={(e) => setCaregiverPhone(e.target.value)}
+                        placeholder="+233XXXXXXXXX"
+                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Section 2: Medication & Schedule */}
-              <div className="border border-gray-100 rounded-2xl p-4 space-y-3 bg-gray-50/30">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Pill className="w-3.5 h-3.5 text-gray-600" />
-                  2. Medication & Schedule Details
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Drug Name & Strength
-                    </label>
-                    <input
-                      type="text"
-                      value={drugName}
-                      onChange={(e) => setDrugName(e.target.value)}
-                      placeholder="e.g. Paracetamol 500mg"
-                      required
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    />
+                {/* Section 2: Medication & Schedule */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-100">
+                    <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Pill className="w-3.5 h-3.5 text-neutral-500" />
+                      2. Medication & Schedule
+                    </h3>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Dosage Template
-                    </label>
-                    <select
-                      value={dosageId}
-                      onChange={(e) => setDosageId(Number(e.target.value))}
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    >
-                      {dosages.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.label_english}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Drug Name & Strength
+                      </label>
+                      <input
+                        type="text"
+                        value={drugName}
+                        onChange={(e) => setDrugName(e.target.value)}
+                        placeholder="e.g. Paracetamol 500mg"
+                        required
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Frequency
-                    </label>
-                    <select
-                      value={frequencyId}
-                      onChange={(e) => setFrequencyId(Number(e.target.value))}
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    >
-                      {frequencies.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.label_english}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Dosage Template
+                      </label>
+                      <select
+                        value={dosageId}
+                        onChange={(e) => setDosageId(Number(e.target.value))}
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      >
+                        {dosages.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label_english}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Timing / Meal Relation
-                    </label>
-                    <select
-                      value={timingId}
-                      onChange={(e) => setTimingId(Number(e.target.value))}
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    >
-                      {timings.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.label_english}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Frequency
+                      </label>
+                      <select
+                        value={frequencyId}
+                        onChange={(e) => setFrequencyId(Number(e.target.value))}
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      >
+                        {frequencies.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label_english}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Call Reminder Times (24h)
-                    </label>
-                    <div className="relative">
+                    <div>
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Timing
+                      </label>
+                      <select
+                        value={timingId}
+                        onChange={(e) => setTimingId(Number(e.target.value))}
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      >
+                        {timings.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label_english}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Duration (Days)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={durationDays}
+                        onChange={(e) => setDurationDays(Number(e.target.value))}
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-neutral-600 mb-1">
+                        Reminder Times (24h)
+                      </label>
                       <input
                         type="text"
                         value={scheduleTimes}
                         onChange={(e) => setScheduleTimes(e.target.value)}
                         placeholder="08:00, 14:00, 20:00"
                         required
-                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/15 transition-all"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Duration (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Number(e.target.value))}
-                      className="w-full h-9 px-3 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                    />
-                  </div>
-
-                  <div className="flex items-center pt-5">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 select-none">
-                      <input
-                        type="checkbox"
-                        checked={isChronic}
-                        onChange={(e) => setIsChronic(e.target.checked)}
-                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300"
-                      />
-                      <span>Chronic / Long-term Medication</span>
-                    </label>
+                    {/* Chronic Checkbox matching user screenshot */}
+                    <div className="sm:col-span-2 pt-2">
+                      <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-neutral-800 select-none">
+                        <input
+                          type="checkbox"
+                          checked={isChronic}
+                          onChange={(e) => setIsChronic(e.target.checked)}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-neutral-300"
+                        />
+                        <span>Chronic / Long-term Medication</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </form>
+            )}
 
-              {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-gray-100">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="md"
-                  onClick={() => setStep('record')}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  disabled={isSaving}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[160px] gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Confirm & Save
-                    </>
-                  )}
-                </Button>
+            {/* STEP 3: SUCCESS CONFIRMATION */}
+            {step === 'success' && (
+              <div className="py-12 text-center space-y-4">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-neutral-900">Prescription Saved Successfully</h3>
+                  <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                    Patient <strong>{patientName}</strong> has been enrolled with <strong>{drugName}</strong>. Automatic voice reminder calls are scheduled.
+                  </p>
+                </div>
+                <div className="pt-4 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('record');
+                      onClose();
+                    }}
+                    className="px-4 py-2 text-xs font-medium text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('record');
+                    }}
+                    className="px-4 py-2 text-xs font-medium text-white bg-[#009E60] hover:bg-[#008A54] rounded-xl flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Dictate Another
+                  </button>
+                </div>
               </div>
-            </form>
-          )}
+            )}
+          </div>
 
-          {/* STEP 3: SUCCESS CELEBRATION */}
-          {step === 'success' && (
-            <div className="py-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-10 h-10" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-gray-900">Prescription Saved Successfully!</h3>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  Patient <strong>{patientName}</strong> has been enrolled with <strong>{drugName}</strong>. Automatic voice reminder calls are scheduled.
-                </p>
-              </div>
-              <div className="pt-4 flex items-center justify-center gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="md"
-                  onClick={() => {
-                    setStep('record');
-                    onClose();
-                  }}
-                >
-                  Close
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  onClick={() => {
-                    setStep('record');
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Dictate Another
-                </Button>
-              </div>
+          {/* Sticky Action Footer for Review Step */}
+          {step === 'review' && (
+            <div className="px-6 py-4 bg-white border-t border-neutral-100 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setStep('record')}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-semibold text-neutral-700 bg-white hover:bg-neutral-50 border border-neutral-200 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="voice-assistant-form"
+                disabled={isSaving}
+                className="px-5 py-2.5 text-xs font-semibold text-white bg-[#009E60] hover:bg-[#008A54] active:bg-[#007748] rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Confirm & Save
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
