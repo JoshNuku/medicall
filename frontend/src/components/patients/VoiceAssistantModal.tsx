@@ -306,23 +306,29 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 via-white to-white shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
-              <Sparkles className="w-5 h-5" />
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/40 via-white to-white shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/80 shadow-xs shrink-0">
+              <Sparkles className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                AI Voice Prescription Assistant
-              </h2>
-              <p className="text-xs text-gray-500">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-gray-900 tracking-tight">
+                  AI Voice Prescription Assistant
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                  AI Powered
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
                 Dictate prescription details naturally; AI extracts and fills the form for you.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+            className="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -339,39 +345,42 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
           {/* STEP 1: VOICE RECORDING STUDIO */}
           {step === 'record' && (
-            <div className="flex flex-col items-center justify-center py-4 text-center space-y-5">
+            <div className="flex flex-col items-center justify-center py-4 text-center space-y-6">
               {/* Language Selection Selector */}
-              <div className="inline-flex items-center p-1 bg-gray-100/90 rounded-2xl border border-gray-200/80">
+              <div className="inline-flex items-center p-1 bg-gray-100/90 rounded-2xl border border-gray-200/80 shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setPreferredLanguage('english')}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     preferredLanguage === 'english'
-                      ? 'bg-white text-gray-900 shadow-xs border border-gray-200/50'
+                      ? 'bg-white text-gray-900 shadow-xs border border-gray-200/60'
                       : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  English
+                  <span className="text-xs">🇬🇧</span>
+                  <span>English</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPreferredLanguage('twi')}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     preferredLanguage === 'twi'
-                      ? 'bg-white text-emerald-900 shadow-xs border border-gray-200/50'
+                      ? 'bg-white text-emerald-900 shadow-xs border border-emerald-200/70'
                       : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  Asante Twi
+                  <span className="text-xs">🇬🇭</span>
+                  <span>Asante Twi</span>
                 </button>
               </div>
 
-              {/* Pulsing Mic Visualizer */}
-              <div className="relative flex items-center justify-center pt-2">
+              {/* Tactile Microphone Recording Stage */}
+              <div className="relative flex flex-col items-center justify-center py-2">
+                {/* Ambient Halo & Pulse Rings */}
                 {isRecording && (
                   <>
-                    <div className="absolute w-36 h-36 rounded-full bg-emerald-400/20 animate-ping" />
-                    <div className="absolute w-28 h-28 rounded-full bg-emerald-500/30 animate-pulse" />
+                    <div className="absolute w-40 h-40 rounded-full bg-rose-400/20 animate-ping" />
+                    <div className="absolute w-32 h-32 rounded-full bg-rose-500/25 animate-pulse" />
                   </>
                 )}
 
@@ -379,63 +388,81 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={isProcessing}
-                  className={`relative w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform shadow-xl cursor-pointer ${
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center text-white transition-all transform shadow-xl cursor-pointer border-4 border-white ${
                     isRecording
-                      ? 'bg-rose-500 hover:bg-rose-600 scale-105 shadow-rose-500/30'
+                      ? 'bg-rose-500 hover:bg-rose-600 scale-105 shadow-rose-500/35 ring-4 ring-rose-400/30'
                       : isProcessing
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-emerald-600/30'
+                      ? 'bg-gray-700 cursor-not-allowed shadow-gray-700/25 ring-4 ring-gray-200'
+                      : 'bg-[#70BF2B] hover:bg-[#62A825] hover:scale-105 shadow-[#70BF2B]/35 ring-4 ring-[#70BF2B]/20 active:scale-95'
                   }`}
                   aria-label={isRecording ? 'Stop recording' : 'Start recording'}
                 >
                   {isProcessing ? (
-                    <RefreshCw className="w-8 h-8 animate-spin" />
+                    <RefreshCw className="w-9 h-9 animate-spin text-white" />
                   ) : isRecording ? (
-                    <Square className="w-7 h-7 fill-white" />
+                    <Square className="w-8 h-8 fill-white text-white" />
                   ) : (
-                    <Mic className="w-8 h-8" />
+                    <Mic className="w-10 h-10 text-white stroke-[2.2]" />
                   )}
                 </button>
+
+                {/* Animated Waveform Visualizer when recording */}
+                {isRecording && (
+                  <div className="flex items-center gap-1 h-6 mt-4">
+                    {[40, 70, 100, 60, 95, 50, 85].map((h, i) => (
+                      <span
+                        key={i}
+                        className="w-1 bg-rose-500 rounded-full animate-wave-bar"
+                        style={{ height: `${h}%`, animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Status Message & Timer */}
+              {/* Status Message & Live Duration Counter */}
               <div>
                 {isProcessing ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-900">Processing Audio...</p>
+                    <p className="text-sm font-semibold text-gray-900 flex items-center justify-center gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                      Processing Audio...
+                    </p>
                     <p className="text-xs text-gray-500">Transcribing speech and extracting prescription schema...</p>
                   </div>
                 ) : isRecording ? (
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-full text-xs font-semibold">
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-full text-xs font-semibold">
                       <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                       Listening: {Math.floor(recordDuration / 60)}:{(recordDuration % 60).toString().padStart(2, '0')}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">Click square button when done speaking</p>
+                    <p className="text-xs text-gray-500">Click the red square button when done speaking</p>
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-900">Click to start dictating</p>
-                    <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                    <h3 className="text-sm font-bold text-gray-900 tracking-tight">Click to start dictating</h3>
+                    <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
                       Speak naturally: patient name, phone number, medication, frequency, and times.
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Spoken Prompt Example */}
+              {/* Spoken Prompt Example & File Upload */}
               {!isRecording && !isProcessing && (
-                <div className="w-full max-w-lg bg-gray-50/80 border border-gray-100 rounded-2xl p-4 text-left space-y-2">
+                <div className="w-full max-w-lg bg-gray-50/80 border border-gray-100 rounded-2xl p-4 text-left space-y-2.5">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Info className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Example Dictation (English):</span>
+                    <Info className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Example Dictation ({preferredLanguage === 'english' ? 'English' : 'Asante Twi'}):</span>
                   </div>
-                  <p className="text-xs text-gray-600 italic bg-white p-3 rounded-xl border border-gray-100 shadow-sm leading-relaxed">
-                    &ldquo;Patient is Samuel Boateng, phone 0536287642. I am prescribing 1 tablet of Paracetamol three times daily after meals for 7 days.&rdquo;
+                  <p className="text-xs text-gray-600 italic bg-white p-3 rounded-xl border border-gray-100 shadow-2xs leading-relaxed font-sans">
+                    {preferredLanguage === 'english'
+                      ? '“Patient is Samuel Boateng, phone 0536287642. I am prescribing 1 tablet of Paracetamol three times daily after meals for 7 days.”'
+                      : '“Yarefoɔ no din de Samuel Boateng, n’ahemfie fon nɔma ne 0536287642. Ɔbɛnom Paracetamol 500mg borɔfo baako mprɛnsa da biara.”'}
                   </p>
 
                   <div className="pt-2 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100">
-                    <span>Or upload a pre-recorded file:</span>
+                    <span>Or upload a pre-recorded audio file:</span>
                     <input
                       type="file"
                       ref={fileInputRef}
