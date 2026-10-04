@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useData } from '@/lib/data-context';
@@ -39,6 +39,7 @@ import {
   Volume2,
   ArrowRight,
   ShieldCheck,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function PatientDetailPage() {
@@ -76,6 +77,8 @@ export default function PatientDetailPage() {
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const [isDeletePatientOpen, setIsDeletePatientOpen] = useState(false);
   const [isDeletingPatient, setIsDeletingPatient] = useState(false);
+  const [openActionMenu, setOpenActionMenu] = useState<'call' | 'more' | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showScriptByMed, setShowScriptByMed] = useState<Record<string | number, boolean>>({});
   const [audioTrackByMed, setAudioTrackByMed] = useState<Record<number, 'prescription' | 'reminder'>>({});
@@ -85,6 +88,26 @@ export default function PatientDetailPage() {
   const [editFields, setEditFields] = useState<{ drug_name: string; schedule_times: string; duration_days: number; is_chronic: boolean }>({ drug_name: '', schedule_times: '', duration_days: 7, is_chronic: false });
   const [deletingMedId, setDeletingMedId] = useState<number | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+
+  useEffect(() => {
+    if (!openActionMenu) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        setOpenActionMenu(null);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenActionMenu(null);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openActionMenu]);
 
   const startEditing = (med: { id: number; drug_name: string; schedule_times: string; duration_days: number; is_chronic: boolean | number }) => {
     setEditingMedId(med.id);
@@ -270,53 +293,108 @@ export default function PatientDetailPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setIsEditPatientOpen(true)}
-              className="p-2 sm:p-2.5 text-gray-500 hover:text-[#55941E] hover:bg-[#F0F9EB] border border-gray-200 hover:border-[#70BF2B]/40 rounded-xl transition-colors cursor-pointer shadow-2xs"
-              title="Edit patient profile"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeletePatientOpen(true)}
-              className="p-2 sm:p-2.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-xl transition-colors cursor-pointer shadow-2xs"
-              title="Delete patient profile"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <Button
-              variant="secondary"
-              icon={<Phone className="w-4 h-4 text-[#70BF2B]" />}
-              onClick={() => {
-                setCallModalType('reminder');
-                setIsCallModalOpen(true);
-              }}
-              className="border-[#70BF2B]/40 hover:bg-[#F0F9EB] text-[#55941E] text-xs flex-1 sm:flex-initial"
-            >
-              Call Patient Now
-            </Button>
-            <Button
-              variant="secondary"
-              icon={<Stethoscope className="w-4 h-4 text-amber-600" />}
-              onClick={() => {
-                setCallModalType('diagnostic');
-                setIsCallModalOpen(true);
-              }}
-              className="border-amber-200 hover:bg-amber-50 text-amber-800 text-xs flex-1 sm:flex-initial"
-            >
-              Diagnostic Call
-            </Button>
+          <div ref={actionMenuRef} className="grid w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto sm:flex-nowrap">
             <Button
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setIsPrescribeOpen(true)}
-              className="bg-[#70BF2B] hover:bg-[#62A825] text-white text-xs w-full sm:w-auto"
+              className="order-first col-span-2 h-11 w-full whitespace-nowrap bg-[#70BF2B] text-xs text-white hover:bg-[#62A825] sm:order-last sm:col-span-1 sm:h-10 sm:w-auto"
             >
-              Prescribe medication
+              <span className="flex items-center gap-2">Prescribe medication</span>
             </Button>
+
+            <div className="relative min-w-0 sm:flex-initial">
+              <Button
+                type="button"
+                variant="secondary"
+                icon={<Phone className="h-4 w-4 text-[#55941E]" />}
+                onClick={() => setOpenActionMenu((menu) => menu === 'call' ? null : 'call')}
+                aria-haspopup="menu"
+                aria-expanded={openActionMenu === 'call'}
+                className="h-11 w-full gap-1.5 whitespace-nowrap border-[#70BF2B]/40 px-2 text-xs text-[#55941E] hover:bg-[#F0F9EB] sm:h-10 sm:gap-2 sm:px-4 sm:w-auto"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>Call</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                </span>
+              </Button>
+              {openActionMenu === 'call' && (
+                <div role="menu" className="absolute left-0 z-20 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl sm:left-auto sm:right-0">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenActionMenu(null);
+                      setCallModalType('reminder');
+                      setIsCallModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-[#F0F9EB] hover:text-[#55941E]"
+                  >
+                    <Phone className="h-4 w-4 text-[#55941E]" />
+                    Reminder call
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenActionMenu(null);
+                      setCallModalType('diagnostic');
+                      setIsCallModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-amber-50 hover:text-amber-800"
+                  >
+                    <Stethoscope className="h-4 w-4 text-amber-600" />
+                    Diagnostic call
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="relative min-w-0 sm:flex-initial">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setOpenActionMenu((menu) => menu === 'more' ? null : 'more')}
+                aria-haspopup="menu"
+                aria-expanded={openActionMenu === 'more'}
+                aria-label="More actions"
+                className="h-11 w-full gap-1.5 whitespace-nowrap px-2 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:w-auto"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span className="sm:hidden">More</span>
+                  <span className="hidden sm:inline">More actions</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                </span>
+              </Button>
+              {openActionMenu === 'more' && (
+                <div role="menu" className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenActionMenu(null);
+                      setIsEditPatientOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <Pencil className="h-4 w-4 text-gray-500" />
+                    Edit patient
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenActionMenu(null);
+                      setIsDeletePatientOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-rose-600 hover:bg-rose-50"
+                  >
+                    <Trash2 className="h-4 w-4 text-rose-500" />
+                    Delete patient
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
