@@ -330,6 +330,39 @@ export async function testTtsProviderApi(provider: 'lab' | 'khaya', text?: strin
   return res.json();
 }
 
+// 9b. ASR Speech-to-Text Engine Provider Settings API
+export async function fetchAsrProviderApi() {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/asr-provider`);
+  if (!res.ok) throw new Error('Offline — unable to load ASR settings.');
+  return res.json();
+}
+
+export async function updateAsrProviderApi(provider: 'groq' | 'lab') {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/asr-provider`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to switch ASR provider.');
+  }
+  return res.json();
+}
+
+export async function testAsrProviderApi(provider: 'groq' | 'lab') {
+  const res = await fetchWithRetry(`${API_BASE_URL}/settings/asr-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to test ASR provider.');
+  }
+  return res.json();
+}
+
 // 10. AI Voice Dictation API
 export async function dictatePrescriptionApi(audioBlob: Blob, language = 'en', patientId?: number) {
   const formData = new FormData();
