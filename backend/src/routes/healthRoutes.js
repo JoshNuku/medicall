@@ -7,6 +7,11 @@ const { getAllPatients } = require('../db/queries/patients');
 const { getOpenEscalationsWithPatient } = require('../db/queries/escalations');
 const { getTodayCallEvents } = require('../db/queries/callEvents');
 
+// Lightweight ping endpoints for fast uptime monitors (e.g. UptimeRobot, Render internal health check)
+router.get('/ping', (req, res) => res.status(200).send('pong'));
+router.head('/ping', (req, res) => res.status(200).end());
+router.head('/', (req, res) => res.status(200).end());
+
 /**
  * @openapi
  * /health:
@@ -58,10 +63,11 @@ router.get('/', async (req, res) => {
   const atConfigured = Boolean(process.env.AT_API_KEY && process.env.AT_USERNAME);
   const aiAgentEnabled = process.env.ENABLE_AI_AGENT === 'true';
 
-  const isHealthy = dbStatus === 'connected' && isCloudinaryConfigured;
+  const isHealthy = dbStatus === 'connected';
 
+  // Return 200 OK so uptime monitors don't false-alarm when optional CDN is initializing
   res.status(isHealthy ? 200 : 503).json({
-    status: isHealthy ? 'healthy' : 'degraded',
+    status: isHealthy ? (isCloudinaryConfigured ? 'healthy' : 'degraded') : 'unhealthy',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
     latencyMs: Date.now() - startTime,

@@ -80,6 +80,23 @@ app.use('/voice', voiceWebhookLimiter, voiceRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceInboundRoutes);
 app.use('/voice', voiceWebhookLimiter, voiceDiagnosticRoutes);
 
+// Root endpoint for UptimeRobot, load balancers, and browser probes
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    service: 'MediCall API Backend',
+    version: '1.0.0',
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    documentation: '/api-docs',
+    health: '/health'
+  });
+});
+
+app.head('/', (req, res) => {
+  res.status(200).end();
+});
+
 // Fallback: If Africa's Talking dashboard callback is configured at root '/'
 app.post('/', voiceWebhookLimiter, (req, res, next) => {
   if (req.body && (req.body.dtmfDigits !== undefined || req.query.dtmfDigits !== undefined)) {
