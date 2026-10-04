@@ -248,7 +248,7 @@ export default function PatientDetailPage() {
         {/* Patient Identity Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 tracking-tight">
                 {patient.name}
               </h1>
@@ -256,25 +256,25 @@ export default function PatientDetailPage() {
               <Badge variant="language" language={patient.preferred_language} />
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mt-2 font-mono">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-gray-500 mt-2 font-mono">
               <span className="flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-gray-400" />
+                <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 {patient.phone_number}
               </span>
               {patient.caregiver_phone && (
                 <span className="flex items-center gap-1.5 text-gray-600">
-                  <HeartHandshake className="w-3.5 h-3.5 text-gray-400" />
+                  <HeartHandshake className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   Caregiver: {patient.caregiver_phone}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsEditPatientOpen(true)}
-              className="p-2.5 text-gray-500 hover:text-[#55941E] hover:bg-[#F0F9EB] border border-gray-200 hover:border-[#70BF2B]/40 rounded-xl transition-colors cursor-pointer shadow-2xs"
+              className="p-2 sm:p-2.5 text-gray-500 hover:text-[#55941E] hover:bg-[#F0F9EB] border border-gray-200 hover:border-[#70BF2B]/40 rounded-xl transition-colors cursor-pointer shadow-2xs"
               title="Edit patient profile"
             >
               <Pencil className="w-4 h-4" />
@@ -282,7 +282,7 @@ export default function PatientDetailPage() {
             <button
               type="button"
               onClick={() => setIsDeletePatientOpen(true)}
-              className="p-2.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-xl transition-colors cursor-pointer shadow-2xs"
+              className="p-2 sm:p-2.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-xl transition-colors cursor-pointer shadow-2xs"
               title="Delete patient profile"
             >
               <Trash2 className="w-4 h-4" />
@@ -294,7 +294,7 @@ export default function PatientDetailPage() {
                 setCallModalType('reminder');
                 setIsCallModalOpen(true);
               }}
-              className="border-[#70BF2B]/40 hover:bg-[#F0F9EB] text-[#55941E]"
+              className="border-[#70BF2B]/40 hover:bg-[#F0F9EB] text-[#55941E] text-xs flex-1 sm:flex-initial"
             >
               Call Patient Now
             </Button>
@@ -305,7 +305,7 @@ export default function PatientDetailPage() {
                 setCallModalType('diagnostic');
                 setIsCallModalOpen(true);
               }}
-              className="border-amber-200 hover:bg-amber-50 text-amber-800"
+              className="border-amber-200 hover:bg-amber-50 text-amber-800 text-xs flex-1 sm:flex-initial"
             >
               Diagnostic Call
             </Button>
@@ -313,7 +313,7 @@ export default function PatientDetailPage() {
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setIsPrescribeOpen(true)}
-              className="bg-[#70BF2B] hover:bg-[#62A825] text-white"
+              className="bg-[#70BF2B] hover:bg-[#62A825] text-white text-xs w-full sm:w-auto"
             >
               Prescribe medication
             </Button>
@@ -472,11 +472,11 @@ export default function PatientDetailPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
             {medications.map((med) => (
               <div
                 key={med.id}
-                className="bg-white border border-[#ECECEC] rounded-2xl p-6 space-y-5 hover:border-gray-300 transition-colors shadow-xs relative"
+                className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 hover:border-gray-300 transition-colors shadow-xs relative"
               >
                 {/* Delete Confirmation Overlay */}
                 {deletingMedId === med.id && (

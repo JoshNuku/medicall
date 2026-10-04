@@ -52,16 +52,16 @@ export const Modal: React.FC<ModalProps> = ({
       />
 
       {/* Side Pane Sheet Container */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 z-10">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 z-10 w-full sm:w-auto">
         <div
-          className={`w-screen ${maxWidthClasses} bg-white shadow-2xl border-l border-[#EAEAEA] flex flex-col h-full transform transition ease-in-out duration-300 animate-in slide-in-from-right`}
+          className={`w-full ${maxWidthClasses} bg-white shadow-2xl border-l border-[#EAEAEA] flex flex-col h-full transform transition ease-in-out duration-300 animate-in slide-in-from-right`}
           role="dialog"
           aria-modal="true"
         >
           {/* Side Pane Header */}
-          <div className="px-6 py-5 border-b border-gray-100 flex items-start justify-between bg-white shrink-0">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-start justify-between bg-white shrink-0">
             <div className="pr-4">
-              <h2 className="text-lg font-bold text-gray-900 tracking-tight">{title}</h2>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">{title}</h2>
               {description && (
                 <p className="text-xs text-gray-500 mt-1 leading-relaxed">{description}</p>
               )}
@@ -76,7 +76,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Scrollable Side Pane Body */}
-          <div className="flex-1 overflow-y-auto px-6 py-6 overscroll-contain">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 overscroll-contain">
             {children}
           </div>
         </div>

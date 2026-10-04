@@ -25,19 +25,19 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
 
   return (
     <>
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900 tracking-tight">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 mb-3 sm:mb-4 gap-2">
+          <div className="min-w-0">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900 tracking-tight truncate">
               Monitored Patients
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5 truncate">
               Active medication regimens and adherence status across Ghanaian clinics
             </p>
           </div>
           <Link
             href="/patients"
-            className="text-xs font-semibold text-[#55941E] hover:underline flex items-center gap-1 transition-colors"
+            className="text-xs font-semibold text-[#55941E] hover:underline flex items-center gap-1 transition-colors shrink-0"
           >
             <span>All patients ({patients.length})</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -182,17 +182,17 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
           {displayPatients.map((patient) => (
             <div
               key={patient.id}
-              className="p-4 rounded-xl border border-gray-100 bg-[#FAF9F6] space-y-3"
+              className="p-3.5 rounded-xl border border-gray-100 bg-[#FAF9F6] space-y-2.5"
             >
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <Link
                     href={`/patients/${patient.id}`}
-                    className="font-semibold text-sm text-gray-900 hover:text-[#55941E]"
+                    className="font-semibold text-sm text-gray-900 hover:text-[#55941E] truncate block"
                   >
                     {patient.name}
                   </Link>
-                  <span className="block text-xs text-gray-400 font-mono">
+                  <span className="block text-[11px] text-gray-400 font-mono">
                     {patient.phone_number}
                   </span>
                 </div>
@@ -200,26 +200,40 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
               </div>
 
               <div className="flex items-center justify-between text-xs text-gray-600 pt-2 border-t border-gray-200/50">
-                <span>Adherence: <strong className="text-gray-900">{patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : 'New'}</strong></span>
-                <span className="font-semibold text-[10px] uppercase bg-gray-200 px-1.5 py-0.5 rounded">
-                  {patient.preferred_language}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-gray-500">Adherence:</span>
+                  <span className="font-semibold text-xs text-gray-900">
+                    {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : 'New'}
+                  </span>
+                </div>
+                <Badge variant="language" language={patient.preferred_language} size="sm" />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-1">
+              <div className="flex items-center justify-end gap-1.5 pt-1">
+                <button
+                  onClick={() => {
+                    loadPatientDetails(patient.id);
+                    setAudioPreviewPatient(patient);
+                  }}
+                  className="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-[#55941E] transition-colors"
+                  title="Audio tracks"
+                  aria-label="Preview audio"
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                </button>
                 <button
                   onClick={() => {
                     setActiveCallPatientId(patient.id);
                     setIsCallModalOpen(true);
                   }}
-                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-700 flex items-center gap-1"
+                  className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-700 flex items-center gap-1 shadow-2xs"
                 >
                   <Phone className="w-3 h-3 text-[#70BF2B]" />
                   <span>Call</span>
                 </button>
                 <Link
                   href={`/patients/${patient.id}`}
-                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#70BF2B] text-white"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#70BF2B] text-white shadow-2xs"
                 >
                   View Detail
                 </Link>

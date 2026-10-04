@@ -105,7 +105,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
             Call Purpose
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setCallType('reminder')}

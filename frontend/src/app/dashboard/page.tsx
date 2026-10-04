@@ -57,7 +57,7 @@ export default function DashboardPage() {
       {error && <ErrorBanner message={error} onRetry={refetch} />}
 
       {/* Clean Minimalist Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-1">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
             Dashboard Overview
@@ -67,7 +67,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {/* Date Pill */}
           <div className="hidden lg:inline-flex items-center gap-2 bg-white border border-[#EAEAEA] px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-gray-400" />
@@ -77,7 +77,7 @@ export default function DashboardPage() {
           {/* Quick Demo Call Button */}
           <button
             onClick={() => setIsCallModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-[#70BF2B]/40 text-[#55941E] hover:bg-[#F0F9EB] transition-all shadow-2xs"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-[#70BF2B]/40 text-[#55941E] hover:bg-[#F0F9EB] transition-all shadow-2xs flex-1 sm:flex-initial"
           >
             <Phone className="w-3.5 h-3.5 text-[#70BF2B]" />
             <span>Test Voice Call</span>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
           {/* Enroll Patient Button */}
           <button
             onClick={() => setIsEnrollModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-[#70BF2B] hover:bg-[#62A825] text-white transition-all shadow-xs"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-[#70BF2B] hover:bg-[#62A825] text-white transition-all shadow-xs flex-1 sm:flex-initial"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Enroll Patient</span>
@@ -94,16 +94,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Four Primary Summary Metrics (Strict AGENTS.md rule: Adherence, Patients, Calls Today, Alerts) */}
+      {/* Four Primary Summary Metrics (Strict AGENTS.md rule: 2x2 metric grid on mobile) */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           <MetricSkeleton />
           <MetricSkeleton />
           <MetricSkeleton />
           <MetricSkeleton />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {/* 1. Overall Adherence Hero Card */}
           <MetricCard
             variant="hero"

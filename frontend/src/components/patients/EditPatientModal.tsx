@@ -150,12 +150,12 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             />
             <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
-          <div className="flex items-center justify-between mt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-1">
             <p className="text-[11px] text-gray-400">
               Automated reminder voice calls and SMS alerts will be placed to this line.
             </p>
             {phoneNumber.trim() && !phoneValidation.isValid && (
-              <span className="text-[11px] text-amber-600 font-medium">
+              <span className="text-[11px] text-amber-600 font-medium shrink-0">
                 {phoneValidation.error?.split('.')[0]}
               </span>
             )}
@@ -220,12 +220,12 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             />
             <HeartHandshake className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
-          <div className="flex items-center justify-between mt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-1">
             <p className="text-[11px] text-gray-400">
               Receives SMS alerts if the patient misses repeated scheduled reminder calls.
             </p>
             {isCaregiverFilled && !caregiverValidation.isValid && (
-              <span className="text-[11px] text-amber-600 font-medium">
+              <span className="text-[11px] text-amber-600 font-medium shrink-0">
                 {caregiverValidation.error?.split('.')[0]}
               </span>
             )}

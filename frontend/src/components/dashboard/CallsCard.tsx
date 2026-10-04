@@ -39,24 +39,24 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
 
   return (
     <>
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 flex flex-col justify-between h-full shadow-xs">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs">
         <div>
-          <div className="flex items-center justify-between gap-3 mb-4 pb-1">
+          <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4 pb-1">
             <div>
-              <h2 className="text-base font-semibold text-gray-900 tracking-tight">Call Activity &amp; Live Queue</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Automated outbound reminder timeline</p>
+              <h2 className="text-sm sm:text-base font-semibold text-gray-900 tracking-tight">Call Activity &amp; Live Queue</h2>
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">Automated outbound reminder timeline</p>
             </div>
             <div className="relative">
               <select
                 value={range}
                 onChange={(e) => setRange(e.target.value as CallRange)}
-                className="appearance-none border border-gray-200 bg-white rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20"
+                className="appearance-none border border-gray-200 bg-white rounded-lg px-2.5 sm:px-3 py-1.5 pr-7 sm:pr-8 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20"
               >
                 <option value="today">Today</option>
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <ChevronDown className="pointer-events-none absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             </div>
           </div>
 

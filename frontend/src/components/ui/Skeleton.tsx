@@ -16,13 +16,13 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
 };
 
 export const MetricSkeleton = () => (
-  <div className="bg-white border border-[#EBEAE5] rounded-2xl p-5 space-y-3">
+  <div className="bg-white border border-[#EBEAE5] rounded-2xl p-3.5 sm:p-5 space-y-2 sm:space-y-3">
     <div className="flex items-center justify-between">
-      <Skeleton className="h-3 w-20" />
-      <Skeleton className="h-8 w-8 rounded-xl" />
+      <Skeleton className="h-3 w-16 sm:w-20" />
+      <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl" />
     </div>
-    <Skeleton className="h-8 w-24" />
-    <Skeleton className="h-3 w-32" />
+    <Skeleton className="h-7 sm:h-8 w-20 sm:w-24" />
+    <Skeleton className="h-3 w-24 sm:w-32" />
   </div>
 );
 

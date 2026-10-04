@@ -471,27 +471,27 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         </div>
 
         {/* Strict Two-Mode Switcher */}
-        <div className="bg-[#FAF9F6] p-1.5 rounded-2xl border border-gray-200/80 grid grid-cols-2 gap-2">
+        <div className="bg-[#FAF9F6] p-1.5 rounded-2xl border border-gray-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setMode('template')}
-            className={`py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${mode === 'template'
+            className={`py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${mode === 'template'
               ? 'bg-white text-gray-900 shadow-xs border border-gray-200'
               : 'text-gray-500 hover:text-gray-800'
               }`}
           >
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Mode 1: Verified Template</span>
           </button>
           <button
             type="button"
             onClick={() => setMode('recorded')}
-            className={`py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${mode === 'recorded'
+            className={`py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${mode === 'recorded'
               ? 'bg-white text-gray-900 shadow-xs border border-gray-200'
               : 'text-gray-500 hover:text-gray-800'
               }`}
           >
-            <Mic className="w-4 h-4 text-purple-600" />
+            <Mic className="w-4 h-4 text-purple-600 shrink-0" />
             <span>Mode 2: Pharmacist Recorded</span>
           </button>
         </div>

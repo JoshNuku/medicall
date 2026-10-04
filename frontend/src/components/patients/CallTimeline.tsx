@@ -57,9 +57,9 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
   };
 
   return (
-    <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs">
-      <div className="pb-4 border-b border-gray-100 mb-5">
-        <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
+    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+      <div className="pb-3 sm:pb-4 border-b border-gray-100 mb-4 sm:mb-5">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 tracking-tight">
           Adherence history & call timeline
         </h3>
         <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -72,7 +72,7 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
           No call history recorded yet. The first automated reminder will trigger at the scheduled time.
         </div>
       ) : (
-        <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200/80">
+        <div className="relative pl-5 sm:pl-6 space-y-4 sm:space-y-6 before:content-[''] before:absolute before:left-2 sm:before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200/80">
           {logs.map((item, index) => {
             const key = item.id || item.call_event_id || `log-${index}-${item.scheduled_time || ''}`;
             const dateStr = item.scheduled_time
@@ -91,10 +91,10 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
             return (
               <div key={key} className="relative group">
                 {/* Timeline Dot */}
-                <div className="absolute -left-6 top-1.5 w-3 h-3 rounded-full bg-white border-2 border-emerald-600 group-hover:scale-125 transition-transform" />
+                <div className="absolute -left-5 sm:-left-6 top-1.5 w-3 h-3 rounded-full bg-white border-2 border-emerald-600 group-hover:scale-125 transition-transform" />
 
-                <div className="bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl p-3.5 hover:border-gray-300 transition-colors">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div className="bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl p-3 sm:p-3.5 hover:border-gray-300 transition-colors">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-bold text-gray-900">
                         {dateStr} &middot; {timeStr}

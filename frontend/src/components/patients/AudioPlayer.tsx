@@ -444,44 +444,44 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }
 
   return (
-    <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl p-3.5 transition-all hover:border-[#DFDCD4]">
+    <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl p-3 sm:p-3.5 transition-all hover:border-[#DFDCD4] w-full">
       {/* Top row: Language badge + title + speed pill + timing */}
-      <div className="flex items-center justify-between gap-2 mb-2.5">
-        <div className="flex items-center gap-2 min-w-0">
-          <Badge variant="language" language={language} />
+      <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 max-w-full">
+          <Badge variant="language" language={language} size="sm" />
           <span className="text-xs font-semibold text-gray-800 truncate tracking-tight">{title}</span>
           {isGenerating ? (
-            <span className="text-[11px] text-gray-400 font-normal flex items-center gap-1.5 shrink-0 ml-1">
+            <span className="text-[10px] sm:text-[11px] text-gray-400 font-normal flex items-center gap-1 shrink-0 ml-1">
               <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
-              <span>Generating audio...</span>
+              <span>Generating...</span>
             </span>
           ) : isPlayingTrailer ? (
-            <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-2 py-0.5 rounded-md animate-pulse shrink-0">
-              Playing Keypress Menu...
+            <span className="text-[10px] text-emerald-700 bg-emerald-100 font-semibold px-1.5 sm:px-2 py-0.5 rounded-md animate-pulse shrink-0">
+              Keypress Menu...
             </span>
           ) : appendKeypressTrailer ? (
-            <span className="text-[10px] text-gray-500 bg-white font-mono px-1.5 py-0.5 rounded border border-gray-200 shrink-0">
+            <span className="text-[10px] text-gray-500 bg-white font-mono px-1.5 py-0.5 rounded border border-gray-200 shrink-0 hidden sm:inline">
               Keypad trailer
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
           <button
             type="button"
             onClick={toggleSpeed}
-            className="px-2 py-0.5 text-[11px] font-mono font-medium rounded-md bg-white border border-[#E2DFD7] hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
+            className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-mono font-medium rounded-md bg-white border border-[#E2DFD7] hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
             title="Adjust playback speed for patient clarity"
           >
             {playbackSpeed}x pace
           </button>
-          <span className="text-xs text-gray-500 font-mono shrink-0">
+          <span className="text-[11px] sm:text-xs text-gray-500 font-mono shrink-0">
             {formatTime(currentTime)} / {formatTime(displayDuration)}
           </span>
         </div>
       </div>
 
       {/* Main player controls + waveform */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 w-full">
         {/* Play/Pause Button */}
         {isGenerating ? (
           <div

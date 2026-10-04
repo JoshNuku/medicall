@@ -29,22 +29,22 @@ export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
   };
 
   return (
-    <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs">
-      <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
-            <AlertTriangle className="w-4 h-4" />
+    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+      <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 mb-3 sm:mb-4 gap-2">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-gray-900 tracking-tight">
+          <div className="min-w-0">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900 tracking-tight truncate">
               Needs Attention &middot; Urgent Escalations
             </h2>
-            <p className="text-xs text-gray-400">Patients reporting barriers or missed doses</p>
+            <p className="text-[11px] sm:text-xs text-gray-400 truncate">Patients reporting barriers or missed doses</p>
           </div>
         </div>
         <Link
           href="/alerts"
-          className="text-xs font-semibold text-[#55941E] hover:underline flex items-center gap-1 transition-colors"
+          className="text-xs font-semibold text-[#55941E] hover:underline flex items-center gap-1 transition-colors shrink-0"
         >
           <span>View all ({alerts.filter((a) => a.status === 'open').length})</span>
           <ArrowRight className="w-3.5 h-3.5" />

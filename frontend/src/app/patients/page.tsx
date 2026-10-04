@@ -96,9 +96,9 @@ export default function PatientsPage() {
       />
 
       {/* Filter and Search Bar */}
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-[#ECECEC] rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs">
         {/* Search */}
-        <div className="relative w-full sm:w-80">
+        <div className="relative w-full md:w-80">
           <input
             type="text"
             placeholder="Search by name or phone..."
@@ -110,11 +110,11 @@ export default function PatientsPage() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
             <button
               onClick={() => setLanguageFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'all'
                   ? 'bg-white text-gray-900 shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
@@ -124,7 +124,7 @@ export default function PatientsPage() {
             </button>
             <button
               onClick={() => setLanguageFilter('twi')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'twi'
                   ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
@@ -134,7 +134,7 @@ export default function PatientsPage() {
             </button>
             <button
               onClick={() => setLanguageFilter('english')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'english'
                   ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
@@ -349,34 +349,34 @@ export default function PatientsPage() {
               key={patient.id}
               className="block bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs hover:border-gray-300 transition-colors"
             >
-              <div className="flex items-center justify-between mb-2">
-                <Link href={`/patients/${patient.id}`}>
-                  <span className="font-semibold text-base text-gray-900 hover:text-[#55941E] transition-colors">{patient.name}</span>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <Link href={`/patients/${patient.id}`} className="min-w-0">
+                  <span className="font-semibold text-base text-gray-900 hover:text-[#55941E] transition-colors truncate block">{patient.name}</span>
                 </Link>
                 <Badge variant="status" status={patient.status} size="sm" />
               </div>
 
               <div className="space-y-1 text-xs text-gray-600 mb-3 font-mono">
                 <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-gray-400" />
+                  <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span>{patient.phone_number}</span>
                 </div>
                 {patient.caregiver_phone && (
                   <div className="flex items-center gap-2">
-                    <HeartHandshake className="w-3.5 h-3.5 text-gray-400" />
+                    <HeartHandshake className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     <span>Caregiver: {patient.caregiver_phone}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 text-xs">
                 <div className="flex items-center gap-2">
                   <Badge variant="language" language={patient.preferred_language} />
                   <span className="text-gray-600">
                     Adherence: <strong className="text-gray-900 font-semibold">{patient.adherence_rate !== null && patient.adherence_rate !== undefined ? `${patient.adherence_rate}%` : 'New'}</strong>
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 ml-auto">
                   <Link
                     href={`/patients/${patient.id}`}
                     className="p-1.5 text-gray-400 hover:text-[#55941E] hover:bg-[#F0F9EB] rounded-lg transition-colors"
