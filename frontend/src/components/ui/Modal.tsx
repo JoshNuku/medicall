@@ -1,7 +1,54 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+
+let modalLockCount = 0;
+let restorePageScroll: (() => void) | null = null;
+
+const lockPageScroll = () => {
+  if (modalLockCount === 0) {
+    const scrollY = window.scrollY;
+    const htmlOverflow = document.documentElement.style.overflow;
+    const bodyStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+    };
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+
+    restorePageScroll = () => {
+      document.documentElement.style.overflow = htmlOverflow;
+      document.body.style.overflow = bodyStyles.overflow;
+      document.body.style.position = bodyStyles.position;
+      document.body.style.top = bodyStyles.top;
+      document.body.style.left = bodyStyles.left;
+      document.body.style.right = bodyStyles.right;
+      document.body.style.width = bodyStyles.width;
+      window.scrollTo(0, scrollY);
+    };
+  }
+
+  modalLockCount += 1;
+  return () => {
+    modalLockCount -= 1;
+    if (modalLockCount === 0) {
+      restorePageScroll?.();
+      restorePageScroll = null;
+    }
+  };
+};
 
 interface ModalProps {
   isOpen: boolean;
@@ -20,21 +67,23 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
 }) => {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onCloseRef.current();
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    const unlockPageScroll = lockPageScroll();
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = 'unset';
+      unlockPageScroll();
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const maxWidthClasses = {
     sm: 'md:max-w-md',
@@ -43,8 +92,8 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'md:max-w-2xl',
   }[maxWidth];
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-[80] overflow-hidden">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
@@ -53,7 +102,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       <div className="pointer-events-none fixed inset-0 z-10 flex items-end justify-center md:justify-end">
         <div
-          className={`pointer-events-auto flex h-[min(92dvh,48rem)] w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up md:h-full md:max-h-full ${maxWidthClasses} md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          className={`pointer-events-auto flex h-dvh w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up ${maxWidthClasses} md:h-full md:max-h-full md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
           role="dialog"
           aria-modal="true"
         >
@@ -81,6 +130,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
