@@ -83,10 +83,14 @@ export const MobileNav: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setIsNotificationsOpen(true)}
+            onClick={() => {
+              setIsOpen(false);
+              setIsNotificationsOpen(true);
+            }}
             className="p-2 text-gray-500 hover:text-gray-900 relative rounded-lg hover:bg-gray-100"
-            aria-label="Alerts"
+            aria-label="Notifications"
             aria-expanded={isNotificationsOpen}
+            aria-haspopup="dialog"
           >
             <Bell className="w-5 h-5" />
             {metrics.open_alerts > 0 && (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -68,10 +68,14 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = 'md',
 }) => {
   const onCloseRef = useRef(onClose);
+  const dragStart = useRef<{ y: number; height: number } | null>(null);
+  const [sheetHeight, setSheetHeight] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
+    setSheetHeight(null);
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onCloseRef.current();
     };
@@ -82,6 +86,43 @@ export const Modal: React.FC<ModalProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
+
+  const handleDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (window.matchMedia('(min-width: 768px)').matches) return;
+    dragStart.current = {
+      y: event.clientY,
+      height: event.currentTarget.parentElement?.getBoundingClientRect().height ?? window.innerHeight * 0.88,
+    };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return;
+    const nextHeight = dragStart.current.height + dragStart.current.y - event.clientY;
+    setSheetHeight(Math.min(window.innerHeight, Math.max(window.innerHeight * 0.45, nextHeight)));
+  };
+
+  const handleDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return;
+    const finalHeight = Math.min(
+      window.innerHeight,
+      Math.max(
+        window.innerHeight * 0.45,
+        dragStart.current.height + dragStart.current.y - event.clientY,
+      ),
+    );
+    const dragDistance = event.clientY - dragStart.current.y;
+    const startHeight = dragStart.current.height;
+    dragStart.current = null;
+    setIsDragging(false);
+    setSheetHeight(finalHeight);
+    const heightRatio = finalHeight / window.innerHeight;
+    if (heightRatio >= 0.92) setSheetHeight(window.innerHeight);
+    else if (dragDistance > 0 && finalHeight < startHeight * 0.8) onCloseRef.current();
+    else setSheetHeight(window.innerHeight * 0.88);
+  };
 
   if (!isOpen || typeof document === 'undefined') return null;
 
@@ -102,11 +143,36 @@ export const Modal: React.FC<ModalProps> = ({
 
       <div className="pointer-events-none fixed inset-0 z-10 flex items-end justify-center md:justify-end">
         <div
-          className={`pointer-events-auto flex h-dvh w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up ${maxWidthClasses} md:h-full md:max-h-full md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          className={`drawer-sheet pointer-events-auto flex w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up ${isDragging ? 'sheet-dragging' : ''} ${maxWidthClasses} md:max-h-full md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          style={sheetHeight === null ? undefined : { height: `${sheetHeight}px` }}
           role="dialog"
           aria-modal="true"
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[#D8D8D2] md:hidden" />
+          <div
+            className="flex h-7 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing md:hidden"
+            onPointerDown={handleDragStart}
+            onPointerMove={handleDragMove}
+            onPointerUp={handleDragEnd}
+            onPointerCancel={() => {
+              dragStart.current = null;
+              setIsDragging(false);
+              setSheetHeight(window.innerHeight * 0.88);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowUp') setSheetHeight(window.innerHeight);
+              if (event.key === 'ArrowDown') {
+                if (sheetHeight && sheetHeight >= window.innerHeight * 0.92) {
+                  setSheetHeight(window.innerHeight * 0.88);
+                }
+                else onCloseRef.current();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Drag up to expand or drag down to close"
+          >
+            <span className="h-1 w-10 rounded-full bg-[#D8D8D2]" />
+          </div>
           {/* Side Pane Header */}
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-start justify-between bg-white shrink-0">
             <div className="pr-4">

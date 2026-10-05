@@ -142,3 +142,20 @@ html, body {
 .animate-slide-in-up {
   animation: slideInUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+.drawer-sheet,
+.voice-assistant-sheet {
+  height: 88dvh;
+  transition: height 180ms ease-out;
+}
+
+.sheet-dragging {
+  transition: none !important;
+}
+
+@media (min-width: 768px) {
+  .drawer-sheet,
+  .voice-assistant-sheet {
+    height: 100% !important;
+  }
+}
