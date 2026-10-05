@@ -63,16 +63,20 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const [durationDays, setDurationDays] = useState(7);
   const [isChronic, setIsChronic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState<number | null>(null);
+  const [isSheetDragging, setIsSheetDragging] = useState(false);
 
   // Audio recording refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dragStartRef = useRef<{ y: number; height: number } | null>(null);
 
   // Reset when modal opens/closes
   useEffect(() => {
     if (isOpen) {
+      setSheetHeight(null);
       setStep('record');
       setIsRecording(false);
       setRecordDuration(0);
@@ -118,12 +122,34 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    const originalOverflow = document.body.style.overflow;
+    const scrollY = window.scrollY;
+    const originalStyles = {
+      htmlOverflow: document.documentElement.style.overflow,
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+    };
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalStyles.htmlOverflow;
+      document.body.style.overflow = originalStyles.overflow;
+      document.body.style.position = originalStyles.position;
+      document.body.style.top = originalStyles.top;
+      document.body.style.left = originalStyles.left;
+      document.body.style.right = originalStyles.right;
+      document.body.style.width = originalStyles.width;
+      window.scrollTo(0, scrollY);
     };
   }, [isOpen, onClose]);
 
@@ -313,6 +339,43 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleSheetDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if ((event.pointerType === 'mouse' && event.button !== 0) ||
+        window.matchMedia('(min-width: 768px)').matches) return;
+    dragStartRef.current = {
+      y: event.clientY,
+      height: event.currentTarget.parentElement?.getBoundingClientRect().height ?? window.innerHeight * 0.88,
+    };
+    setIsSheetDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleSheetDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStartRef.current) return;
+    const nextHeight = dragStartRef.current.height + dragStartRef.current.y - event.clientY;
+    setSheetHeight(Math.min(window.innerHeight, Math.max(window.innerHeight * 0.45, nextHeight)));
+  };
+
+  const handleSheetDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStartRef.current) return;
+    const finalHeight = Math.min(
+      window.innerHeight,
+      Math.max(
+        window.innerHeight * 0.45,
+        dragStartRef.current.height + dragStartRef.current.y - event.clientY,
+      ),
+    );
+    const dragDistance = event.clientY - dragStartRef.current.y;
+    const startHeight = dragStartRef.current.height;
+    dragStartRef.current = null;
+    setIsSheetDragging(false);
+    setSheetHeight(finalHeight);
+    const heightRatio = finalHeight / window.innerHeight;
+    if (heightRatio >= 0.92) setSheetHeight(window.innerHeight);
+    else if (dragDistance > 0 && finalHeight < startHeight * 0.8) onClose();
+    else setSheetHeight(window.innerHeight * 0.88);
+  };
+
   // Filter templates
   const dosages = templates.filter((t) => t.category === 'dosage');
   const frequencies = templates.filter((t) => t.category === 'frequency');
@@ -329,12 +392,37 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
       <div className="absolute inset-0 flex items-end justify-center md:justify-end">
         <section
-          className="relative flex h-[min(92dvh,48rem)] w-full flex-col overflow-hidden rounded-t-3xl border border-[#EBEAE5] bg-white shadow-2xl animate-slide-in-up md:h-full md:max-h-full md:max-w-xl md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right"
+          className={`voice-assistant-sheet relative flex w-full flex-col overflow-hidden rounded-t-3xl border border-[#EBEAE5] bg-white shadow-2xl animate-slide-in-up ${isSheetDragging ? 'sheet-dragging' : ''} md:max-h-full md:max-w-xl md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          style={sheetHeight === null ? undefined : { height: `${sheetHeight}px` }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="voice-pane-title"
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[#D8D8D2] md:hidden" />
+          <div
+            className="mx-auto flex h-7 w-full shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing md:hidden"
+            onPointerDown={handleSheetDragStart}
+            onPointerMove={handleSheetDragMove}
+            onPointerUp={handleSheetDragEnd}
+            onPointerCancel={() => {
+              dragStartRef.current = null;
+              setIsSheetDragging(false);
+              setSheetHeight(window.innerHeight * 0.88);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowUp') setSheetHeight(window.innerHeight);
+              if (event.key === 'ArrowDown') {
+                if (sheetHeight && sheetHeight >= window.innerHeight * 0.92) {
+                  setSheetHeight(window.innerHeight * 0.88);
+                }
+                else onClose();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Drag up to expand or drag down to close"
+          >
+            <span className="h-1 w-10 rounded-full bg-[#D8D8D2]" />
+          </div>
           
           {/* Header */}
           <div className="px-4 sm:px-6 py-4 border-b border-[#EBEAE5] flex items-center justify-between bg-white shrink-0">

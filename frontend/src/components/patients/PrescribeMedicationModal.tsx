@@ -764,14 +764,14 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         )}
 
         {/* Regimen Scheduling Details (Shared) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-              Call schedule times (24-Hour Format: HH:MM) *
+              Reminder times *
             </label>
             <div className="space-y-2">
               {scheduleTimes.map((time, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="flex min-w-0 items-center gap-2">
                   <label htmlFor={`schedule-time-${index}`} className="sr-only">
                     Reminder time {index + 1}
                   </label>
@@ -789,7 +789,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                           )
                         );
                       }}
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-3.5 text-sm font-mono transition-all focus:border-[#70BF2B] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
+                      className="block h-11 w-full min-w-0 appearance-none rounded-xl border border-gray-200 py-2.5 pl-10 pr-2 text-sm font-mono transition-all focus:border-[#70BF2B] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
                     />
                   </div>
                   <button
@@ -799,7 +799,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                     onClick={() =>
                       setScheduleTimes((times) => times.filter((_, timeIndex) => timeIndex !== index))
                     }
-                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -816,7 +816,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               </button>
             </div>
             <p className="text-[11px] text-gray-500 mt-1.5">
-              Select 24-hour reminder times for automated adherence calls.
+              Choose up to four daily call times (24-hour clock).
             </p>
           </div>
 

@@ -14,18 +14,22 @@ import {
   Settings,
   HelpCircle,
   Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { useAuth } from '@/lib/auth-context';
 import { LogoutButton } from '@/components/layout/LogoutButton';
 import { VoiceAssistantModal } from '@/components/patients/VoiceAssistantModal';
+import { Modal } from '@/components/ui/Modal';
 
 export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const { metrics } = useData();
+  const { metrics, alerts } = useData();
   const { user } = useAuth();
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const openAlerts = alerts.filter((alert) => alert.status === 'open').slice(0, 4);
 
   const navItems = [
     {
@@ -77,16 +81,22 @@ export const MobileNav: React.FC = () => {
           >
             <Sparkles className="w-5 h-5 text-[#55941E]" />
           </button>
-          <Link
-            href="/alerts"
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              setIsNotificationsOpen(true);
+            }}
             className="p-2 text-gray-500 hover:text-gray-900 relative rounded-lg hover:bg-gray-100"
-            aria-label="Alerts"
+            aria-label="Notifications"
+            aria-expanded={isNotificationsOpen}
+            aria-haspopup="dialog"
           >
             <Bell className="w-5 h-5" />
             {metrics.open_alerts > 0 && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />
             )}
-          </Link>
+          </button>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -172,6 +182,58 @@ export const MobileNav: React.FC = () => {
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
       />
+      <Modal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        title="Notifications"
+        description={
+          metrics.open_alerts > 0
+            ? `${metrics.open_alerts} open patient alerts`
+            : 'All monitored patients are adherent.'
+        }
+      >
+        <div className="divide-y divide-gray-100">
+          {openAlerts.length === 0 ? (
+            <div className="py-8 text-center">
+              <CheckCircle2 className="mx-auto mb-2 h-7 w-7 text-[#70BF2B]" />
+              <p className="text-sm font-semibold text-gray-800">No unresolved escalations</p>
+              <p className="mt-1 text-xs text-gray-500">All monitored patients are adherent.</p>
+            </div>
+          ) : (
+            openAlerts.map((alert) => (
+              <Link
+                key={alert.id}
+                href={`/patients/${alert.patient_id}`}
+                onClick={() => setIsNotificationsOpen(false)}
+                className="flex items-start gap-3 py-4 transition-colors first:pt-1 hover:bg-[#F8F9FA]"
+              >
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600">
+                  <AlertTriangle className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-semibold text-gray-900">{alert.patient_name}</span>
+                    <span className="shrink-0 text-[11px] text-gray-400">
+                      {new Date(alert.created_at).toLocaleTimeString('en-GB', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-gray-500">{alert.details}</span>
+                </span>
+              </Link>
+            ))
+          )}
+        </div>
+        <Link
+          href="/alerts"
+          onClick={() => setIsNotificationsOpen(false)}
+          className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-[#70BF2B]/30 bg-[#F0F9EB] px-4 py-2.5 text-sm font-semibold text-[#447817] transition-colors hover:bg-[#E5F5D8]"
+        >
+          View all alerts
+        </Link>
+      </Modal>
     </header>
   );
 };

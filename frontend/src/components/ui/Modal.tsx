@@ -1,7 +1,54 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+
+let modalLockCount = 0;
+let restorePageScroll: (() => void) | null = null;
+
+const lockPageScroll = () => {
+  if (modalLockCount === 0) {
+    const scrollY = window.scrollY;
+    const htmlOverflow = document.documentElement.style.overflow;
+    const bodyStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+    };
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+
+    restorePageScroll = () => {
+      document.documentElement.style.overflow = htmlOverflow;
+      document.body.style.overflow = bodyStyles.overflow;
+      document.body.style.position = bodyStyles.position;
+      document.body.style.top = bodyStyles.top;
+      document.body.style.left = bodyStyles.left;
+      document.body.style.right = bodyStyles.right;
+      document.body.style.width = bodyStyles.width;
+      window.scrollTo(0, scrollY);
+    };
+  }
+
+  modalLockCount += 1;
+  return () => {
+    modalLockCount -= 1;
+    if (modalLockCount === 0) {
+      restorePageScroll?.();
+      restorePageScroll = null;
+    }
+  };
+};
 
 interface ModalProps {
   isOpen: boolean;
@@ -20,21 +67,64 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
 }) => {
+  const onCloseRef = useRef(onClose);
+  const dragStart = useRef<{ y: number; height: number } | null>(null);
+  const [sheetHeight, setSheetHeight] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    if (!isOpen) return;
+    setSheetHeight(null);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onCloseRef.current();
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    const unlockPageScroll = lockPageScroll();
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = 'unset';
+      unlockPageScroll();
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (window.matchMedia('(min-width: 768px)').matches) return;
+    dragStart.current = {
+      y: event.clientY,
+      height: event.currentTarget.parentElement?.getBoundingClientRect().height ?? window.innerHeight * 0.88,
+    };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return;
+    const nextHeight = dragStart.current.height + dragStart.current.y - event.clientY;
+    setSheetHeight(Math.min(window.innerHeight, Math.max(window.innerHeight * 0.45, nextHeight)));
+  };
+
+  const handleDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return;
+    const finalHeight = Math.min(
+      window.innerHeight,
+      Math.max(
+        window.innerHeight * 0.45,
+        dragStart.current.height + dragStart.current.y - event.clientY,
+      ),
+    );
+    const dragDistance = event.clientY - dragStart.current.y;
+    const startHeight = dragStart.current.height;
+    dragStart.current = null;
+    setIsDragging(false);
+    setSheetHeight(finalHeight);
+    const heightRatio = finalHeight / window.innerHeight;
+    if (heightRatio >= 0.92) setSheetHeight(window.innerHeight);
+    else if (dragDistance > 0 && finalHeight < startHeight * 0.8) onCloseRef.current();
+    else setSheetHeight(window.innerHeight * 0.88);
+  };
+
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const maxWidthClasses = {
     sm: 'md:max-w-md',
@@ -43,8 +133,8 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'md:max-w-2xl',
   }[maxWidth];
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-[80] overflow-hidden">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
@@ -53,11 +143,36 @@ export const Modal: React.FC<ModalProps> = ({
 
       <div className="pointer-events-none fixed inset-0 z-10 flex items-end justify-center md:justify-end">
         <div
-          className={`pointer-events-auto flex h-[min(92dvh,48rem)] w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up md:h-full md:max-h-full ${maxWidthClasses} md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          className={`drawer-sheet pointer-events-auto flex w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up ${isDragging ? 'sheet-dragging' : ''} ${maxWidthClasses} md:max-h-full md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          style={sheetHeight === null ? undefined : { height: `${sheetHeight}px` }}
           role="dialog"
           aria-modal="true"
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[#D8D8D2] md:hidden" />
+          <div
+            className="flex h-7 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing md:hidden"
+            onPointerDown={handleDragStart}
+            onPointerMove={handleDragMove}
+            onPointerUp={handleDragEnd}
+            onPointerCancel={() => {
+              dragStart.current = null;
+              setIsDragging(false);
+              setSheetHeight(window.innerHeight * 0.88);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowUp') setSheetHeight(window.innerHeight);
+              if (event.key === 'ArrowDown') {
+                if (sheetHeight && sheetHeight >= window.innerHeight * 0.92) {
+                  setSheetHeight(window.innerHeight * 0.88);
+                }
+                else onCloseRef.current();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Drag up to expand or drag down to close"
+          >
+            <span className="h-1 w-10 rounded-full bg-[#D8D8D2]" />
+          </div>
           {/* Side Pane Header */}
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-start justify-between bg-white shrink-0">
             <div className="pr-4">
@@ -81,6 +196,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
