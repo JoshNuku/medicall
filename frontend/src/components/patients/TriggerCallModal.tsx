@@ -22,7 +22,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   defaultPatientId,
   defaultCallType = 'reminder',
 }) => {
-  const { patients } = useData();
+  const { patients, refetch } = useData();
   const [selectedPatientId, setSelectedPatientId] = useState<number | string>(
     defaultPatientId || (patients.length > 0 ? patients[0].id : '')
   );
@@ -67,6 +67,9 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
             ? `AI Diagnostic call initiated in background! The agent is personalizing the prompt and dialing ${phoneToCall}. Test pressing 1 (Cost), 2 (Side effects), 3 (Forgot), 4 (Other), or 0 (Help).`
             : `Outbound reminder call initiated in background! The agent is personalizing the prompt and dialing ${phoneToCall}. Test pressing 1 (Confirm), 2 (Side effects), 3 (Cost), 4 (Forgot), or 0 (Help).`
         );
+        if (refetch) {
+          refetch().catch(() => {});
+        }
       } else {
         throw new Error(res.message || 'Call failed to dispatch');
       }

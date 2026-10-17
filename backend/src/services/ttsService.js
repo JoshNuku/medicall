@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { uploadAudio, isConfigured: isCloudinaryConfigured } = require('./cloudinaryService');
+const { tripAiCircuitBreaker } = require('./aiCircuitBreaker');
 require('dotenv').config();
 
 const TTS_API_URL = process.env.TTS_API_URL || process.env.LAB_TTS_URL || 'https://lab-subscription-platform.vercel.app/api/v1/tts';
@@ -141,6 +142,10 @@ async function requestLabTtsChunk(text) {
       const errCode = errData?.error?.code || `HTTP_${response.status}`;
       const errMsg = errData?.error?.message || response.statusText;
       const reqId = errData?.request_id || response.headers.get('x-request-id') || 'n/a';
+
+      if (response.status === 429 || (errMsg && errMsg.toLowerCase().includes('limit has been reached'))) {
+        tripAiCircuitBreaker(`Lab TTS Quota Limit Exceeded: ${errMsg}`, 6 * 60 * 60 * 1000);
+      }
 
       console.error(`[TTS Lab Error (${response.status})]: ${errCode} - ${errMsg} (Request ID: ${reqId})`);
       return null;
@@ -328,6 +333,9 @@ async function synthesizeWithKhaya(text, filename = null, speakerId = 'female', 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[Khaya TTS Error (${response.status})]:`, errorText);
+      if (response.status === 403 || response.status === 429 || errorText.includes('quota') || errorText.includes('call volume')) {
+        tripAiCircuitBreaker(`Khaya TTS Daily Quota Exhausted (${response.status})`, 4 * 60 * 60 * 1000);
+      }
       return null;
     }
 
@@ -389,13 +397,18 @@ async function synthesizeSpeech(text, filename = null, speakerId = 'PT', tempo =
     audioUrl = await synthesizeWithLab(text, filename, 'PT', tempo);
   }
 
-  // Graceful Automatic Fallback if Primary Provider Fails
+  // Graceful Automatic Fallback if Primary Provider Fails (guarded by ENABLE_TTS_FALLBACK to protect credits)
   if (!audioUrl) {
-    console.warn(`⚠️ [TTS Service] Primary provider "${primary}" failed. Falling back to "${secondary.toUpperCase()}"...`);
-    if (secondary === 'khaya') {
-      audioUrl = await synthesizeWithKhaya(text, filename, 'female', tempo);
+    const allowFallback = process.env.ENABLE_TTS_FALLBACK === 'true';
+    if (allowFallback) {
+      console.warn(`⚠️ [TTS Service] Primary provider "${primary}" failed. Falling back to "${secondary.toUpperCase()}"...`);
+      if (secondary === 'khaya') {
+        audioUrl = await synthesizeWithKhaya(text, filename, 'female', tempo);
+      } else {
+        audioUrl = await synthesizeWithLab(text, filename, 'PT', tempo);
+      }
     } else {
-      audioUrl = await synthesizeWithLab(text, filename, 'PT', tempo);
+      console.warn(`⚠️ [TTS Service] Primary provider "${primary}" failed. Automatic fallback is disabled (ENABLE_TTS_FALLBACK!=true) to protect API credits.`);
     }
   }
 

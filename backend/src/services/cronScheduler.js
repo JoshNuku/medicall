@@ -17,10 +17,18 @@ const runSchedulerCycle = async (now = new Date()) => {
   const todayDate = now.toISOString().split('T')[0];
   const medications = await getAllActiveMedications();
 
-  // 1. Pre-generate AI reminder audio 10 mins before call to avoid telephony latency (sequential queue)
-  if (process.env.ENABLE_AI_AGENT === 'true') {
+  // 1. Pre-generate AI reminder audio 10 mins before call (opt-in via ENABLE_CRON_AI_PREGEN=true to protect API credits)
+  const isAiEnabled = process.env.ENABLE_AI_AGENT === 'true';
+  const isPreGenEnabled = process.env.ENABLE_CRON_AI_PREGEN === 'true';
+
+  if (isAiEnabled && isPreGenEnabled) {
     for (const med of medications) {
       if (med.instruction_source === 'recorded') continue;
+      // Skip if reminder audio is already pre-generated and cached
+      if (med.reminder_audio_url && (med.reminder_audio_url.startsWith('http') || med.reminder_audio_url.startsWith('/audio/'))) {
+        continue;
+      }
+
       const times = (med.schedule_times || '').split(',').map(t => t.trim());
       if (times.includes(upcoming10MinHhMm)) {
         try {
@@ -30,7 +38,7 @@ const runSchedulerCycle = async (now = new Date()) => {
             medicationId: med.id,
             speakerId: 'female'
           });
-          if (audioResult && typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          if (audioResult && typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http'))) {
             const db = require('../db/connection');
             await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
             med.reminder_audio_url = audioResult;
@@ -47,20 +55,20 @@ const runSchedulerCycle = async (now = new Date()) => {
     const times = (med.schedule_times || '').split(',').map(t => t.trim());
     if (!times.includes(currentHhMm)) continue;
 
-    if (await hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
-
     try {
+      if (await hasReminderCallToday(med.id, todayDate, currentHhMm)) continue;
+
       console.log(`\n⏰ [CRON SCHEDULER]: Automated reminder call triggered for ${med.patient_name || 'Patient #' + med.patient_id} (${med.phone_number})...`);
 
-      // Ensure dynamic AI reminder audio is fresh before placing call
-      if (process.env.ENABLE_AI_AGENT === 'true' && med.instruction_source !== 'recorded') {
+      // Ensure AI reminder audio exists if not already pre-generated
+      if (isAiEnabled && med.instruction_source !== 'recorded' && !med.reminder_audio_url) {
         try {
           const audioResult = await preGenerateReminderAudio({
             patientId: med.patient_id,
             medicationId: med.id,
             speakerId: 'female'
           });
-          if (typeof audioResult === 'string' && audioResult.startsWith('/audio/')) {
+          if (typeof audioResult === 'string' && (audioResult.startsWith('/audio/') || audioResult.startsWith('http'))) {
             const db = require('../db/connection');
             await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(audioResult, med.id);
             med.reminder_audio_url = audioResult;
@@ -101,6 +109,11 @@ const runSchedulerCycle = async (now = new Date()) => {
 };
 
 const startScheduler = () => {
+  if (process.env.ENABLE_CRON_SCHEDULER === 'false') {
+    console.log('⏸️  [CRON SCHEDULER]: Background scheduler is disabled (ENABLE_CRON_SCHEDULER=false).');
+    return;
+  }
+
   // Run scheduler cycle every minute
   cron.schedule('* * * * *', () => {
     runSchedulerCycle().catch(err => console.error('[Scheduler Error]:', err.message));

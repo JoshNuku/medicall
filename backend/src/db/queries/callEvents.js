@@ -68,10 +68,13 @@ const getRecentCallEventsForMedication = async (medicationId, limit = 10) => {
 
 const getTodayCallEvents = async () => {
   return await db.prepare(`
-    SELECT ce.*, p.name AS patient_name, p.phone_number AS patient_phone, m.drug_name
+    SELECT ce.*, 
+           COALESCE(p.name, 'Patient #' || ce.patient_id) AS patient_name, 
+           p.phone_number AS patient_phone, 
+           COALESCE(m.drug_name, 'Medication Reminder') AS drug_name
     FROM call_events ce
-    JOIN patients p ON ce.patient_id = p.id
-    JOIN medications m ON ce.medication_id = m.id
+    LEFT JOIN patients p ON ce.patient_id = p.id
+    LEFT JOIN medications m ON ce.medication_id = m.id
     ORDER BY ce.scheduled_time DESC
   `).all();
 };

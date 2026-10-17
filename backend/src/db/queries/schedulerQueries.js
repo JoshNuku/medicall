@@ -13,7 +13,7 @@ const getAllActiveMedications = async () => {
 const hasReminderCallToday = async (medicationId, doseDate, timeStr) => {
   const row = await db.prepare(`
     SELECT id FROM call_events
-    WHERE medication_id = ? AND dose_date = ? AND scheduled_time LIKE ? AND call_type = 'reminder'
+    WHERE medication_id = ? AND dose_date = ? AND CAST(scheduled_time AS TEXT) LIKE ? AND call_type = 'reminder'
   `).get(medicationId, doseDate, `%${timeStr}%`);
   return !!row;
 };

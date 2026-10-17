@@ -4,6 +4,11 @@ const { generateReminderMessage, generateDiagnosticMessage } = require('./agent'
 const { translateEnglishToTwi, synthesizeTwiSpeech } = require('./khayaService');
 const { getPatientById } = require('../db/queries/patients');
 const { getMedicationById } = require('../db/queries/medications');
+const {
+  checkAiCircuitBreaker,
+  hasAttemptedPreGenToday,
+  markPreGenAttemptedToday
+} = require('./aiCircuitBreaker');
 
 /**
  * Pre-generates the personalized AI audio file before a scheduled call.
@@ -25,7 +30,21 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     return medication.audio_url || '/audio/default-reminder.mp3';
   }
 
-  // 3. AI Agent dynamic generation (English -> Twi -> Neural TTS)
+  // 3. Check AI Circuit Breaker (protects Groq/Khaya/TTS from quota exhaustion)
+  const breaker = checkAiCircuitBreaker();
+  if (!breaker.allowed) {
+    console.log(`🛡️  [AI Shield]: Pre-gen paused for Med #${medicationId} (${breaker.reason}). Serving template audio.`);
+    return medication.reminder_audio_url || medication.audio_url || '/audio/default-reminder.mp3';
+  }
+
+  // 4. Max 1 AI generation attempt per medication per day
+  const todayDate = new Date().toISOString().split('T')[0];
+  if (hasAttemptedPreGenToday(medicationId, todayDate)) {
+    return medication.reminder_audio_url || medication.audio_url || '/audio/default-reminder.mp3';
+  }
+  markPreGenAttemptedToday(medicationId, todayDate);
+
+  // 5. AI Agent dynamic generation (English -> Twi -> Neural TTS)
   try {
     const patient = await getPatientById(patientId);
     const lang = (patient ? patient.preferred_language : 'twi').toLowerCase();
@@ -78,10 +97,10 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     console.log(`   ✓ Audio file ready: ${audioUrl}`);
 
     const resolvedAudio = audioUrl || medication.reminder_audio_url || medication.audio_url;
-    if (resolvedAudio && typeof resolvedAudio === 'string' && resolvedAudio.startsWith('/audio/')) {
+    if (resolvedAudio && typeof resolvedAudio === 'string' && (resolvedAudio.startsWith('/audio/') || resolvedAudio.startsWith('http'))) {
       const db = require('../db/connection');
       try {
-        db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(resolvedAudio, medicationId);
+        await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(resolvedAudio, medicationId);
       } catch (_) {}
     }
 

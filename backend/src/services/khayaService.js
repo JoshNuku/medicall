@@ -33,6 +33,10 @@ const translateEnglishToTwi = async (englishText) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[Khaya AI Translation] Failed (${response.status}):`, errorText);
+      if (response.status === 403 || errorText.includes('quota') || errorText.includes('call volume')) {
+        const { tripAiCircuitBreaker } = require('./aiCircuitBreaker');
+        tripAiCircuitBreaker('Khaya Translation Daily Quota Exhausted (HTTP 403)', 4 * 60 * 60 * 1000);
+      }
       return null;
     }
 

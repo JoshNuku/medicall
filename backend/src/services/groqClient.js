@@ -34,6 +34,10 @@ const sendChatCompletion = async ({ model, messages, tools = [], temperature = 0
 
   if (!response.ok) {
     const errorText = await response.text();
+    if (response.status === 429) {
+      const { tripAiCircuitBreaker } = require('./aiCircuitBreaker');
+      tripAiCircuitBreaker(`Groq API Rate Limit Exceeded (HTTP 429)`, 30 * 60 * 1000);
+    }
     throw new Error(`Groq API Error (${response.status}): ${errorText}`);
   }
 

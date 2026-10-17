@@ -208,4 +208,36 @@ router.post('/asr-test', async (req, res, next) => {
   }
 });
 
+/**
+ * @openapi
+ * /settings/ai-circuit-breaker:
+ *   get:
+ *     tags: [Settings]
+ *     summary: Check AI Services Circuit Breaker status and credit protection shield
+ */
+router.get('/ai-circuit-breaker', (req, res) => {
+  const { getAiCircuitBreakerStatus } = require('../services/aiCircuitBreaker');
+  res.json({
+    status: 'success',
+    circuitBreaker: getAiCircuitBreakerStatus()
+  });
+});
+
+/**
+ * @openapi
+ * /settings/ai-circuit-breaker/reset:
+ *   post:
+ *     tags: [Settings]
+ *     summary: Manually reset AI Services Circuit Breaker
+ */
+router.post('/ai-circuit-breaker/reset', (req, res) => {
+  const { resetAiCircuitBreaker, getAiCircuitBreakerStatus } = require('../services/aiCircuitBreaker');
+  resetAiCircuitBreaker();
+  res.json({
+    status: 'success',
+    message: 'AI Circuit Breaker reset successfully.',
+    circuitBreaker: getAiCircuitBreakerStatus()
+  });
+});
+
 module.exports = router;
