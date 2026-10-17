@@ -250,28 +250,11 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   }
 
   // --- ENGLISH DTMF CONFIRMATION RESPONSES ---
+  // Africa's Talking handles English natively via <Say> with personalized patient and drug names
   if (outcome === CALL_OUTCOMES.CONFIRMED) {
-    const playUrl = getCloudinaryAudioUrl('en_confirmed.mp3', baseUrl);
-    const encouragementMsg = getEnglishEncouragement(patient?.name, callEventId);
-    if (playUrl) {
-      return buildVoiceResponse([buildPlay(playUrl), buildSay(encouragementMsg)]);
-    }
     const echoMsg = getVerbalEchoText('1', patient?.name, medication?.drug_name);
+    const encouragementMsg = getEnglishEncouragement(patient?.name, callEventId);
     return buildVoiceResponse(buildSay(`${echoMsg} ${encouragementMsg}`));
-  }
-
-  if (dtmfDigits === '3') {
-    const costAudio = getCloudinaryAudioUrl('en_cost_barrier.mp3', baseUrl);
-    if (costAudio) {
-      return buildVoiceResponse(buildPlay(costAudio));
-    }
-  }
-
-  if (dtmfDigits === '4') {
-    const sideEffectsAudio = getCloudinaryAudioUrl('en_side_effects.mp3', baseUrl);
-    if (sideEffectsAudio) {
-      return buildVoiceResponse(buildPlay(sideEffectsAudio));
-    }
   }
 
   const echoMsg = getVerbalEchoText(dtmfDigits, patient?.name, medication?.drug_name);
