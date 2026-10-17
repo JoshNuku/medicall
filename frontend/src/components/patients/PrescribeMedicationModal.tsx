@@ -447,11 +447,10 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 setLanguage('twi');
                 setIsPromptManuallyEdited(false);
               }}
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                language === 'twi'
+              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${language === 'twi'
                   ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <span>Twi (Akan)</span>
             </button>
@@ -461,11 +460,10 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 setLanguage('english');
                 setIsPromptManuallyEdited(false);
               }}
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                language === 'english'
+              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${language === 'english'
                   ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <span>English</span>
             </button>
@@ -816,7 +814,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               </button>
             </div>
             <p className="text-[11px] text-gray-500 mt-1.5">
-              Choose up to four daily call times (24-hour clock).
+              Choose up to four daily call times.
             </p>
           </div>
 
