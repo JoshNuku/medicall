@@ -32,16 +32,21 @@ const handleUniversalKeys = (digit, callContext = {}) => {
       });
     }
 
-    if (isTwi && baseUrl) {
+    if (baseUrl) {
       const { getCloudinaryAudioUrl } = require('./cloudinaryService');
       const { buildPlay } = require('../utils/xmlBuilder');
-      const pharmacistAudio = getCloudinaryAudioUrl('twi_pharmacist_alert.mp3', baseUrl);
+      const pharmacistAudioFile = isTwi ? 'twi_pharmacist_alert.mp3' : 'en_pharmacist_alert.mp3';
+      const pharmacistAudio = getCloudinaryAudioUrl(pharmacistAudioFile, baseUrl);
       if (pharmacistAudio) {
         return buildVoiceResponse(buildPlay(pharmacistAudio));
       }
     }
 
-    const sayXml = buildSay('Thank you. A healthcare worker has been notified and will contact you shortly. Goodbye.');
+    const sayXml = buildSay(
+      isTwi
+        ? 'Yɛabɔ wo duruyɛfoɔ amanneɛ na ɔbɛfrɛ wo ntɛm ara. Medaase firi MediCall. Nante yie.'
+        : 'Thank you. A healthcare worker has been notified and will contact you shortly. Goodbye.'
+    );
     return buildVoiceResponse(sayXml);
   }
 

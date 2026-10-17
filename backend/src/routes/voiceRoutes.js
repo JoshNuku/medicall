@@ -151,15 +151,25 @@ const handleReminderCall = async (req, res, next) => {
         : `${baseUrl}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
       console.log(`🔊 [VOICE ROUTE]: Serving recorded voice note with embedded Khaya AI keypad prompt: ${audioUrl}`);
     } else if (isEnglish) {
-      const latestMsg = patientObj ? await getLatestAssistantMessage(patientObj.id) : null;
-      if (isAiAgentEnabled) {
+      const candidateAudio = medication?.reminder_audio_url || medication?.audio_url;
+      const isEnglishAudioFile = candidateAudio && (
+        candidateAudio.includes('_en') ||
+        candidateAudio.includes('default-reminder-en') ||
+        candidateAudio.includes('lisinopril_en') ||
+        candidateAudio.includes('metformin_en') ||
+        (!candidateAudio.includes('twi') && candidateAudio.startsWith('/audio/reminder_'))
+      );
+
+      if (isEnglishAudioFile) {
+        audioUrl = candidateAudio.startsWith('http') ? candidateAudio : `${baseUrl}${candidateAudio.startsWith('/') ? '' : '/'}${candidateAudio}`;
+        console.log(`🔊 [VOICE ROUTE]: Serving synthesized English reminder audio (${audioUrl})`);
+      } else {
+        const latestMsg = patientObj ? await getLatestAssistantMessage(patientObj.id) : null;
         sayText = (latestMsg && latestMsg.content)
           ? latestMsg.content
-          : `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you are taking it now. Press 2 for side effects. Press 3 for cost issues. Press 4 for an earlier reminder. Press 6 to repeat, or Press 0 for your pharmacist.`;
-      } else {
-        sayText = `Hello ${patientObj ? patientObj.name : 'there'}, this is your MediCall reminder to take your ${medName} now. Press 1 to confirm you have taken your medication. Press 2 if not taken. Press 6 to repeat, or Press 0 for your pharmacist.`;
+          : `Hello ${patientObj ? patientObj.name : 'there'}, hope you are doing well. Please take your ${medName}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`;
+        console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt via speech synthesis:\n   "${sayText}"`);
       }
-      console.log(`🗣️ [VOICE ROUTE]: Serving English template reminder prompt (AI Agent: ${isAiAgentEnabled}):\n   "${sayText}"`);
     } else {
       // For Twi reminder calls: use personalized AI reminder audio, or pre-generated reminder audio, or fallback to default
       const candidateAudio = medication?.reminder_audio_url || medication?.audio_url;

@@ -40,7 +40,7 @@ const registerMedication = async ({
         finalAudioUrl = '/audio/default-reminder-en.mp3';
       }
       finalReminderAudioUrl = finalAudioUrl;
-      initialAudioStatus = 'ready';
+      initialAudioStatus = 'generating'; // Will synthesize personalized English audio in background
     } else {
       // Instant template fallback so record is functional immediately
       finalAudioUrl = (dosage && dosage.audio_url) || '/audio/default-reminder.mp3';

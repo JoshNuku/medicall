@@ -43,11 +43,40 @@ const createMedication = async ({
 };
 
 const getMedicationsByPatientId = async (patientId) => {
-  return await db.prepare('SELECT * FROM medications WHERE patient_id = ? ORDER BY created_at DESC').all(patientId);
+  return await db.prepare(`
+    SELECT 
+      m.*,
+      d.label_english AS dosage_label,
+      d.text_twi AS dosage_text_twi,
+      f.label_english AS frequency_label,
+      f.text_twi AS frequency_text_twi,
+      t.label_english AS timing_label,
+      t.text_twi AS timing_text_twi
+    FROM medications m
+    LEFT JOIN instruction_templates d ON m.dosage_template_id = d.id
+    LEFT JOIN instruction_templates f ON m.frequency_template_id = f.id
+    LEFT JOIN instruction_templates t ON m.timing_template_id = t.id
+    WHERE m.patient_id = ?
+    ORDER BY m.created_at DESC
+  `).all(patientId);
 };
 
 const getMedicationById = async (id) => {
-  return await db.prepare('SELECT * FROM medications WHERE id = ?').get(id);
+  return await db.prepare(`
+    SELECT 
+      m.*,
+      d.label_english AS dosage_label,
+      d.text_twi AS dosage_text_twi,
+      f.label_english AS frequency_label,
+      f.text_twi AS frequency_text_twi,
+      t.label_english AS timing_label,
+      t.text_twi AS timing_text_twi
+    FROM medications m
+    LEFT JOIN instruction_templates d ON m.dosage_template_id = d.id
+    LEFT JOIN instruction_templates f ON m.frequency_template_id = f.id
+    LEFT JOIN instruction_templates t ON m.timing_template_id = t.id
+    WHERE m.id = ?
+  `).get(id);
 };
 
 const getMedicationWithPatient = async (id) => {

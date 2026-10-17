@@ -4,6 +4,7 @@ const { generateReminderMessage, generateDiagnosticMessage } = require('./agent'
 const { translateEnglishToTwi, synthesizeTwiSpeech } = require('./khayaService');
 const { getPatientById } = require('../db/queries/patients');
 const { getMedicationById } = require('../db/queries/medications');
+const { uploadAudio, isConfigured: isCloudinaryConfigured } = require('./cloudinaryService');
 const {
   checkAiCircuitBreaker,
   hasAttemptedPreGenToday,
@@ -47,7 +48,7 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
   // 5. AI Agent dynamic generation (English -> Twi -> Neural TTS)
   try {
     const patient = await getPatientById(patientId);
-    const lang = (patient ? patient.preferred_language : 'twi').toLowerCase();
+    const lang = (medication?.language || (patient ? patient.preferred_language : 'twi')).toLowerCase();
 
     // Step A: Groq LLM generates English text with context
     console.log(`   [Step 1/3] 🧠 Groq AI Agent generating personalized reminder...`);
@@ -79,10 +80,20 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
 
     console.log(`   ✓ Agent Generated English:\n     "${englishText}"`);
 
-    // Step B: If English -> No Khaya needed! Return null audio so Africa's Talking speaks English via <Say>
+    // Step B: If English -> Synthesize English speech and persist it for UI & calls
     if (lang === 'english' || lang === 'en') {
-      console.log(`   ✓ Telephony Mode: Real-time <Say> TTS engine (0 latency).`);
-      return { isEnglish: true, text: englishText };
+      console.log(`   [Step 2/2] 🎙️ Synthesizing English Speech for reminder audio...`);
+      const filename = `reminder_patient_${patientId}_med_${medicationId}_en_${Date.now()}.mp3`;
+      const audioUrl = await synthesizeEnglishSpeech(englishText, filename);
+      console.log(`   ✓ English Reminder Audio ready: ${audioUrl}`);
+
+      const resolvedAudio = audioUrl || medication.reminder_audio_url || '/audio/default-reminder-en.mp3';
+      const db = require('../db/connection');
+      try {
+        await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(resolvedAudio, medicationId);
+      } catch (_) {}
+
+      return resolvedAudio;
     }
 
     // Step C: If Twi -> Translate to Twi and synthesize via Khaya AI Neural TTS
@@ -131,9 +142,21 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
   const timing = medication.timing_template_id ? await getTemplateById(medication.timing_template_id) : null;
 
   if (isEnglish) {
-    const drugLower = (medication.drug_name || '').toLowerCase();
-    if (drugLower.includes('lisinopril')) return '/audio/lisinopril_en.mp3';
-    if (drugLower.includes('metformin')) return '/audio/metformin_en.mp3';
+    const dosageLabel = dosage ? (dosage.label_english || dosage.text_en) : 'as directed';
+    const freqLabel = freq ? (freq.label_english || freq.text_en) : 'as directed';
+    const timingLabel = timing ? (timing.label_english || timing.text_en) : 'with water';
+    const fullEnglishScript = `This is your complete MediCall prescription for ${medication.drug_name}. Take ${dosageLabel}, ${freqLabel}, ${timingLabel}. Your treatment course is ${medication.is_chronic ? 'ongoing chronic management' : `${medication.duration_days} days`}. Press number nine to repeat, or press number zero for your pharmacist.`;
+    console.log(`🎙️ [PRESCRIPTION SYNTHESIS]: Generating full English prescription audio...`);
+    const filename = `prescription_patient_${patientId}_med_${medicationId}_en_${Date.now()}.mp3`;
+    const audioUrl = await synthesizeEnglishSpeech(fullEnglishScript, filename);
+    if (audioUrl) {
+      console.log(`✓ Full English prescription audio ready: ${audioUrl}`);
+      const db = require('../db/connection');
+      try {
+        await db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(audioUrl, medicationId);
+      } catch (_) {}
+      return audioUrl;
+    }
     return '/audio/default-reminder-en.mp3';
   }
 
@@ -209,11 +232,11 @@ const convertDigitsToTwiWords = (text) => {
   if (isEnglish) {
     const dosageLabel = dosage ? (dosage.text_en || dosage.label_english) : '1 tablet';
     const timingLabel = timing ? (timing.text_en || timing.label_english) : 'after meals';
-    reminderScript = `Hello ${patientName}, this is your MediCall reminder to take your ${drugName} now: ${dosageLabel} ${timingLabel}. Press 1 to confirm you have taken it. Press 2 if not taken. Press 9 to repeat, or Press 0 for your pharmacist.`;
+    reminderScript = `Hello ${patientName}, hope you are doing well. Please take your ${drugName}: ${dosageLabel} ${timingLabel}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`;
   } else {
     const dosageText = dosage ? dosage.text_twi : 'Fa baa baako';
     const timingText = timing ? timing.text_twi : 'sɛ wodidi wie a';
-    reminderScript = `Meda wo akye ${patientName}, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro ${drugName}: ${dosageText} ${timingText}. Mia baako sɛ woanom. Mia mmienu sɛ woamfa. Mia nkron sɛ wobɛtie bio, anaa mia hwee ma wo duruyɛfoɔ.`;
+    reminderScript = `Medaase ${patientName}, yɛhwɛ kwan sɛ wo ho yɛ. Yɛsrɛ wo fa wo ${drugName}: ${dosageText} ${timingText}. Klike baako sɛ worenom seesei. Klike mmienu sɛ wo ho atɔ wo na woagyae nom. Klike mmiɛnsa sɛ wo nsuo asa anaa sika ho asɛm bi wɔ hɔ. Klike nan sɛ aduro no reha wo. Klike zero ma aduruyɛfoɔ no, anaa nsia na tie bio.`;
   }
 
   try {
@@ -248,8 +271,11 @@ const convertDigitsToTwiWords = (text) => {
  */
 const synthesizeEnglishSpeech = async (text, filename) => {
   const audioDir = path.join(__dirname, '../../public/audio');
+  const frontendAudioDir = path.join(__dirname, '../../../frontend/public/audio');
   if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
+  if (!fs.existsSync(frontendAudioDir)) fs.mkdirSync(frontendAudioDir, { recursive: true });
   const finalFilePath = path.join(audioDir, filename);
+  const frontendFilePath = path.join(frontendAudioDir, filename);
 
   try {
     const sentences = text.match(/[^.?!]+[.?!]+|[^.?!]+$/g) || [text];
@@ -266,12 +292,28 @@ const synthesizeEnglishSpeech = async (text, filename) => {
     if (buffers.length > 0) {
       const combined = Buffer.concat(buffers);
       fs.writeFileSync(finalFilePath, combined);
+      try {
+        fs.writeFileSync(frontendFilePath, combined);
+      } catch (_) {}
+
+      // Upload to Cloudinary if configured so production telephony & clients stream from CDN
+      if (isCloudinaryConfigured) {
+        try {
+          const cloudUrl = await uploadAudio(finalFilePath, { filename });
+          if (cloudUrl && cloudUrl.startsWith('http')) {
+            console.log(`☁️  [English TTS Cloudinary]: Uploaded -> ${cloudUrl}`);
+            return cloudUrl;
+          }
+        } catch (cloudErr) {
+          console.warn(`[English TTS Cloudinary warning]:`, cloudErr.message);
+        }
+      }
       return `/audio/${filename}`;
     }
   } catch (err) {
     console.warn('[English TTS Warning]:', err.message);
   }
-  return '/audio/english_diagnostic_reason.mp3';
+  return '/audio/default-reminder-en.mp3';
 };
 
 /**

@@ -45,8 +45,11 @@ export interface Medication {
   timing_template_id: number | null;
   // Denormalized labels for quick display
   dosage_label?: string;
+  dosage_text_twi?: string;
   frequency_label?: string;
+  frequency_text_twi?: string;
   timing_label?: string;
+  timing_text_twi?: string;
   assembled_twi?: string;
   audio_url: string;
   reminder_audio_url?: string;

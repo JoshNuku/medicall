@@ -60,7 +60,7 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
     dose_date: today
   });
 
-  const relistenAudioUrl = getRelistenAudioUrl(activeMed, patient.preferred_language, baseUrl);
+  const relistenAudioUrl = getRelistenAudioUrl(activeMed, activeMed.language || patient.preferred_language, baseUrl);
   console.log(`🔊 [INBOUND HELPLINE]: Serving relisten instruction for Patient #${patient.id} (${activeMed.drug_name}): ${relistenAudioUrl}`);
 
   const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${activeMed.id}`;
@@ -77,8 +77,9 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
   const patient = patientId ? await getPatientById(patientId) : null;
   if (!patient) return buildVoiceResponse(buildSay('Thank you. Goodbye.'));
 
-  const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
   const medications = await getMedicationsByPatientId(patient.id);
+  const selectedMed = medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0];
+  const isEnglish = ((selectedMed && selectedMed.language) || patient.preferred_language || '').toLowerCase() === 'english';
 
   if (!dtmfDigits || dtmfDigits === 'undefined') {
     console.log(`ℹ️ [INBOUND HELPLINE]: Call ended / timeout for Patient #${patient.id}`);
@@ -116,7 +117,7 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     console.log(`✓ [INBOUND HELPLINE]: Repeating prescription instruction (Key 9)`);
     if (medId) {
       const chosenMed = medications.find(m => m.id === parseInt(medId, 10)) || medications[0];
-      const relistenAudioUrl = getRelistenAudioUrl(chosenMed, patient.preferred_language, baseUrl);
+      const relistenAudioUrl = getRelistenAudioUrl(chosenMed, chosenMed.language || patient.preferred_language, baseUrl);
       const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`;
       return buildVoiceResponse(buildGetDigits({
         numDigits: 1,
@@ -134,7 +135,7 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     if (index >= 0 && index < medications.length) {
       const chosenMed = medications[index];
       console.log(`✓ [INBOUND HELPLINE]: Selected medication #${index + 1}: ${chosenMed.drug_name}`);
-      const relistenAudioUrl = getRelistenAudioUrl(chosenMed, patient.preferred_language, baseUrl);
+      const relistenAudioUrl = getRelistenAudioUrl(chosenMed, chosenMed.language || patient.preferred_language, baseUrl);
       const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`;
       return buildVoiceResponse(buildGetDigits({
         numDigits: 1,

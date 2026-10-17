@@ -96,10 +96,11 @@ router.post('/trigger', async (req, res, next) => {
           patient_id: patient.id,
           drug_name: 'Amoxicillin 500mg',
           instruction_source: 'template',
-          audio_url: '/audio/default-reminder.mp3',
+          audio_url: patient?.preferred_language === 'english' ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3',
           schedule_times: '08:00, 20:00',
           duration_days: 7,
-          is_chronic: 0
+          is_chronic: 0,
+          language: patient?.preferred_language || 'english'
         });
         medicationId = newMed.id;
       }

@@ -122,7 +122,7 @@ async function prepareRecordedMedicationAudio(recordedRelativePath, language = '
  */
 function getRelistenAudioUrl(medication, language = 'twi', baseUrl = '') {
   if (!medication) return null;
-  const isEnglish = (language || medication.language || '').toLowerCase() === 'english';
+  const isEnglish = ((medication && medication.language) || language || '').toLowerCase() === 'english';
   const audioDir = path.join(__dirname, '../../public/audio');
 
   if (medication.instruction_source === 'recorded' && medication.audio_url) {
