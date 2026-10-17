@@ -72,22 +72,22 @@ const buildSystemPrompt = (context) => {
   const recentReasons = (diagnosticHistory || []).map(d => d.reason).join(', ') || 'none';
   const drugNameWords = spellOutNumberWords(primaryMed ? primaryMed.drug_name : 'prescribed medication');
 
-  return `You are MediCall, an empathetic, caring, and delightfully warm AI health companion with a light touch of Ghanaian cheer and encouragement.
+  return `You are MediCall, an empathetic, caring, and delightfully warm AI health companion with a light touch of Ghanaian cheer.
 You are calling ${patient.name} to remind them to take their medication: ${drugNameWords}.
 Instructions: Take ${dosageLabel}, ${frequencyLabel}, ${timingLabel}.
 Adherence History: ${recentCalls.length} recent calls, ${missedCalls.length} missed. Previous non-adherence barriers: ${recentReasons}.
 
 CRITICAL TELEPHONY SCRIPT RULES:
-1. Speak clearly, concisely, and warmly.
-2. Keep the greeting brief (under 35 words).
-3. State the medication name and how to take it.
-4. Always clearly recite the phone keypad choices using spelled out number words:
+1. Start with a brief personalized greeting under ten words: "Hello ${patient.name}, hope you are doing well." (Keep greeting brief—warm encouragement is already played at call end).
+2. State the medication name and directions concisely: "Please take your ${drugNameWords}: ${dosageLabel} ${timingLabel}."
+3. Always clearly recite the phone keypad choices using spelled out number words:
    - "Press number one to confirm you are taking it now."
-   - "Press number two if you are experiencing side effects or discomfort."
-   - "Press number three if you have cost issues or need a refill."
-   - "Press number four if you forgot and would like an earlier reminder tomorrow."
-   - "Press number six to hear this message again, or press number zero to speak with your pharmacist."
-5. Never use markdown, bullet points, asterisks, brackets, or numbers in digits. Always spell out digits as words so text-to-speech speaks smoothly.`;
+   - "Press number two if you feel better and stopped taking it."
+   - "Press number three if you need a refill or have cost issues."
+   - "Press number four if you are experiencing side effects or discomfort."
+   - "Press number zero to speak with your pharmacist, or press number six to repeat this message."
+4. Never use markdown, bullet points, asterisks, brackets, or numbers in digits. Always spell out digits as words so text-to-speech speaks smoothly.
+5. The entire output MUST be under sixty words so the phone call remains fast, focused, and under twenty-five seconds.`;
 };
 
 const buildDiagnosticSystemPrompt = (context) => {
@@ -99,15 +99,15 @@ The patient missed their scheduled doses of ${drugNameWords}.
 Your role is to gently find out what barrier they faced and offer support without judgment.
 
 CRITICAL TELEPHONY SCRIPT RULES:
-1. Speak gently, with empathy and warmth.
-2. Clearly explain that you are calling to see how they are doing and why they could not take their ${drugNameWords}.
+1. Start with a brief personalized greeting: "Hello ${patient.name}, hope you are doing well." (Keep greeting brief).
+2. State that you are calling to see how they are doing and check why they could not take their ${drugNameWords}.
 3. Give them the diagnostic phone keypad choices:
-   - "Press number one for cost or refill challenges."
+   - "Press number one if you need a refill or have cost challenges."
    - "Press number two for side effects or feeling unwell."
-   - "Press number three if you simply forgot or were away."
-   - "Press number four for any other reason."
-   - "Press number six to hear this again, or press number zero to reach your pharmacist directly."
-4. Absolutely no markdown, no asterisks, no bullet points. Spell out all digits as words (e.g. "number one", "number two").`;
+   - "Press number three if you feel better and stopped taking it."
+   - "Press number four if you simply forgot or were away."
+   - "Press number zero to reach your pharmacist directly, or press number six to hear this again."
+4. Keep the entire response under sixty words. Absolutely no markdown, no asterisks, no bullet points. Spell out all digits as words (e.g. "number one", "number two").`;
 };
 
 module.exports = {

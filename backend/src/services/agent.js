@@ -46,7 +46,8 @@ const agent = async ({ prompt, model = DEFAULT_MODEL, patientId = null, systemPr
 const generateReminderMessage = async ({ patientId, medicationId, model = DEFAULT_MODEL }) => {
   const context = await getPatientFullContext(patientId, medicationId);
   const systemPrompt = context ? buildSystemPrompt(context) : null;
-  const prompt = 'Generate the warm phone reminder voice message for the upcoming dose in plain English.';
+  const patientName = context?.patient?.name || 'there';
+  const prompt = `Generate the concise reminder voice message for ${patientName} in plain English. Start with a brief personalized greeting ("Hello ${patientName}, hope you are doing well.") and keep the entire message under sixty words.`;
 
   const response = await agent({ prompt, model, patientId, systemPrompt, tools: [], temperature: 0.3 });
   return response.content;
@@ -64,9 +65,10 @@ CRITICAL HEALTHCARE AGENT TRIAGE INSTRUCTIONS:
 The patient just completed their phone call for Call Event #${callEventId || 'none'}.
 The patient pressed keypad digit '${dtmfDigits}':
 - Key '1' (Confirmed taken): Call 'do_nothing' with patient_id: ${patientId}.
-- Key '2' (Side effects): Call 'escalate_case' with patient_id: ${patientId}, escalation_type: 'health_worker_side_effect', details: 'Patient reported side effects during reminder call.'.
-- Key '3' (Cost issue): Call 'escalate_case' with patient_id: ${patientId}, escalation_type: 'pharmacist_cost', details: 'Patient reported medication cost issue during reminder call.'.
-- Key '4' (Forgot / Early reminder): Call 'editCronReminder' (mode: 'add_10min_pre_reminder') to adapt tomorrow's call time.
+- Key '2' (Felt better & stopped taking): Call 'escalate_case' with patient_id: ${patientId}, escalation_type: 'general_attention', details: 'Patient stopped taking medication early because they feel better. Requires antimicrobial resistance (AMR) / chronic adherence counseling.'.
+- Key '3' (Need a refill / Cost barrier): Call 'escalate_case' with patient_id: ${patientId}, escalation_type: 'pharmacist_cost', details: 'Patient reported needing a refill or medication cost barrier during reminder call.'.
+- Key '4' (Side effects / discomfort): Call 'escalate_case' with patient_id: ${patientId}, escalation_type: 'health_worker_side_effect', details: 'Patient reported side effects during reminder call.'.
+- Key '0' (Requested pharmacist assistance): Call 'escalate_case' with patient_id: ${patientId}, escalation_type: 'patient_requested_help', details: 'Patient pressed 0 to speak directly with pharmacist.'.
 Execute the single most appropriate tool autonomously.
 `;
 

@@ -101,7 +101,7 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
 
   if (isEnglish && medication?.instruction_source !== 'recorded') {
     const latestMsg = patient ? await getLatestAssistantMessage(patient.id) : null;
-    replaySayText = latestMsg?.content || `Hello ${patient ? patient.name : 'there'}, this is your MediCall reminder to take your ${medication ? medication.drug_name : 'medication'} now. Press number one to confirm you are taking it now, press number two for side effects, press number three for cost issues, press number four for an earlier reminder, or press number six to hear this again.`;
+    replaySayText = latestMsg?.content || `Hello ${patient ? patient.name : 'there'}, hope you are doing well. Please take your ${medication ? medication.drug_name : 'medication'}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`;
   }
 
   // Check universal keys (6/9: repeat, 0: help)
@@ -109,7 +109,9 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     patientId: callEvent.patient_id,
     replayUrl: audioUrl,
     replaySayText,
-    replayCallbackUrl: callbackUrl
+    replayCallbackUrl: callbackUrl,
+    baseUrl,
+    isTwi
   });
 
   if (universalResponse) {
@@ -133,22 +135,37 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       console.log('✓ [AI Mode] Dose Confirmed Taken');
     } else if (dtmfDigits === '2') {
       outcome = CALL_OUTCOMES.NOT_TAKEN;
+      await createDiagnosticResponse({
+        call_event_id: callEventId,
+        patient_id: callEvent.patient_id,
+        reason: 'felt_better'
+      }).catch(err => console.warn('Failed to log felt_better diagnostic response:', err.message));
+      responseMessage = isTwi
+        ? "Yɛte aseɛ sɛ wo ho atɔ wo! Nanso sɛ wogyae aduro no nom ntɛm a, yareɛ no bɛtumi asan aba. Yɛbɛka akyerɛ aduruyɛfoɔ no."
+        : 'We understand you feel better! However, stopping early can cause your illness to return. We have notified your pharmacist to review your treatment.';
+      console.log('✓ [AI Mode] Key 2: Felt better & stopped taking reported. Immediate tailored voice returned.');
+    } else if (dtmfDigits === '3') {
+      outcome = CALL_OUTCOMES.NOT_TAKEN;
+      await createDiagnosticResponse({
+        call_event_id: callEventId,
+        patient_id: callEvent.patient_id,
+        reason: 'cost'
+      }).catch(err => console.warn('Failed to log cost/refill diagnostic response:', err.message));
+      responseMessage = isTwi
+        ? "Medaase sɛ woaka ho asɛm. Yɛde bɛto aduruyɛfoɔ no anim sɛnea wɔbɛboa wo ma woanya aduro foforɔ."
+        : 'Thank you for letting us know. We understand refills and medication costs can be challenging—we have alerted your pharmacist to assist you.';
+      console.log('✓ [AI Mode] Key 3: Refill / Cost barrier reported. Immediate tailored voice returned.');
+    } else if (dtmfDigits === '4') {
+      outcome = CALL_OUTCOMES.NOT_TAKEN;
+      await createDiagnosticResponse({
+        call_event_id: callEventId,
+        patient_id: callEvent.patient_id,
+        reason: 'side_effects'
+      }).catch(err => console.warn('Failed to log side_effects diagnostic response:', err.message));
       responseMessage = isTwi
         ? "Medaase sɛ woaka akyerɛ yɛn. Yɛde nsunsuansoɔ no reto dɔkota no anim ntɛm ara."
         : 'Thank you for letting us know. Your safety is our top priority—we are alerting your healthcare team right now to check on these side effects.';
-      console.log('✓ [AI Mode] Key 2: Side Effects reported. Immediate tailored voice returned.');
-    } else if (dtmfDigits === '3') {
-      outcome = CALL_OUTCOMES.NOT_TAKEN;
-      responseMessage = isTwi
-        ? "Medaase sɛ woaka ho asɛm. Yɛde bɛto aduruyɛfoɔ no anim sɛnea wɔbɛboa wo."
-        : 'Thank you for letting us know. We understand medication costs can be challenging—we are alerting your pharmacist to review options for you.';
-      console.log('✓ [AI Mode] Key 3: Cost Barrier reported. Immediate tailored voice returned.');
-    } else if (dtmfDigits === '4') {
-      outcome = CALL_OUTCOMES.NOT_TAKEN;
-      responseMessage = isTwi
-        ? "Ɛnyɛ hwee koraa! Yɛbɛsakra bere no na yɛakae wo ntɛm ɔkyena."
-        : 'No problem at all! We will adjust your schedule to give you an earlier reminder tomorrow.';
-      console.log('✓ [AI Mode] Key 4: Schedule shift requested. Immediate tailored voice returned.');
+      console.log('✓ [AI Mode] Key 4: Side effects reported. Immediate tailored voice returned.');
     } else {
       outcome = CALL_OUTCOMES.NOT_TAKEN;
       responseMessage = isTwi
@@ -159,9 +176,9 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     // 1. Seed Conversation Memory
     const keyDescriptions = {
       '1': 'Pressed 1 (Confirmed dose taken)',
-      '2': 'Pressed 2 (Reported side effects)',
-      '3': 'Pressed 3 (Reported cost barrier)',
-      '4': 'Pressed 4 (Reported forgot / early reminder request)'
+      '2': 'Pressed 2 (Reported felt better & stopped early)',
+      '3': 'Pressed 3 (Reported need refill or cost barrier)',
+      '4': 'Pressed 4 (Reported side effects or discomfort)'
     };
     await addConversationMessage({
       patient_id: callEvent.patient_id,
@@ -216,6 +233,18 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       const echoAudio = getTwiEchoConfirmedUndoAudio(baseUrl);
       const encouragement = getTwiEncouragementAudio(callEventId, baseUrl);
       return buildVoiceResponse([buildPlay(echoAudio.url), buildPlay(encouragement.url)]);
+    }
+    if (dtmfDigits === '2') {
+      const counselingAudio = getCloudinaryAudioUrl('twi_felt_better_counseling.mp3', baseUrl) || getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl);
+      return buildVoiceResponse(buildPlay(counselingAudio));
+    }
+    if (dtmfDigits === '3') {
+      const costAudio = getCloudinaryAudioUrl('twi_cost_barrier.mp3', baseUrl) || getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl);
+      return buildVoiceResponse(buildPlay(costAudio));
+    }
+    if (dtmfDigits === '4') {
+      const sideEffectsAudio = getCloudinaryAudioUrl('twi_side_effects.mp3', baseUrl) || getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl);
+      return buildVoiceResponse(buildPlay(sideEffectsAudio));
     }
     return buildVoiceResponse(buildPlay(getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl)));
   }

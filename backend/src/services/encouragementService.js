@@ -83,11 +83,11 @@ function getVerbalEchoText(dtmfDigits, patientName, drugName) {
     case '1':
       return `You pressed 1 to confirm your dose of ${drug}. Thank you, ${name}! (If this was a mistake, press 0 now for help).`;
     case '2':
-      return `You pressed 2 to report side effects from ${drug}. We have recorded this and are alerting your healthcare team right now to review your medication.`;
+      return `You pressed 2: you feel better and stopped taking ${drug}. We understand, but stopping early can cause your illness to return. We have notified your pharmacist to review your treatment.`;
     case '3':
-      return `You pressed 3 to report medication cost or refill issues. We have notified your pharmacist to assist you with refill options.`;
+      return `You pressed 3 to report needing a refill or cost barrier for ${drug}. We have alerted your pharmacist to assist you with your refill.`;
     case '4':
-      return `You pressed 4 to request an earlier reminder. We have adjusted your schedule to call you earlier tomorrow.`;
+      return `You pressed 4 to report side effects from ${drug}. We have recorded this and alerted your healthcare team right now to check on you.`;
     case '0':
       return `Connecting you to your pharmacist helpline. Please stay on the line...`;
     default:

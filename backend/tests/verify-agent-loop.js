@@ -12,7 +12,7 @@ async function testAgentSetup() {
 
   // 1. Create Patient & Medication
   const testPhone = `+233${Math.floor(100000000 + Math.random() * 900000000)}`;
-  const patient = createPatient({
+  const patient = await createPatient({
     phone_number: testPhone,
     name: 'Adwoa Mensah',
     preferred_language: 'twi',
@@ -20,7 +20,7 @@ async function testAgentSetup() {
   });
   console.log('✓ Patient created:', patient.name, '(ID:', patient.id, ')');
 
-  const med = createMedication({
+  const med = await createMedication({
     patient_id: patient.id,
     drug_name: 'Paracetamol',
     instruction_source: 'template',
@@ -32,7 +32,7 @@ async function testAgentSetup() {
   console.log('✓ Medication created:', med.drug_name);
 
   // 2. Add missed call event and diagnostic barrier
-  const callEvent = createCallEvent({
+  const callEvent = await createCallEvent({
     patient_id: patient.id,
     medication_id: med.id,
     scheduled_time: new Date().toISOString(),
@@ -41,7 +41,7 @@ async function testAgentSetup() {
     dose_date: new Date().toISOString().split('T')[0]
   });
 
-  createDiagnosticResponse({
+  await createDiagnosticResponse({
     call_event_id: callEvent.id,
     patient_id: patient.id,
     reason: 'forgot'
@@ -49,22 +49,22 @@ async function testAgentSetup() {
   console.log('✓ Missed dose and diagnostic response recorded');
 
   // 3. Test Agent Conversation History Storage
-  addConversationMessage({
+  await addConversationMessage({
     patient_id: patient.id,
     role: 'user',
     content: 'Hello, why am I taking this medicine?'
   });
-  addConversationMessage({
+  await addConversationMessage({
     patient_id: patient.id,
     role: 'assistant',
     content: 'It is for pain relief.'
   });
-  const history = getConversationHistory(patient.id);
+  const history = await getConversationHistory(patient.id);
   console.log('✓ Conversation history entries retrieved:', history.length);
   if (history.length < 2) throw new Error('Failed to retrieve conversation history');
 
   // 4. Test Context Builder
-  const context = getPatientFullContext(patient.id, med.id);
+  const context = await getPatientFullContext(patient.id, med.id);
   console.log('✓ Full context extracted for patient:', context.patient.name);
   const prompt = buildSystemPrompt(context);
   console.log('✓ System Prompt generated:\n' + prompt);
