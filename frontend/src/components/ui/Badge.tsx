@@ -77,7 +77,7 @@ export const Badge: React.FC<BadgeProps> = ({
       repeated_forgetting: { label: 'Repeated forgetting', shell: 'bg-amber-50 text-amber-800 border-amber-200' },
       same_day_multiple_misses: { label: 'Multiple missed doses', shell: 'bg-rose-50 text-rose-700 border-rose-200' },
       patient_requested_help: { label: 'Help requested', shell: 'bg-violet-50 text-violet-700 border-violet-200' },
-      general_attention: { label: 'Attention', shell: 'bg-slate-100 text-slate-700 border-slate-200' },
+      general_attention: { label: 'Dose not taken', shell: 'bg-orange-50 text-orange-800 border-orange-200' },
     }[alertType];
 
     if (!config) return null;

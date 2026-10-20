@@ -752,15 +752,15 @@ export default function PatientDetailPage() {
                       ? (med.spoken_text_en || med.spoken_text)
                       : (med.spoken_text || med.spoken_text_en);
 
-                    const spokenText = isPrescriptionTrack
-                      ? (med.instruction_source === 'recorded'
-                          ? undefined
-                          : isMedEnglish
-                          ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press number nine to repeat, or press number zero for your pharmacist.`
-                          : `Fa wo nnuro ${med.drug_name}. ${twiDosage}. ${twiFreq}. ${twiTiming}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`)
-                      : (actualGeneratedScript || (isMedEnglish
-                          ? `Hello ${patient.name}, hope you are doing well. Please take your ${med.drug_name}: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`
-                          : `Medaase ${patient.name}, yɛhwɛ kwan sɛ wo ho yɛ. Yɛsrɛ wo fa wo ${med.drug_name}: ${twiDosage} ${twiTiming}. Klike baako sɛ worenom seesei. Klike mmienu sɛ wo ho atɔ wo na woagyae nom. Klike mmiɛnsa sɛ wo nsuo asa anaa sika ho asɛm bi wɔ hɔ. Klike nan sɛ aduro no reha wo. Klike zero ma aduruyɛfoɔ no, anaa nsia na tie bio.`));
+                    const spokenText = med.instruction_source === 'recorded'
+                      ? undefined
+                      : isPrescriptionTrack
+                        ? isMedEnglish
+                          ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press 1 if you have taken your dose, Press 2 if you stopped or could not take it, Press 9 to repeat, or Press 0 for your pharmacist.`
+                          : `Fa wo nnuro ${med.drug_name}. ${twiDosage}. ${twiFreq}. ${twiTiming}. Sɛ woanom a, mia baako (1). Sɛ woantom a, mia mmienu (2). Mia nkron (9) sɛ wopɛ sɛ wotie bio, anaa mia hwee (0) ma wo duruyɛfoɔ.`
+                        : (actualGeneratedScript || (isMedEnglish
+                            ? `Hello ${patient.name}, hope you are doing well. Please take your ${med.drug_name}: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 if you have taken your dose, Press 2 if you stopped or could not take it, Press 9 to repeat, or Press 0 for your pharmacist.`
+                            : `Medaase ${patient.name}, yɛhwɛ kwan sɛ wo ho yɛ. Yɛsrɛ wo fa wo ${med.drug_name}: ${twiDosage} ${twiTiming}. Sɛ woanom a, mia baako (1). Sɛ woantom a, mia mmienu (2). Mia nkron (9) sɛ wopɛ sɛ wotie bio, anaa mia hwee (0) ma wo duruyɛfoɔ.`));
 
                     return (
                       <div className="space-y-2.5">
@@ -795,17 +795,23 @@ export default function PatientDetailPage() {
                             </button>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => setShowScriptByMed((prev) => ({
-                              ...prev,
-                              [`script-${med.id}`]: !prev[`script-${med.id}`]
-                            }))}
-                            className="text-xs text-gray-500 hover:text-[#55941E] font-medium transition-colors cursor-pointer flex items-center gap-1"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            {showScriptByMed[`script-${med.id}`] ? 'Hide script' : 'View spoken script'}
-                          </button>
+                          {med.instruction_source !== 'recorded' ? (
+                            <button
+                              type="button"
+                              onClick={() => setShowScriptByMed((prev) => ({
+                                ...prev,
+                                [`script-${med.id}`]: !prev[`script-${med.id}`]
+                              }))}
+                              className="text-xs text-gray-500 hover:text-[#55941E] font-medium transition-colors cursor-pointer flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              {showScriptByMed[`script-${med.id}`] ? 'Hide script' : 'View spoken script'}
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-gray-400 font-normal italic">
+                              Pharmacist voice recording
+                            </span>
+                          )}
                         </div>
 
 
@@ -821,8 +827,8 @@ export default function PatientDetailPage() {
                           isGenerating={med.audio_status === 'generating'}
                         />
 
-                        {/* Expandable Spoken Script */}
-                        {showScriptByMed[`script-${med.id}`] && (
+                        {/* Expandable Spoken Script (only for verified template instructions) */}
+                        {med.instruction_source !== 'recorded' && showScriptByMed[`script-${med.id}`] && (
                           <div className="p-3 bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl space-y-1.5 text-xs text-gray-600 animate-in fade-in">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="font-semibold text-gray-700">
@@ -833,7 +839,7 @@ export default function PatientDetailPage() {
                               </span>
                             </div>
                             <p className="text-gray-800 bg-white p-2.5 rounded-lg border border-gray-100 font-normal leading-relaxed text-xs">
-                              {spokenText || 'Audio provided by pharmacist voice note.'}
+                              {spokenText || 'Audio provided by verified clinical template.'}
                             </p>
                           </div>
                         )}
@@ -872,6 +878,7 @@ export default function PatientDetailPage() {
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
         defaultPatientId={patient.id}
+        defaultMedicationId={medications[0]?.id}
         defaultCallType={callModalType}
       />
 

@@ -53,7 +53,7 @@ function makeLocalRequest(path, method = 'GET', postData = null) {
     const port = process.env.PORT || 3000;
     const bodyStr = postData ? JSON.stringify(postData) : null;
     const options = {
-      hostname: '127.0.0.1',
+      hostname: 'localhost',
       port,
       path,
       method,

@@ -30,6 +30,7 @@ import {
   ChevronUp,
   RefreshCw,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import {
   fetchTtsProviderApi,
@@ -44,9 +45,20 @@ import {
 } from '@/lib/api';
 
 export default function SettingsPage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, hideSettings } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (hideSettings) {
+      router.replace('/dashboard');
+    }
+  }, [hideSettings, router]);
 
   const [saved, setSaved] = useState(false);
+
+  if (hideSettings) {
+    return null;
+  }
 
   // Clinician Profile Form State
   const [name, setName] = useState('Josh Nuku');

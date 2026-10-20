@@ -147,7 +147,7 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
     const dosageLabel = dosage ? (dosage.label_english || dosage.text_en) : 'as directed';
     const freqLabel = freq ? (freq.label_english || freq.text_en) : 'as directed';
     const timingLabel = timing ? (timing.label_english || timing.text_en) : 'with water';
-    const fullEnglishScript = `This is your complete MediCall prescription for ${medication.drug_name}. Take ${dosageLabel}, ${freqLabel}, ${timingLabel}. Your treatment course is ${medication.is_chronic ? 'ongoing chronic management' : `${medication.duration_days} days`}. Press number nine to repeat, or press number zero for your pharmacist.`;
+    const fullEnglishScript = `This is your complete MediCall prescription for ${medication.drug_name}. Take ${dosageLabel}, ${freqLabel}, ${timingLabel}. Your treatment course is ${medication.is_chronic ? 'ongoing chronic management' : `${medication.duration_days} days`}. Press 1 if you have taken your dose, Press 2 if you stopped or could not take it, Press 9 to repeat, or Press 0 for your pharmacist.`;
     console.log(`🎙️ [PRESCRIPTION SYNTHESIS]: Generating full English prescription audio...`);
     const filename = `prescription_patient_${patientId}_med_${medicationId}_en_${Date.now()}.mp3`;
     const audioUrl = await synthesizeEnglishSpeech(fullEnglishScript, filename);
@@ -169,7 +169,7 @@ const generateFullPrescriptionAudio = async ({ patientId, medicationId, speakerI
     timing ? timing.text_twi : ''
   ].filter(Boolean);
 
-  const assembledTwiText = `Fa wo nnuro ${medication.drug_name}. ${twiPhrases.join('. ')}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`;
+  const assembledTwiText = `Fa wo nnuro ${medication.drug_name}. ${twiPhrases.join('. ')}. Sɛ woanom a, mia baako (1). Sɛ woantom a, mia mmienu (2). Mia nkron (9) sɛ wopɛ sɛ wotie bio, anaa mia hwee (0) ma wo duruyɛfoɔ.`;
 
   try {
     console.log(`🎙️ [PRESCRIPTION SYNTHESIS]: Generating full prescription audio via Khaya TTS...`);

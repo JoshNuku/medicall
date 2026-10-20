@@ -103,9 +103,30 @@ const registerMedication = async ({
           const relistenPath = `/audio/relisten_${baseName}.mp3`;
           const relistenAudio = fs.existsSync(path.join(__dirname, '../../public', relistenPath)) ? relistenPath : mergedUrl;
 
+          let finalReminderUrl = mergedUrl;
+          let finalRelistenUrl = relistenAudio;
+
+          const { uploadAudio, isConfigured: isCloudConfigured } = require('./cloudinaryService');
+          if (isCloudConfigured) {
+            try {
+              const fullMerged = path.join(__dirname, '../../public', mergedUrl);
+              const fullRelisten = path.join(__dirname, '../../public', relistenAudio);
+              if (fs.existsSync(fullMerged)) {
+                const cloudReminder = await uploadAudio(fullMerged, { filename: path.basename(mergedUrl) });
+                if (cloudReminder && cloudReminder.startsWith('http')) finalReminderUrl = cloudReminder;
+              }
+              if (fs.existsSync(fullRelisten)) {
+                const cloudRelisten = await uploadAudio(fullRelisten, { filename: path.basename(relistenAudio) });
+                if (cloudRelisten && cloudRelisten.startsWith('http')) finalRelistenUrl = cloudRelisten;
+              }
+            } catch (upErr) {
+              console.warn('[Cloudinary Recorded Audio Upload Warning]:', upErr.message);
+            }
+          }
+
           await db.prepare('UPDATE medications SET audio_url = ?, reminder_audio_url = ?, audio_status = ? WHERE id = ?')
-            .run(relistenAudio, mergedUrl, 'ready', createdMed.id);
-          console.log(`✓ [BACKGROUND TASK] Completed recorded audio merge for Med #${createdMed.id}`);
+            .run(finalRelistenUrl, finalReminderUrl, 'ready', createdMed.id);
+          console.log(`✓ [BACKGROUND TASK] Completed recorded audio merge & upload for Med #${createdMed.id}`);
         }
       } catch (bgErr) {
         console.error(`⚠️ [BACKGROUND TASK ERROR] Med #${createdMed.id}:`, bgErr.message);

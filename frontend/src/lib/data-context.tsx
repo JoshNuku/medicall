@@ -173,12 +173,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             repeated_forgetting: 'Repeated forgetting',
             same_day_multiple_misses: 'Multiple missed doses',
             patient_requested_help: 'Help requested',
-            general_attention: 'Attention',
+            general_attention: 'Dose not taken',
           };
           return {
             ...a,
             human_label: labels[a.escalation_type] || a.escalation_type.replace(/_/g, ' '),
-            details: a.details || 'Escalation flagged by clinical automated phone check-in.',
+            details: a.details || (a.escalation_type === 'general_attention'
+              ? 'Patient reported dose was not taken during phone check-in.'
+              : 'Escalation flagged by clinical automated phone check-in.'),
           };
         });
 
@@ -282,9 +284,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }));
 
       setMedications((prev) => {
+        const uniqueMeds = Array.isArray(meds)
+          ? meds.filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i)
+          : [];
         const current = prev[patientId];
-        if (JSON.stringify(current) === JSON.stringify(meds)) return prev;
-        return { ...prev, [patientId]: meds };
+        if (JSON.stringify(current) === JSON.stringify(uniqueMeds)) return prev;
+        return { ...prev, [patientId]: uniqueMeds };
       });
 
       setPatientLogs((prev) => {
@@ -455,10 +460,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'active',
     };
 
-    setMedications((prev) => ({
-      ...prev,
-      [patientId]: [populatedMed, ...(prev[patientId] || [])],
-    }));
+    setMedications((prev) => {
+      const existing = (prev[patientId] || []).filter((m) => m.id !== populatedMed.id);
+      return {
+        ...prev,
+        [patientId]: [populatedMed, ...existing],
+      };
+    });
 
     // Update patient in state
     setPatients((prev) =>
@@ -534,7 +542,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getPatientMedications = (patientId: number) => {
-    return medications[patientId] || [];
+    const list = medications[patientId] || [];
+    const seen = new Set<number>();
+    return list.filter((m) => {
+      if (!m || !m.id) return true;
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
   };
 
   const getPatientLogs = (patientId: number) => {

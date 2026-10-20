@@ -133,23 +133,25 @@ const handleReminderCall = async (req, res, next) => {
     let audioUrl = null;
     let sayText = null;
 
-    if (medication?.instruction_source === 'recorded' && medication?.audio_url) {
-      let fileUrl = medication.audio_url;
-      if (fileUrl.endsWith('.webm')) {
+    if (medication?.instruction_source === 'recorded' && (medication?.reminder_audio_url || medication?.audio_url)) {
+      let fileUrl = medication.reminder_audio_url || medication.audio_url;
+      if (fileUrl.endsWith('.webm') || !fileUrl.includes('merged_')) {
         const { prepareRecordedMedicationAudio } = require('../services/audioMergeService');
         try {
-          const upgraded = await prepareRecordedMedicationAudio(fileUrl, isEnglish ? 'english' : 'twi');
+          const rawSource = medication.audio_url || fileUrl;
+          const upgraded = await prepareRecordedMedicationAudio(rawSource, isEnglish ? 'english' : 'twi');
           if (upgraded) {
             fileUrl = upgraded;
             const db = require('../db/connection');
-            await db.prepare('UPDATE medications SET audio_url = ? WHERE id = ?').run(fileUrl, medication.id);
+            await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(fileUrl, medication.id);
           }
         } catch (_) {}
       }
+      const { getCloudinaryAudioUrl } = require('../services/cloudinaryService');
       audioUrl = fileUrl.startsWith('http')
         ? fileUrl
-        : `${baseUrl}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
-      console.log(`🔊 [VOICE ROUTE]: Serving recorded voice note with embedded Khaya AI keypad prompt: ${audioUrl}`);
+        : getCloudinaryAudioUrl(fileUrl, baseUrl);
+      console.log(`🔊 [VOICE ROUTE]: Serving recorded voice note with embedded keypress menu: ${audioUrl}`);
     } else if (isEnglish) {
       const candidateAudio = medication?.reminder_audio_url || medication?.audio_url;
       const isEnglishAudioFile = candidateAudio && (

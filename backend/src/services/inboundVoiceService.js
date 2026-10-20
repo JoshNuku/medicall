@@ -34,8 +34,8 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
       .join(' ');
 
     const promptText = isEnglish
-      ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Press 9 to repeat, or Press 0 to speak with your pharmacist.`
-      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Mia nkron sɛ wobɛtie bio, anaa mia hwee sɛ wobɛkasa akyerɛ wo duruyɛfoɔ.`;
+      ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Or press 0 to speak with your pharmacist.`
+      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Anaa mia hwee ma wo duruyɛfoɔ.`;
 
     const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}`;
     const digitsXml = buildGetDigits({
@@ -152,6 +152,20 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     if (pending) {
       await updateCallOutcome(pending.id, 'confirmed', new Date().toISOString());
       await resetCaregiverNotifiedAt(patient.id);
+    } else {
+      const today = new Date().toISOString().split('T')[0];
+      const chosenMed = (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
+      await createCallEvent({
+        patient_id: patient.id,
+        medication_id: chosenMed ? chosenMed.id : null,
+        scheduled_time: new Date().toISOString(),
+        actual_call_time: new Date().toISOString(),
+        call_type: 'relisten',
+        outcome: 'confirmed',
+        attempt_number: 1,
+        dose_date: today
+      });
+      await resetCaregiverNotifiedAt(patient.id);
     }
     console.log(`✓ [INBOUND HELPLINE]: Dose marked Confirmed Taken (Key 1)`);
     const ackAudioFile = isEnglish ? 'en_confirmed.mp3' : 'twi_confirmed.mp3';
@@ -173,13 +187,32 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     const pending = await getLatestPendingCallEventForPatient(patient.id);
     if (pending) {
       await updateCallOutcome(pending.id, 'not_taken', new Date().toISOString());
+    } else {
+      const today = new Date().toISOString().split('T')[0];
+      const chosenMed = (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
+      await createCallEvent({
+        patient_id: patient.id,
+        medication_id: chosenMed ? chosenMed.id : null,
+        scheduled_time: new Date().toISOString(),
+        actual_call_time: new Date().toISOString(),
+        call_type: 'relisten',
+        outcome: 'not_taken',
+        attempt_number: 1,
+        dose_date: today
+      });
     }
     await createEscalation({
       patient_id: patient.id,
       escalation_type: 'patient_requested_help'
     });
     console.log(`✓ [INBOUND HELPLINE]: Dose recorded as Not Taken (Key 2) & pharmacist alerted`);
-    const ackAudioFile = isEnglish ? 'en_side_effects.mp3' : 'twi_not_taken_ack.mp3';
+
+    const pharmacistPhone = process.env.PHARMACIST_PHONE || '+233272806050';
+    const chosenMed = (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
+    const alertMessage = `🚨 [MediCall Alert]\nPatient: ${patient.name} (${patient.phone_number})\nMedication: ${chosenMed ? chosenMed.drug_name : 'Prescription'}\nIssue: DOSE NOT TAKEN\nCaller reported dose was not taken via helpline. Action required.`;
+    const { sendSms } = require('./africasTalkingService');
+    sendSms(pharmacistPhone, alertMessage).catch(err => console.warn('Failed to send pharmacist SMS alert on inbound:', err.message));
+    const ackAudioFile = isEnglish ? 'en_diagnostic_ack.mp3' : 'twi_not_taken_ack.mp3';
     const playUrl = getCloudinaryAudioUrl(ackAudioFile, baseUrl);
     if (playUrl) {
       return buildVoiceResponse(buildPlay(playUrl));
@@ -193,16 +226,20 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     );
   }
 
-  // 6. Any other key: guide caller with trailer prompt
-  console.log(`⚠️ [INBOUND HELPLINE]: Unrecognized keypress "${dtmfDigits}". Prompting trailer.`);
+  // 6. Any other key: guide caller with trailer prompt or re-prompt medication menu
+  console.log(`⚠️ [INBOUND HELPLINE]: Unrecognized keypress "${dtmfDigits}".`);
+  if (!medId && medications.length > 1) {
+    return await handleInboundCall(patient.phone_number, baseUrl);
+  }
   const chosenMed = (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
   const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}${chosenMed ? `&medId=${chosenMed.id}` : ''}`;
-  const trailerFile = isEnglish ? 'en_keypress_trailer.mp3' : 'twi_keypress_trailer.mp3';
+  const trailerFile = isEnglish ? 'en_keypress_menu.mp3' : 'twi_keypress_menu.mp3';
+  const trailerUrl = getCloudinaryAudioUrl(trailerFile, baseUrl);
   return buildVoiceResponse(buildGetDigits({
     numDigits: 1,
     timeout: 10,
     callbackUrl,
-    playUrl: `${baseUrl}/audio/${trailerFile}`
+    playUrl: trailerUrl
   }));
 };
 

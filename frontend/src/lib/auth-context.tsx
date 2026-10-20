@@ -18,6 +18,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (updated: Partial<User>) => void;
+  hideSettings: boolean;
+  setHideSettings: (hide: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -178,6 +180,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
+  const [hideSettings, setHideSettingsState] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('medicall_hide_settings');
+      if (stored === 'true') {
+        setHideSettingsState(true);
+      }
+    } catch (_) {}
+  }, []);
+
+  const setHideSettings = useCallback((hide: boolean) => {
+    setHideSettingsState(hide);
+    try {
+      localStorage.setItem('medicall_hide_settings', hide ? 'true' : 'false');
+    } catch (_) {}
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -187,7 +207,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         logout,
-        updateUser
+        updateUser,
+        hideSettings,
+        setHideSettings
       }}
     >
       {children}

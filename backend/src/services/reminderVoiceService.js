@@ -90,7 +90,11 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
   }
 
   const medication = await getMedicationById(callEvent.medication_id);
-  const audioUrl = medication ? medication.audio_url : null;
+  let audioUrl = medication ? (medication.reminder_audio_url || medication.audio_url) : null;
+  if (audioUrl) {
+    const { getCloudinaryAudioUrl } = require('./cloudinaryService');
+    audioUrl = audioUrl.startsWith('http') ? audioUrl : getCloudinaryAudioUrl(audioUrl, baseUrl);
+  }
   const callbackUrl = `${baseUrl}/voice/reminder/confirm?callEventId=${callEventId}`;
 
   const patient = await getPatientById(callEvent.patient_id);
@@ -219,6 +223,26 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       outcome = CALL_OUTCOMES.NOT_TAKEN;
       responseMessage = 'Thank you. We have recorded that your dose was not taken.';
       console.log('✓ [Classic Mode] Key 2: Not Taken');
+
+      // Escalate as an open alert in dashboard and notify pharmacist via SMS
+      try {
+        const { createEscalation } = require('../db/queries/escalations');
+        const { ESCALATION_TYPES } = require('../config/constants');
+        const { sendSms } = require('./africasTalkingService');
+
+        await createEscalation({
+          patient_id: callEvent.patient_id,
+          escalation_type: ESCALATION_TYPES.GENERAL_ATTENTION
+        });
+
+        const pharmacistPhone = process.env.PHARMACIST_PHONE || '+233272806050';
+        const alertMessage = `🚨 [MediCall Alert]\nPatient: ${patient ? patient.name : 'Patient #' + callEvent.patient_id} (${patient ? patient.phone_number : ''})\nMedication: ${medication ? medication.drug_name : 'Prescription'}\nIssue: DOSE NOT TAKEN\nPatient pressed 2 (Not Taken) during reminder call. Please review.`;
+
+        console.log(`🚨 [Pharmacist Escalation]: Creating alert and sending SMS to ${pharmacistPhone}...`);
+        sendSms(pharmacistPhone, alertMessage).catch(err => console.warn('Failed to send pharmacist SMS alert:', err.message));
+      } catch (escErr) {
+        console.warn('⚠️ [Recorded Dose Not Taken Escalation Error]:', escErr.message);
+      }
     } else {
       console.log(`⚠️ [Classic Mode] Unhandled keypress: "${dtmfDigits}"`);
     }
@@ -235,7 +259,10 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
       return buildVoiceResponse([buildPlay(echoAudio.url), buildPlay(encouragement.url)]);
     }
     if (dtmfDigits === '2') {
-      const counselingAudio = getCloudinaryAudioUrl('twi_felt_better_counseling.mp3', baseUrl) || getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl);
+      const isRecorded = medication?.instruction_source === 'recorded';
+      const counselingAudio = isRecorded
+        ? (getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl) || getCloudinaryAudioUrl('twi_felt_better_counseling.mp3', baseUrl))
+        : (getCloudinaryAudioUrl('twi_felt_better_counseling.mp3', baseUrl) || getCloudinaryAudioUrl('twi_not_taken_ack.mp3', baseUrl));
       return buildVoiceResponse(buildPlay(counselingAudio));
     }
     if (dtmfDigits === '3') {
@@ -257,7 +284,8 @@ const processReminderConfirm = async (callEventId, dtmfDigits, baseUrl) => {
     return buildVoiceResponse(buildSay(`${echoMsg} ${encouragementMsg}`));
   }
 
-  const echoMsg = getVerbalEchoText(dtmfDigits, patient?.name, medication?.drug_name);
+  const isRecorded = medication?.instruction_source === 'recorded';
+  const echoMsg = getVerbalEchoText(dtmfDigits, patient?.name, medication?.drug_name, isRecorded);
   return buildVoiceResponse(buildSay(echoMsg || responseMessage));
 };
 

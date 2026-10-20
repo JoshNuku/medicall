@@ -22,7 +22,7 @@ function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-  const { login } = useAuth();
+  const { login, hideSettings, setHideSettings } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -196,6 +196,33 @@ function LoginForm() {
               )}
             </button>
           </form>
+
+          {/* Subtle Demo Presentation Mode Toggle */}
+          <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400 select-none">
+            <span className="text-[11px] font-medium text-gray-400">
+            </span>
+            <button
+              type="button"
+              onClick={() => setHideSettings(!hideSettings)}
+              className="flex items-center gap-2 cursor-pointer group"
+              title={hideSettings ? 'Demo mode is ON (Settings hidden)' : 'Demo mode is OFF (Settings visible)'}
+              role="switch"
+              aria-checked={hideSettings}
+            >
+              <span className="text-[10px] text-gray-400 font-normal">
+                {hideSettings ? 'Settings hidden' : 'Off'}
+              </span>
+              <span
+                className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border border-transparent transition-colors duration-200 ease-in-out ${hideSettings ? 'bg-[#70BF2B]' : 'bg-gray-200'
+                  }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out mt-0.5 ${hideSettings ? 'translate-x-3.5' : 'translate-x-0.5'
+                    }`}
+                />
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

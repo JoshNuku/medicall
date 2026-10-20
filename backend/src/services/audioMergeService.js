@@ -43,9 +43,34 @@ async function concatAudioFiles(inputA, inputB, outputPath) {
 }
 
 /**
+ * Ensures an audio asset exists locally on Render/ephemeral disks by downloading from Cloudinary if missing.
+ */
+async function ensureLocalAudioFile(filename, targetPath) {
+  if (fs.existsSync(targetPath)) return true;
+  try {
+    const { getCloudinaryAudioUrl } = require('./cloudinaryService');
+    const remoteUrl = getCloudinaryAudioUrl(filename);
+    if (remoteUrl && (remoteUrl.startsWith('http://') || remoteUrl.startsWith('https://'))) {
+      console.log(`[AudioMerge] Downloading missing asset ${filename} from Cloudinary CDN: ${remoteUrl}...`);
+      const res = await fetch(remoteUrl);
+      if (res.ok) {
+        const buffer = Buffer.from(await res.arrayBuffer());
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+        fs.writeFileSync(targetPath, buffer);
+        console.log(`✓ [AudioMerge] Successfully cached ${filename} locally (${buffer.length} bytes)`);
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn(`[AudioMerge] Failed to download remote asset ${filename}:`, err.message);
+  }
+  return false;
+}
+
+/**
  * Merges a pharmacist's recorded voice note into two telephony-grade MP3 assets:
- * 1. merged_<id>.mp3: For Outbound Reminders (voice note + 1=taken, 2=not taken menu)
- * 2. relisten_<id>.mp3: For Inbound Helpline (voice note + 9=repeat, 0=pharmacist trailer)
+ * 1. merged_<id>.mp3: For Outbound Reminders (voice note + 1=taken, 2=not taken, 9=repeat, 0=help menu)
+ * 2. relisten_<id>.mp3: For Inbound Helpline & Full Prescription (voice note + unified keypress menu)
  * 
  * @param {string} recordedRelativePath - e.g. "/audio/recording_123.webm"
  * @param {string} language - "twi" or "english"
@@ -72,6 +97,10 @@ async function prepareRecordedMedicationAudio(recordedRelativePath, language = '
   const menuFullPath = path.join(audioDir, menuFileName);
   const trailerFullPath = path.join(audioDir, trailerFileName);
 
+  // Ensure menu and trailer files are present on disk (auto-fetch from Cloudinary on Render)
+  await ensureLocalAudioFile(menuFileName, menuFullPath);
+  await ensureLocalAudioFile(trailerFileName, trailerFullPath);
+
   const baseName = path.parse(filename).name.replace(/^(merged_|converted_|relisten_)/, '');
   const tempConvertedPath = path.join(audioDir, `converted_${baseName}.mp3`);
   const finalMergedFilename = `merged_${baseName}.mp3`;
@@ -92,10 +121,11 @@ async function prepareRecordedMedicationAudio(recordedRelativePath, language = '
       fs.copyFileSync(tempConvertedPath, finalMergedPath);
     }
 
-    // Step 3: Generate Inbound Helpline audio (Instruction + Trailer: 9=repeat, 0=pharmacist)
-    if (fs.existsSync(trailerFullPath)) {
-      console.log(`[AudioMerge] Concatenating helpline relisten audio with ${trailerFileName}...`);
-      await concatAudioFiles(tempConvertedPath, trailerFullPath, finalRelistenPath);
+    // Step 3: Generate Inbound Helpline & Relisten audio with unified interactive options (1=taken, 2=not taken, 9=repeat, 0=help)
+    const trailingMenuFile = fs.existsSync(menuFullPath) ? menuFullPath : (fs.existsSync(trailerFullPath) ? trailerFullPath : null);
+    if (trailingMenuFile) {
+      console.log(`[AudioMerge] Concatenating helpline relisten audio with ${path.basename(trailingMenuFile)}...`);
+      await concatAudioFiles(tempConvertedPath, trailingMenuFile, finalRelistenPath);
     } else {
       fs.copyFileSync(tempConvertedPath, finalRelistenPath);
     }
@@ -126,6 +156,10 @@ function getRelistenAudioUrl(medication, language = 'twi', baseUrl = '') {
   const audioDir = path.join(__dirname, '../../public/audio');
 
   if (medication.instruction_source === 'recorded' && medication.audio_url) {
+    if (medication.audio_url.startsWith('http://') || medication.audio_url.startsWith('https://')) {
+      return medication.audio_url;
+    }
+    const { getCloudinaryAudioUrl } = require('./cloudinaryService');
     const baseName = path.basename(medication.audio_url)
       .replace(/^(merged_|converted_|relisten_)/, '')
       .replace(/\.(webm|mp3)$/, '');
@@ -134,12 +168,21 @@ function getRelistenAudioUrl(medication, language = 'twi', baseUrl = '') {
     if (fs.existsSync(path.join(audioDir, relistenFile))) {
       return `${baseUrl}/audio/${relistenFile}`;
     }
+    return getCloudinaryAudioUrl(relistenFile, baseUrl);
   }
 
   let fileUrl = medication.audio_url || (isEnglish ? '/audio/default-reminder-en.mp3' : '/audio/default-reminder.mp3');
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+  const { getCloudinaryAudioUrl } = require('./cloudinaryService');
+  const cloudUrl = getCloudinaryAudioUrl(fileUrl, baseUrl);
+  if (cloudUrl && cloudUrl.startsWith('https://res.cloudinary.com')) {
+    return cloudUrl;
+  }
   if (fileUrl.includes('localhost:3000')) {
     fileUrl = fileUrl.replace(/http:\/\/localhost:3000/g, baseUrl);
-  } else if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+  } else {
     fileUrl = `${baseUrl}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
   }
   return fileUrl;

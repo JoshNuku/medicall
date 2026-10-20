@@ -5,4 +5,12 @@ data/*.db-journal
 data/*.db-wal
 data/*.db-shm
 public/audio/*.wav
+public/audio/*.webm
 public/audio/*.mp3
+
+# Whitelist static core system audio assets so they exist on Render deployment
+!public/audio/twi_*.mp3
+!public/audio/en_*.mp3
+!public/audio/english_*.mp3
+!public/audio/default-reminder*.mp3
+!public/audio/.gitkeep

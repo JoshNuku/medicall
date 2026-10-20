@@ -75,7 +75,7 @@ function getTwiNeutralScreeningAudio(baseUrl) {
 /**
  * Verbal Echo Spoken Messages for English calls
  */
-function getVerbalEchoText(dtmfDigits, patientName, drugName) {
+function getVerbalEchoText(dtmfDigits, patientName, drugName, isRecorded = false) {
   const name = patientName || 'there';
   const drug = drugName || 'your medication';
 
@@ -83,6 +83,9 @@ function getVerbalEchoText(dtmfDigits, patientName, drugName) {
     case '1':
       return `You pressed 1 to confirm your dose of ${drug}. Thank you, ${name}! (If this was a mistake, press 0 now for help).`;
     case '2':
+      if (isRecorded) {
+        return `You pressed 2: you have not taken your dose of ${drug}. Thank you, we have recorded this for your healthcare team.`;
+      }
       return `You pressed 2: you feel better and stopped taking ${drug}. We understand, but stopping early can cause your illness to return. We have notified your pharmacist to review your treatment.`;
     case '3':
       return `You pressed 3 to report needing a refill or cost barrier for ${drug}. We have alerted your pharmacist to assist you with your refill.`;

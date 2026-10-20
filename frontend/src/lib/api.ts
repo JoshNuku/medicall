@@ -282,6 +282,7 @@ export async function fetchTodayCalls() {
 // 8. Trigger Instant Demo Call
 export async function triggerCallApi(payload: {
   patient_id?: number;
+  medication_id?: number;
   phone_number?: string;
   call_type?: 'reminder' | 'diagnostic';
 }) {

@@ -26,7 +26,7 @@ export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { metrics, alerts } = useData();
-  const { user } = useAuth();
+  const { user, hideSettings } = useAuth();
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const openAlerts = alerts.filter((alert) => alert.status === 'open').slice(0, 4);
@@ -51,12 +51,16 @@ export const MobileNav: React.FC = () => {
       active: pathname === '/alerts',
       badge: metrics.open_alerts > 0 ? metrics.open_alerts : undefined,
     },
-    {
-      name: 'Settings',
-      href: '/settings',
-      icon: Settings,
-      active: pathname === '/settings',
-    },
+    ...(!hideSettings
+      ? [
+          {
+            name: 'Settings',
+            href: '/settings',
+            icon: Settings,
+            active: pathname === '/settings',
+          },
+        ]
+      : []),
   ];
 
   return (

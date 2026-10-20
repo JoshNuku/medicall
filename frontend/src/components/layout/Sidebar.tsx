@@ -12,11 +12,13 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
+import { useAuth } from '@/lib/auth-context';
 import { LogoutButton } from '@/components/layout/LogoutButton';
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { metrics } = useData();
+  const { hideSettings } = useAuth();
 
   const mainNav = [
     {
@@ -41,12 +43,16 @@ export const Sidebar: React.FC = () => {
   ];
 
   const systemNav = [
-    {
-      name: 'Settings',
-      href: '/settings',
-      icon: Settings,
-      active: pathname === '/settings',
-    },
+    ...(!hideSettings
+      ? [
+          {
+            name: 'Settings',
+            href: '/settings',
+            icon: Settings,
+            active: pathname === '/settings',
+          },
+        ]
+      : []),
     {
       name: 'Support',
       href: '/support',

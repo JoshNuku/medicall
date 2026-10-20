@@ -13,6 +13,7 @@ interface TriggerCallModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPatientId?: number;
+  defaultMedicationId?: number;
   defaultCallType?: 'reminder' | 'diagnostic';
 }
 
@@ -20,9 +21,10 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   isOpen,
   onClose,
   defaultPatientId,
+  defaultMedicationId,
   defaultCallType = 'reminder',
 }) => {
-  const { patients, refetch } = useData();
+  const { patients, getPatientMedications, refetch } = useData();
   const [selectedPatientId, setSelectedPatientId] = useState<number | string>(
     defaultPatientId || (patients.length > 0 ? patients[0].id : '')
   );
@@ -41,6 +43,21 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   const isCustomPhone = selectedPatientId === 'custom';
   const customPhoneValidation = validatePhoneNumber(customPhone, true);
 
+  const patientMeds = selectedPatient ? getPatientMedications(selectedPatient.id) : [];
+  const [selectedMedId, setSelectedMedId] = useState<number | string>(defaultMedicationId || '');
+
+  React.useEffect(() => {
+    if (patientMeds.length > 0) {
+      if (defaultMedicationId && patientMeds.some((m) => m.id === defaultMedicationId)) {
+        setSelectedMedId(defaultMedicationId);
+      } else if (!selectedMedId || !patientMeds.some((m) => m.id === Number(selectedMedId))) {
+        setSelectedMedId(patientMeds[0].id);
+      }
+    } else {
+      setSelectedMedId('');
+    }
+  }, [selectedPatientId, patientMeds.length, defaultMedicationId]);
+
   const handleStartCall = async () => {
     if (isCustomPhone && !customPhoneValidation.isValid) {
       setCallStatus('error');
@@ -54,8 +71,10 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
 
     try {
       const phoneToCall = selectedPatient ? selectedPatient.phone_number : customPhoneValidation.normalized!;
+      const chosenMed = patientMeds.find((m) => m.id === Number(selectedMedId));
       const res = await triggerCallApi({
         patient_id: selectedPatient ? selectedPatient.id : undefined,
+        medication_id: chosenMed ? chosenMed.id : undefined,
         phone_number: phoneToCall,
         call_type: callType,
       });
@@ -169,6 +188,26 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
             <option value="custom">Custom Phone Number...</option>
           </select>
         </div>
+
+        {/* Medication Regimen Selector if patient has active medications */}
+        {selectedPatient && patientMeds.length > 0 && (
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+              Target Medication {patientMeds.length > 1 ? `(${patientMeds.length} enrolled)` : ''}
+            </label>
+            <select
+              value={selectedMedId}
+              onChange={(e) => setSelectedMedId(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/40 focus:border-[#70BF2B] transition-all"
+            >
+              {patientMeds.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.drug_name} — {m.instruction_source === 'recorded' ? '🎙️ Pharmacist Voice Note' : '🤖 AI Agent Voice'} ({m.schedule_times})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Custom Phone Number input if custom selected */}
         {selectedPatientId === 'custom' && (

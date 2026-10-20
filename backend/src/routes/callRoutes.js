@@ -46,7 +46,7 @@ router.get('/today', async (req, res, next) => {
  */
 router.post('/trigger', async (req, res, next) => {
   try {
-    const { patient_id, phone_number, call_type = 'reminder' } = req.body;
+    const { patient_id, phone_number, call_type = 'reminder', medication_id } = req.body;
     let patient = null;
     if (patient_id) {
       patient = await getPatientById(patient_id);
@@ -83,10 +83,11 @@ router.post('/trigger', async (req, res, next) => {
     console.log(`🚀 [FRONTEND TRIGGER]: Live Outbound Call Requested [Mode: ${call_type.toUpperCase()}]`);
     console.log(`   Patient: ${patient ? patient.name : 'Custom Phone'} (${targetPhone})`);
     console.log(`   Language Mode: [${patientLang}]`);
+    if (medication_id) console.log(`   Target Medication ID: #${medication_id}`);
     console.log(`======================================================`);
 
-    let medicationId = null;
-    if (patient) {
+    let medicationId = medication_id ? Number(medication_id) : null;
+    if (patient && !medicationId) {
       const meds = await getMedicationsByPatientId(patient.id);
       if (meds.length > 0) {
         medicationId = meds[0].id;

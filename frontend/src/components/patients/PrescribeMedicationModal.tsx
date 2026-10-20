@@ -345,6 +345,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!drugName.trim()) {
       setError('Please provide a drug name.');
       return;
