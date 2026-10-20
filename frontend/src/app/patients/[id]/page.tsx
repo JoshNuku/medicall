@@ -748,7 +748,11 @@ export default function PatientDetailPage() {
                     const twiFreq = med.frequency_text_twi || med.frequency_label || 'da biara mprenu';
                     const twiTiming = med.timing_text_twi || med.timing_label || 'sɛ wodidi wie a';
 
-                    const spokenText = isPrescriptionTrack
+                    const actualGeneratedScript = isMedEnglish
+                      ? (med.spoken_text_en || med.spoken_text)
+                      : (med.spoken_text || med.spoken_text_en);
+
+                    const spokenText = actualGeneratedScript || (isPrescriptionTrack
                       ? (med.instruction_source === 'recorded'
                           ? undefined
                           : isMedEnglish
@@ -756,7 +760,7 @@ export default function PatientDetailPage() {
                           : `Fa wo nnuro ${med.drug_name}. ${twiDosage}. ${twiFreq}. ${twiTiming}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`)
                       : (isMedEnglish
                           ? `Hello ${patient.name}, hope you are doing well. Please take your ${med.drug_name}: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`
-                          : `Medaase ${patient.name}, yɛhwɛ kwan sɛ wo ho yɛ. Yɛsrɛ wo fa wo ${med.drug_name}: ${twiDosage} ${twiTiming}. Klike baako sɛ worenom seesei. Klike mmienu sɛ wo ho atɔ wo na woagyae nom. Klike mmiɛnsa sɛ wo nsuo asa anaa sika ho asɛm bi wɔ hɔ. Klike nan sɛ aduro no reha wo. Klike zero ma aduruyɛfoɔ no, anaa nsia na tie bio.`);
+                          : `Medaase ${patient.name}, yɛhwɛ kwan sɛ wo ho yɛ. Yɛsrɛ wo fa wo ${med.drug_name}: ${twiDosage} ${twiTiming}. Klike baako sɛ worenom seesei. Klike mmienu sɛ wo ho atɔ wo na woagyae nom. Klike mmiɛnsa sɛ wo nsuo asa anaa sika ho asɛm bi wɔ hɔ. Klike nan sɛ aduro no reha wo. Klike zero ma aduruyɛfoɔ no, anaa nsia na tie bio.`));
 
                     return (
                       <div className="space-y-2.5">

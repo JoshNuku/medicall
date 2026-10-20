@@ -107,8 +107,15 @@ const adjustAudioTempo = (inputPath, outputPath, tempo = 0.88) => {
   if (!ffmpeg) return Promise.resolve(inputPath);
 
   return new Promise((resolve) => {
+    const filters = [];
+    if (tempo && tempo !== 1.0) {
+      filters.push(`atempo=${tempo}`);
+    }
+    // Boost amplitude and normalize audio loudness (EBU R128)
+    filters.push('loudnorm=I=-16:TP=-1.5:LRA=11');
+
     ffmpeg(inputPath)
-      .audioFilters(`atempo=${tempo}`)
+      .audioFilters(filters)
       .output(outputPath)
       .on('end', () => {
         // Clean up temporary raw file

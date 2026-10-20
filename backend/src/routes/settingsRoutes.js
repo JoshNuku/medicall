@@ -16,6 +16,29 @@ const {
   transcribeAudio
 } = require('../services/sttService');
 
+function updateEnvKey(key, value) {
+  const envPaths = [
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../../../.env'),
+  ];
+  for (const envPath of envPaths) {
+    if (fs.existsSync(envPath)) {
+      try {
+        let content = fs.readFileSync(envPath, 'utf8');
+        const regex = new RegExp(`^${key}=.*$`, 'm');
+        if (regex.test(content)) {
+          content = content.replace(regex, `${key}=${value}`);
+        } else {
+          content += `\n${key}=${value}`;
+        }
+        fs.writeFileSync(envPath, content, 'utf8');
+      } catch (e) {
+        console.warn(`[Settings] Failed to write ${key} to ${envPath}:`, e.message);
+      }
+    }
+  }
+}
+
 /**
  * @openapi
  * /settings/tts-provider:
@@ -61,6 +84,7 @@ router.put('/tts-provider', (req, res) => {
 
   try {
     const updated = setActiveTtsProvider(provider);
+    updateEnvKey('TTS_PROVIDER', updated);
     res.json({
       status: 'success',
       activeProvider: updated,
@@ -154,6 +178,7 @@ router.put('/asr-provider', (req, res) => {
 
   try {
     const updated = setActiveAsrProvider(provider);
+    updateEnvKey('ASR_PROVIDER', updated);
     res.json({
       status: 'success',
       activeProvider: updated,

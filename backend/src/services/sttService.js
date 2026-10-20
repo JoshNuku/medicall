@@ -1,6 +1,16 @@
-require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+
+let ffmpeg = null;
+try {
+  ffmpeg = require('fluent-ffmpeg');
+  const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
+  if (ffmpegInstaller && ffmpegInstaller.path) {
+    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+  }
+} catch (e) {
+  console.warn('[FFmpeg] fluent-ffmpeg or @ffmpeg-installer not available in STT:', e.message);
+}
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_STT_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
@@ -54,6 +64,29 @@ function getAsrProvidersStatus() {
 }
 
 /**
+ * Converts audio file to clean 16kHz mono WAV format for neural ASR engines
+ * @param {string} inputPath - Original audio file
+ * @returns {Promise<string|null>} Path to converted WAV file or null
+ */
+function convertAudioToWav(inputPath) {
+  return new Promise((resolve) => {
+    if (!ffmpeg) return resolve(null);
+    const outputPath = inputPath.replace(/\.[^/.]+$/, '') + `_lab_${Date.now()}.wav`;
+    ffmpeg(inputPath)
+      .toFormat('wav')
+      .audioFrequency(16000)
+      .audioChannels(1)
+      .audioCodec('pcm_s16le')
+      .on('end', () => resolve(outputPath))
+      .on('error', (err) => {
+        console.warn('⚠️ [FFmpeg Audio Conversion Warning]:', err.message);
+        resolve(null);
+      })
+      .save(outputPath);
+  });
+}
+
+/**
  * Transcribes audio using Lab Subscription Platform ASR (/api/v1/asr)
  * @param {string} filePath - Path to audio file
  * @returns {Promise<string>} Clean transcript
@@ -64,31 +97,53 @@ const transcribeWithLab = async (filePath) => {
     throw new Error('Lab ASR API key (LAB_ASR_API_KEY or TTS_API_KEY) is not configured in .env');
   }
 
-  const fileBlob = await fs.openAsBlob(filePath);
-  const fileName = path.basename(filePath) || 'audio.mp3';
+  const ext = path.extname(filePath).toLowerCase();
+  let targetPath = filePath;
+  let tempConverted = false;
 
-  const formData = new FormData();
-  formData.append('file', fileBlob, fileName);
-
-  console.log(`🎙️ [Lab ASR]: Uploading ${fileName} to Lab ASR platform (${LAB_ASR_URL})...`);
-
-  const response = await fetch(LAB_ASR_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: formData
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Lab ASR Error (${response.status}): ${errorText}`);
+  // Convert browser WebM / non-wav to clean 16kHz WAV so Lab ASR can read it reliably
+  if (ext === '.webm' || ext === '.ogg' || ext === '.m4a') {
+    const convertedPath = await convertAudioToWav(filePath);
+    if (convertedPath && fs.existsSync(convertedPath)) {
+      targetPath = convertedPath;
+      tempConverted = true;
+    }
   }
 
-  const data = await response.json();
-  const transcript = data.transcription || data.transcript || data.text || '';
-  console.log(`✓ [Lab ASR]: Received transcript: "${transcript}"`);
-  return transcript;
+  try {
+    const isWav = targetPath.toLowerCase().endsWith('.wav');
+    const fileBlob = await fs.openAsBlob(targetPath, { type: isWav ? 'audio/wav' : 'audio/mpeg' });
+    const fileName = path.basename(targetPath) || (isWav ? 'audio.wav' : 'audio.mp3');
+
+    const formData = new FormData();
+    formData.append('file', fileBlob, fileName);
+
+    console.log(`🎙️ [Lab ASR]: Uploading ${fileName} to Lab ASR platform (${LAB_ASR_URL})...`);
+
+    const response = await fetch(LAB_ASR_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Lab ASR Error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    const transcript = data.transcription || data.transcript || data.text || '';
+    console.log(`✓ [Lab ASR]: Received transcript: "${transcript}"`);
+    return transcript;
+  } finally {
+    if (tempConverted && fs.existsSync(targetPath)) {
+      try {
+        fs.unlinkSync(targetPath);
+      } catch (_) {}
+    }
+  }
 };
 
 /**
@@ -198,9 +253,25 @@ const transcribeAudio = async (filePath, options = {}) => {
         return labTranscript;
       }
     } catch (labErr) {
-      console.warn('⚠️ [Lab ASR Warning]:', labErr.message, 'Falling back to Groq Whisper...');
+      console.warn('⚠️ [Lab ASR Warning]:', labErr.message);
+      if (isTwi && KHAYA_API_KEY) {
+        console.log('🇬🇭 [STT Router]: Falling back to Khaya ASR v3 (Asante Twi)...');
+        try {
+          const khayaTranscript = await transcribeWithKhaya(filePath);
+          if (khayaTranscript && khayaTranscript.trim()) {
+            return khayaTranscript;
+          }
+        } catch (khayaErr) {
+          console.warn('⚠️ [Khaya ASR Warning]:', khayaErr.message);
+        }
+      }
+      console.warn('⚠️ [STT Router]: Falling back to Groq Whisper...');
     }
-    return await transcribeWithGroq(filePath, options);
+    const safeOptions = { ...options };
+    if (safeOptions.language === 'twi' || safeOptions.language === 'tw') {
+      delete safeOptions.language;
+    }
+    return await transcribeWithGroq(filePath, safeOptions);
   }
 
   // Provider is 'groq'
@@ -217,7 +288,11 @@ const transcribeAudio = async (filePath, options = {}) => {
   }
 
   console.log('⚡ [STT Router]: Routing audio to Groq Whisper Large v3 Turbo...');
-  return await transcribeWithGroq(filePath, { language: isTwi ? undefined : 'en', ...options });
+  const safeOptions = { ...options };
+  if (isTwi || safeOptions.language === 'twi' || safeOptions.language === 'tw') {
+    delete safeOptions.language;
+  }
+  return await transcribeWithGroq(filePath, safeOptions);
 };
 
 module.exports = {

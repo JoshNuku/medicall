@@ -90,7 +90,8 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
       const resolvedAudio = audioUrl || medication.reminder_audio_url || '/audio/default-reminder-en.mp3';
       const db = require('../db/connection');
       try {
-        await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(resolvedAudio, medicationId);
+        await db.prepare('UPDATE medications SET audio_url = ?, reminder_audio_url = ?, spoken_text = ?, spoken_text_en = ? WHERE id = ?')
+          .run(resolvedAudio, resolvedAudio, englishText, englishText, medicationId);
       } catch (_) {}
 
       return resolvedAudio;
@@ -111,7 +112,8 @@ const preGenerateReminderAudio = async ({ patientId, medicationId, speakerId = '
     if (resolvedAudio && typeof resolvedAudio === 'string' && (resolvedAudio.startsWith('/audio/') || resolvedAudio.startsWith('http'))) {
       const db = require('../db/connection');
       try {
-        await db.prepare('UPDATE medications SET reminder_audio_url = ? WHERE id = ?').run(resolvedAudio, medicationId);
+        await db.prepare('UPDATE medications SET audio_url = ?, reminder_audio_url = ?, spoken_text = ?, spoken_text_en = ? WHERE id = ?')
+          .run(resolvedAudio, resolvedAudio, finalTwiText, englishText, medicationId);
       } catch (_) {}
     }
 

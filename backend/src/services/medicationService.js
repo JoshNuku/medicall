@@ -80,15 +80,13 @@ const registerMedication = async ({
       try {
         if (instructionSource === 'template') {
           console.log(`\n⚡ [BACKGROUND TASK] Starting audio synthesis for Med #${createdMed.id} (${drugName})...`);
-          const { generateFullPrescriptionAudio, generateDoseReminderAudio, preGenerateReminderAudio } = require('./reminderPipelineService');
+          const { generateFullPrescriptionAudio, preGenerateReminderAudio } = require('./reminderPipelineService');
           
-          const tasks = [generateFullPrescriptionAudio({ patientId, medicationId: createdMed.id })];
           if (process.env.ENABLE_AI_AGENT === 'true') {
-            tasks.push(preGenerateReminderAudio({ patientId, medicationId: createdMed.id, speakerId: 'female' }));
+            await preGenerateReminderAudio({ patientId, medicationId: createdMed.id, speakerId: 'female' });
           } else {
-            tasks.push(generateDoseReminderAudio({ patientId, medicationId: createdMed.id }));
+            await generateFullPrescriptionAudio({ patientId, medicationId: createdMed.id });
           }
-          await Promise.allSettled(tasks);
 
           await db.prepare('UPDATE medications SET audio_status = ? WHERE id = ?').run('ready', createdMed.id);
           console.log(`✓ [BACKGROUND TASK] Completed audio synthesis for Med #${createdMed.id}`);

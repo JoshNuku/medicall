@@ -47,7 +47,7 @@ const generateReminderMessage = async ({ patientId, medicationId, model = DEFAUL
   const context = await getPatientFullContext(patientId, medicationId);
   const systemPrompt = context ? buildSystemPrompt(context) : null;
   const patientName = context?.patient?.name || 'there';
-  const prompt = `Generate the concise reminder voice message for ${patientName} in plain English. Start with a brief personalized greeting ("Hello ${patientName}, hope you are doing well.") and keep the entire message under sixty words.`;
+  const prompt = `Generate the warm, encouraging reminder voice message for ${patientName} in plain English. Include simple, heartfelt words of encouragement (e.g. "Stay strong, you matter to us" or "Take heart, you are not alone") that translate clearly into Asante Twi. Keep the message under sixty-five words.`;
 
   const response = await agent({ prompt, model, patientId, systemPrompt, tools: [], temperature: 0.3 });
   return response.content;

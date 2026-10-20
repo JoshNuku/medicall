@@ -58,6 +58,8 @@ export interface Medication {
   duration_days: number;
   is_chronic: boolean;
   language?: 'twi' | 'english';
+  spoken_text?: string;
+  spoken_text_en?: string;
   created_at: string;
   status: 'active' | 'completed' | 'paused';
 }

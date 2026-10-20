@@ -167,10 +167,15 @@ function processAudioWithFfmpeg(inputPath, outputPath, tempo = 0.88) {
 
   return new Promise((resolve) => {
     let command = ffmpeg(inputPath);
+    const filters = [];
 
     if (tempo && tempo !== 1.0) {
-      command = command.audioFilters(`atempo=${tempo}`);
+      filters.push(`atempo=${tempo}`);
     }
+    // Boost amplitude and normalize audio loudness (EBU R128 telephony/broadcast standard)
+    filters.push('loudnorm=I=-16:TP=-1.5:LRA=11');
+
+    command.audioFilters(filters);
 
     command
       .output(outputPath)
@@ -204,7 +209,9 @@ function concatAudioFiles(filePaths, outputPath, tempo = 0.88) {
 
     let filter = `concat=n=${filePaths.length}:v=0:a=1`;
     if (tempo && tempo !== 1.0) {
-      filter += `[a];[a]atempo=${tempo}`;
+      filter += `[a];[a]atempo=${tempo}[b];[b]loudnorm=I=-16:TP=-1.5:LRA=11`;
+    } else {
+      filter += `[a];[a]loudnorm=I=-16:TP=-1.5:LRA=11`;
     }
 
     command
