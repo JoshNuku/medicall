@@ -71,10 +71,16 @@ const getTodayCallEvents = async () => {
     SELECT ce.*, 
            COALESCE(p.name, 'Patient #' || ce.patient_id) AS patient_name, 
            p.phone_number AS patient_phone, 
-           COALESCE(m.drug_name, 'Medication Reminder') AS drug_name
+           COALESCE(m.drug_name, 'Medication Reminder') AS drug_name,
+           dr.reason AS diagnostic_reason
     FROM call_events ce
     LEFT JOIN patients p ON ce.patient_id = p.id
     LEFT JOIN medications m ON ce.medication_id = m.id
+    LEFT JOIN (
+      SELECT call_event_id, MAX(reason) as reason
+      FROM diagnostic_responses
+      GROUP BY call_event_id
+    ) dr ON dr.call_event_id = ce.id
     ORDER BY ce.scheduled_time DESC
   `).all();
 };

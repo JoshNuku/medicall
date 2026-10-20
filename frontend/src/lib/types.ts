@@ -75,6 +75,7 @@ export interface CallEvent {
   call_event_id?: number;
   patient_id: number;
   patient_name: string;
+  patient_phone?: string;
   medication_id: number;
   drug_name: string;
   scheduled_time: string;

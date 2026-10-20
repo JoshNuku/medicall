@@ -18,6 +18,7 @@ import {
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { EnrollPatientModal } from '@/components/patients/EnrollPatientModal';
 import { TriggerCallModal } from '@/components/patients/TriggerCallModal';
+import { CallActivityModal } from '@/components/dashboard/CallActivityModal';
 import {
   Activity,
   PhoneCall,
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const { patients, todayCalls, alerts, adherenceHistory, metrics, isLoading, error, refetch } = useData();
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [isCallActivityOpen, setIsCallActivityOpen] = useState(false);
 
   // Dynamic Adherence Subtext calculation (replaces hardcoded 3.2%)
   const adherenceSubtext = React.useMemo(() => {
@@ -136,18 +138,20 @@ export default function DashboardPage() {
           </Link>
 
           {/* 3. Calls Today */}
-          <MetricCard
-            variant="default"
-            label="Calls Today"
-            value={metrics.calls_today}
-            subtext={
-              metrics.calls_today === 0
-                ? "No calls scheduled today"
-                : `${metrics.calls_today_confirmed} confirmed · ${Math.max(0, metrics.calls_today - metrics.calls_today_confirmed)} pending/retry`
-            }
-            icon={<PhoneCall className="w-5 h-5 text-[#70BF2B]" />}
-            iconBg="bg-[#F0F9EB]"
-          />
+          <div onClick={() => setIsCallActivityOpen(true)} className="block group cursor-pointer" title="Click to view all call activity">
+            <MetricCard
+              variant="default"
+              label="Calls Today"
+              value={metrics.calls_today}
+              subtext={
+                metrics.calls_today === 0
+                  ? "No calls scheduled today"
+                  : `${metrics.calls_today_confirmed} confirmed · ${Math.max(0, metrics.calls_today - metrics.calls_today_confirmed)} pending/retry`
+              }
+              icon={<PhoneCall className="w-5 h-5 text-[#70BF2B] transition-transform group-hover:scale-110" />}
+              iconBg="bg-[#F0F9EB]"
+            />
+          </div>
 
           {/* 4. Open Escalation Alerts */}
           <Link href="/alerts" className="block group">
@@ -199,6 +203,12 @@ export default function DashboardPage() {
       <TriggerCallModal
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
+      />
+
+      <CallActivityModal
+        isOpen={isCallActivityOpen}
+        onClose={() => setIsCallActivityOpen(false)}
+        calls={todayCalls}
       />
     </div>
   );
