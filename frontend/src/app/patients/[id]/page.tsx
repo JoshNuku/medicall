@@ -752,13 +752,13 @@ export default function PatientDetailPage() {
                       ? (med.spoken_text_en || med.spoken_text)
                       : (med.spoken_text || med.spoken_text_en);
 
-                    const spokenText = actualGeneratedScript || (isPrescriptionTrack
+                    const spokenText = isPrescriptionTrack
                       ? (med.instruction_source === 'recorded'
                           ? undefined
                           : isMedEnglish
                           ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press number nine to repeat, or press number zero for your pharmacist.`
                           : `Fa wo nnuro ${med.drug_name}. ${twiDosage}. ${twiFreq}. ${twiTiming}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`)
-                      : (isMedEnglish
+                      : (actualGeneratedScript || (isMedEnglish
                           ? `Hello ${patient.name}, hope you are doing well. Please take your ${med.drug_name}: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`
                           : `Medaase ${patient.name}, yɛhwɛ kwan sɛ wo ho yɛ. Yɛsrɛ wo fa wo ${med.drug_name}: ${twiDosage} ${twiTiming}. Klike baako sɛ worenom seesei. Klike mmienu sɛ wo ho atɔ wo na woagyae nom. Klike mmiɛnsa sɛ wo nsuo asa anaa sika ho asɛm bi wɔ hɔ. Klike nan sɛ aduro no reha wo. Klike zero ma aduruyɛfoɔ no, anaa nsia na tie bio.`));
 
