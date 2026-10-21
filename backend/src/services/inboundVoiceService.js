@@ -27,6 +27,20 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
 
   const isEnglish = (patient.preferred_language || '').toLowerCase() === 'english';
 
+  const TWI_NUMBERS = {
+    0: 'hwee',
+    1: 'baako',
+    2: 'mmienu',
+    3: 'mmiɛnsa',
+    4: 'nnan',
+    5: 'nnum',
+    6: 'nsia',
+    7: 'nson',
+    8: 'nwɔtwe',
+    9: 'nkron',
+    10: 'du'
+  };
+
   // If patient has multiple medications, provide IVR menu to choose which one to hear
   if (medications.length > 1) {
     const medChoices = medications
@@ -35,23 +49,29 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
         let qualifier = '';
         if (hasDup) {
           if (m.instruction_source === 'recorded') {
-            qualifier = isEnglish ? 'Pharmacist voice note' : 'Nkyerɛkyerɛ a yɛatwa agu so';
+            qualifier = isEnglish ? 'pharmacist voice note' : 'a wo duruyɛfoɔ twaeɛ';
           } else {
-            qualifier = isEnglish ? 'Standard prescription' : 'Nkyerɛkyerɛ a wɔagye atom';
+            qualifier = isEnglish ? 'standard prescription' : 'a wɔagye atom';
           }
         }
-        const name = qualifier ? `${m.drug_name} (${qualifier})` : m.drug_name;
-        return isEnglish ? `Press ${idx + 1} for ${name}.` : `Mia ${idx + 1} ma ${name}.`;
+        if (isEnglish) {
+          const name = qualifier ? `${m.drug_name}, ${qualifier}` : m.drug_name;
+          return `Press ${idx + 1} for ${name}.`;
+        }
+        const twiNum = TWI_NUMBERS[idx + 1] || `${idx + 1}`;
+        const name = qualifier ? `${m.drug_name} ${qualifier}` : m.drug_name;
+        return `Mia ${twiNum} ma ${name}.`;
       })
       .join(' ');
 
+    const countWord = TWI_NUMBERS[medications.length] || `${medications.length}`;
     const promptText = isEnglish
       ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Or press 0 to speak with your pharmacist.`
-      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Anaa mia hwee ma wo duruyɛfoɔ.`;
+      : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${countWord}. ${medChoices} Anaa mia hwee ma wo duruyɛfoɔ.`;
 
     let menuPlayUrl = null;
     const medIdsKey = medications.map(m => m.id).join('_');
-    const menuFilename = `inbound_menu_p${patient.id}_${medIdsKey}_${isEnglish ? 'en' : 'tw'}_v2.mp3`;
+    const menuFilename = `inbound_menu_p${patient.id}_${medIdsKey}_${isEnglish ? 'en' : 'tw'}_v3.mp3`;
     const publicAudioDir = path.join(__dirname, '../../public/audio');
     const localMenuPath = path.join(publicAudioDir, menuFilename);
 
