@@ -30,19 +30,49 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
   // If patient has multiple medications, provide IVR menu to choose which one to hear
   if (medications.length > 1) {
     const medChoices = medications
-      .map((m, idx) => (isEnglish ? `Press ${idx + 1} for ${m.drug_name}.` : `Mia ${idx + 1} ma ${m.drug_name}.`))
+      .map((m, idx) => {
+        const hasDup = medications.filter(other => other.drug_name === m.drug_name).length > 1;
+        const qualifier = hasDup ? (m.timing_label || m.dosage_label || m.schedule_times || `#${idx + 1}`) : '';
+        const name = qualifier ? `${m.drug_name} (${qualifier})` : m.drug_name;
+        return isEnglish ? `Press ${idx + 1} for ${name}.` : `Mia ${idx + 1} ma ${name}.`;
+      })
       .join(' ');
 
     const promptText = isEnglish
       ? `Welcome to your MediCall prescription helpline. You have ${medications.length} active medications. ${medChoices} Or press 0 to speak with your pharmacist.`
       : `Akwaaba firi MediCall nnuro helpline. Wowɔ nnuro ${medications.length}. ${medChoices} Anaa mia hwee ma wo duruyɛfoɔ.`;
 
+    let menuPlayUrl = null;
+    const medIdsKey = medications.map(m => m.id).join('_');
+    const menuFilename = `inbound_menu_p${patient.id}_${medIdsKey}_${isEnglish ? 'en' : 'tw'}.mp3`;
+    const publicAudioDir = path.join(__dirname, '../../public/audio');
+    const localMenuPath = path.join(publicAudioDir, menuFilename);
+
+    if (fs.existsSync(localMenuPath)) {
+      menuPlayUrl = `${baseUrl}/audio/${menuFilename}`;
+    } else {
+      try {
+        if (isEnglish) {
+          const { synthesizeEnglishSpeech } = require('./reminderPipelineService');
+          const generated = await synthesizeEnglishSpeech(promptText, menuFilename);
+          if (generated) menuPlayUrl = generated.startsWith('http') ? generated : `${baseUrl}${generated.startsWith('/') ? '' : '/'}${generated}`;
+        } else {
+          const { synthesizeTwiSpeech } = require('./khayaService');
+          const generated = await synthesizeTwiSpeech(promptText, menuFilename, 'female', 0.88);
+          if (generated) menuPlayUrl = generated.startsWith('http') ? generated : `${baseUrl}${generated.startsWith('/') ? '' : '/'}${generated}`;
+        }
+      } catch (synthErr) {
+        console.warn('⚠️ [Inbound Menu Audio Synthesis Notice]:', synthErr.message);
+      }
+    }
+
     const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}`;
     const digitsXml = buildGetDigits({
       numDigits: 1,
       timeout: 12,
       callbackUrl,
-      sayText: promptText
+      playUrl: menuPlayUrl,
+      sayText: menuPlayUrl ? null : promptText
     });
     return buildVoiceResponse(digitsXml);
   }

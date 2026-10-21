@@ -65,14 +65,11 @@ const handleReminderCall = async (req, res, next) => {
     // Inbound call auto-detection: If someone is dialing our helpline number
     const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
     if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
-      const patient = callerPhone ? await getPatientByPhoneNumber(callerPhone) : null;
-      const pendingEvent = patient ? await getLatestPendingCallEventForPatient(patient.id) : null;
-      if (!pendingEvent) {
-        const { handleInboundCall } = require('../services/inboundVoiceService');
-        const xml = await handleInboundCall(callerPhone, baseUrl);
-        res.set('Content-Type', 'text/xml');
-        return res.status(200).send(xml);
-      }
+      console.log(`📞 [INBOUND HELPLINE CALL]: Caller ${callerPhone} dialed ${atNumber}`);
+      const { handleInboundCall } = require('../services/inboundVoiceService');
+      const xml = await handleInboundCall(callerPhone, baseUrl);
+      res.set('Content-Type', 'text/xml');
+      return res.status(200).send(xml);
     }
 
     if (!callEvent) {
