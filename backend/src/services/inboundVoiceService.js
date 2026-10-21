@@ -32,7 +32,14 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
     const medChoices = medications
       .map((m, idx) => {
         const hasDup = medications.filter(other => other.drug_name === m.drug_name).length > 1;
-        const qualifier = hasDup ? (m.timing_label || m.dosage_label || m.schedule_times || `#${idx + 1}`) : '';
+        let qualifier = '';
+        if (hasDup) {
+          if (m.instruction_source === 'recorded') {
+            qualifier = isEnglish ? 'Pharmacist voice note' : 'Nkyerɛkyerɛ a yɛatwa agu so';
+          } else {
+            qualifier = isEnglish ? 'Standard prescription' : 'Nkyerɛkyerɛ a wɔagye atom';
+          }
+        }
         const name = qualifier ? `${m.drug_name} (${qualifier})` : m.drug_name;
         return isEnglish ? `Press ${idx + 1} for ${name}.` : `Mia ${idx + 1} ma ${name}.`;
       })
@@ -44,7 +51,7 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
 
     let menuPlayUrl = null;
     const medIdsKey = medications.map(m => m.id).join('_');
-    const menuFilename = `inbound_menu_p${patient.id}_${medIdsKey}_${isEnglish ? 'en' : 'tw'}.mp3`;
+    const menuFilename = `inbound_menu_p${patient.id}_${medIdsKey}_${isEnglish ? 'en' : 'tw'}_v2.mp3`;
     const publicAudioDir = path.join(__dirname, '../../public/audio');
     const localMenuPath = path.join(publicAudioDir, menuFilename);
 
@@ -66,7 +73,7 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
       }
     }
 
-    const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}`;
+    const callbackUrl = `${baseUrl}/voice/inbound/select/${patient.id}`;
     const digitsXml = buildGetDigits({
       numDigits: 1,
       timeout: 12,
@@ -93,7 +100,7 @@ const handleInboundCall = async (callerNumber, baseUrl) => {
   const relistenAudioUrl = getRelistenAudioUrl(activeMed, activeMed.language || patient.preferred_language, baseUrl);
   console.log(`🔊 [INBOUND HELPLINE]: Serving relisten instruction for Patient #${patient.id} (${activeMed.drug_name}): ${relistenAudioUrl}`);
 
-  const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${activeMed.id}`;
+  const callbackUrl = `${baseUrl}/voice/inbound/select/${patient.id}/${activeMed.id}`;
   const digitsXml = buildGetDigits({
     numDigits: 1,
     timeout: 12,
@@ -148,7 +155,7 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     if (medId) {
       const chosenMed = medications.find(m => m.id === parseInt(medId, 10)) || medications[0];
       const relistenAudioUrl = getRelistenAudioUrl(chosenMed, chosenMed.language || patient.preferred_language, baseUrl);
-      const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`;
+      const callbackUrl = `${baseUrl}/voice/inbound/select/${patient.id}/${chosenMed.id}`;
       return buildVoiceResponse(buildGetDigits({
         numDigits: 1,
         timeout: 12,
@@ -166,7 +173,7 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
       const chosenMed = medications[index];
       console.log(`✓ [INBOUND HELPLINE]: Selected medication #${index + 1}: ${chosenMed.drug_name}`);
       const relistenAudioUrl = getRelistenAudioUrl(chosenMed, chosenMed.language || patient.preferred_language, baseUrl);
-      const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}&medId=${chosenMed.id}`;
+      const callbackUrl = `${baseUrl}/voice/inbound/select/${patient.id}/${chosenMed.id}`;
       return buildVoiceResponse(buildGetDigits({
         numDigits: 1,
         timeout: 12,
@@ -262,7 +269,9 @@ const handleInboundSelect = async (patientId, dtmfDigits, baseUrl, medId = null)
     return await handleInboundCall(patient.phone_number, baseUrl);
   }
   const chosenMed = (medId ? medications.find(m => m.id === parseInt(medId, 10)) : medications[0]);
-  const callbackUrl = `${baseUrl}/voice/inbound/select?patientId=${patient.id}${chosenMed ? `&medId=${chosenMed.id}` : ''}`;
+  const callbackUrl = chosenMed
+    ? `${baseUrl}/voice/inbound/select/${patient.id}/${chosenMed.id}`
+    : `${baseUrl}/voice/inbound/select/${patient.id}`;
   const trailerFile = isEnglish ? 'en_keypress_menu.mp3' : 'twi_keypress_menu.mp3';
   const trailerUrl = getCloudinaryAudioUrl(trailerFile, baseUrl);
   return buildVoiceResponse(buildGetDigits({

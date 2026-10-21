@@ -30,10 +30,10 @@ router.post('/inbound', async (req, res, next) => {
  *     tags: [Voice Webhooks]
  *     summary: Inbound medication selection or help keypress callback
  */
-router.post('/inbound/select', async (req, res, next) => {
+router.post(['/inbound/select', '/inbound/select/:patientId', '/inbound/select/:patientId/:medId'], async (req, res, next) => {
   try {
-    const patientId = req.query.patientId || req.body.patientId;
-    const medId = req.query.medId || req.body.medId;
+    const patientId = req.params.patientId || req.query.patientId || req.body.patientId || req.query['amp;patientId'];
+    const medId = req.params.medId || req.query.medId || req.body.medId || req.query['amp;medId'];
     const dtmfDigits = req.body.dtmfDigits || req.query.dtmfDigits;
     const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).trim().replace(/\/+$/, '');
 
