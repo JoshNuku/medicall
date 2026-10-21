@@ -21,7 +21,7 @@ const getLogsByPatientId = async (patientId) => {
     LEFT JOIN medications m ON ce.medication_id = m.id
     LEFT JOIN diagnostic_responses dr ON dr.call_event_id = ce.id
     WHERE ce.patient_id = ?
-    ORDER BY ce.scheduled_time DESC
+    ORDER BY COALESCE(ce.actual_call_time, ce.scheduled_time) DESC, ce.id DESC
   `).all(patientId);
 };
 

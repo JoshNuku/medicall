@@ -75,14 +75,15 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
         <div className="relative pl-5 sm:pl-6 space-y-4 sm:space-y-6 before:content-[''] before:absolute before:left-2 sm:before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200/80">
           {logs.map((item, index) => {
             const key = item.id || item.call_event_id || `log-${index}-${item.scheduled_time || ''}`;
-            const dateStr = item.scheduled_time
-              ? new Date(item.scheduled_time).toLocaleDateString('en-GB', {
+            const displayTime = item.actual_call_time || item.scheduled_time;
+            const dateStr = displayTime
+              ? new Date(displayTime).toLocaleDateString('en-GB', {
                   day: 'numeric',
                   month: 'short',
                 })
               : 'Today';
-            const timeStr = item.scheduled_time
-              ? new Date(item.scheduled_time).toLocaleTimeString('en-GB', {
+            const timeStr = displayTime
+              ? new Date(displayTime).toLocaleTimeString('en-GB', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })
