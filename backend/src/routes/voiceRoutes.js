@@ -62,10 +62,15 @@ const handleReminderCall = async (req, res, next) => {
     const dynamicBase = incomingHost ? `${req.protocol}://${incomingHost}` : null;
     const baseUrl = (process.env.BASE_URL || (dynamicBase && !dynamicBase.includes('localhost') ? dynamicBase : null) || dynamicBase || 'http://localhost:3000').trim().replace(/\/+$/, '');
 
-    // Inbound call auto-detection: If someone is dialing our helpline number
-    const isCallToOurNumber = destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
-    if (isCallToOurNumber && !req.query.callEventId && !req.body.callEventId) {
-      console.log(`📞 [INBOUND HELPLINE CALL]: Caller ${callerPhone} dialed ${atNumber}`);
+    // Inbound call auto-detection: Only if someone is calling INTO our helpline from outside
+    const isOutboundCall = req.body.direction === 'Outbound' ||
+      (callerPhone && atNumber && (callerPhone === atNumber || callerPhone.endsWith(atNumber.replace('+', '')))) ||
+      Boolean(req.query.callEventId || req.body.callEventId);
+
+    const isCallToOurNumber = !isOutboundCall && destPhone && atNumber && (destPhone === atNumber || destPhone.endsWith(atNumber.replace('+', '')));
+
+    if (isCallToOurNumber) {
+      console.log(`📞 [INBOUND HELPLINE CALL]: Caller ${callerPhone} dialed helpline ${atNumber}`);
       const { handleInboundCall } = require('../services/inboundVoiceService');
       const xml = await handleInboundCall(callerPhone, baseUrl);
       res.set('Content-Type', 'text/xml');
