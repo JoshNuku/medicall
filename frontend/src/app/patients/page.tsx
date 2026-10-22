@@ -96,7 +96,7 @@ export default function PatientsPage() {
       />
 
       {/* Filter and Search Bar */}
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white border border-subtle-border rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs">
         {/* Search */}
         <div className="relative w-full md:w-80">
           <input
@@ -104,14 +104,14 @@ export default function PatientsPage() {
             placeholder="Search by name or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B] transition-all"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 focus:border-kaime-blue transition-all"
           />
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
         </div>
 
         {/* Filter Pills */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
+          <div className="flex items-center gap-1 bg-surface-subtle p-1 rounded-xl border border-subtle-border text-xs">
             <button
               onClick={() => setLanguageFilter('all')}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
@@ -126,7 +126,7 @@ export default function PatientsPage() {
               onClick={() => setLanguageFilter('twi')}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'twi'
-                  ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
+                  ? 'bg-kaime-blue text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -136,7 +136,7 @@ export default function PatientsPage() {
               onClick={() => setLanguageFilter('english')}
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 languageFilter === 'english'
-                  ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
+                  ? 'bg-kaime-blue text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -144,7 +144,7 @@ export default function PatientsPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#F8F9FA] p-1 rounded-xl border border-gray-200/70 text-xs">
+          <div className="flex items-center gap-1 bg-surface-subtle p-1 rounded-xl border border-subtle-border text-xs">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
@@ -159,7 +159,7 @@ export default function PatientsPage() {
               onClick={() => setStatusFilter('active')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                 statusFilter === 'active'
-                  ? 'bg-[#70BF2B] text-white shadow-xs font-semibold'
+                  ? 'bg-kaime-blue text-white shadow-xs font-semibold'
                   : 'text-gray-500 hover:text-gray-900'
               }`}
             >
@@ -180,11 +180,11 @@ export default function PatientsPage() {
       </div>
 
       {/* Patient Table (Desktop) */}
-      <div className="bg-white border border-[#ECECEC] rounded-2xl overflow-hidden hidden sm:block shadow-xs">
+      <div className="bg-white border border-subtle-border rounded-2xl overflow-hidden hidden sm:block shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-[#FAF9F6]/50 text-[11px] font-semibold uppercase text-gray-400 tracking-wider">
+              <tr className="border-b border-gray-100 bg-warm-bg/50 text-[11px] font-semibold uppercase text-gray-400 tracking-wider">
                 <th className="py-3.5 px-5 font-semibold">Patient</th>
                 <th className="py-3.5 px-4 font-semibold">Phone</th>
                 <th className="py-3.5 px-4 font-semibold">Language</th>
@@ -244,11 +244,11 @@ export default function PatientsPage() {
                   return (
                     <tr
                       key={patient.id}
-                      className="hover:bg-[#F8F9FA] transition-colors group cursor-pointer"
+                      className="hover:bg-warm-bg transition-colors group cursor-pointer"
                     >
                       <td className="py-4 px-5">
                         <Link href={`/patients/${patient.id}`} className="block">
-                          <span className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors">
+                          <span className="font-semibold text-gray-900 group-hover:text-kaime-blue transition-colors">
                             {patient.name}
                           </span>
                           <span className="block text-xs text-gray-500 font-normal">
@@ -279,7 +279,7 @@ export default function PatientsPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
                             href={`/patients/${patient.id}`}
-                            className="inline-flex items-center text-xs font-semibold text-[#55941E] hover:text-[#447817] bg-[#F0F9EB] px-2.5 py-1.5 rounded-lg border border-[#70BF2B]/30 transition-colors"
+                            className="inline-flex items-center text-xs font-semibold text-kaime-blue hover:text-kaime-blue-hover bg-kaime-blue-light px-2.5 py-1.5 rounded-lg border border-kaime-blue-border transition-colors"
                           >
                             <span>Manage</span>
                             <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
@@ -290,7 +290,7 @@ export default function PatientsPage() {
                               e.stopPropagation();
                               setPatientToEdit(patient);
                             }}
-                            className="p-1.5 text-gray-400 hover:text-[#55941E] hover:bg-[#F0F9EB] rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-gray-400 hover:text-kaime-blue hover:bg-kaime-blue-light rounded-lg transition-colors cursor-pointer"
                             title="Edit patient profile"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -347,11 +347,11 @@ export default function PatientsPage() {
           filteredPatients.map((patient) => (
             <div
               key={patient.id}
-              className="block bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs hover:border-gray-300 transition-colors"
+              className="block bg-white border border-subtle-border rounded-2xl p-4 shadow-xs hover:border-gray-300 transition-colors"
             >
               <div className="flex items-center justify-between mb-2 gap-2">
                 <Link href={`/patients/${patient.id}`} className="min-w-0">
-                  <span className="font-semibold text-base text-gray-900 hover:text-[#55941E] transition-colors truncate block">{patient.name}</span>
+                  <span className="font-semibold text-base text-gray-900 hover:text-kaime-blue transition-colors truncate block">{patient.name}</span>
                 </Link>
                 <Badge variant="status" status={patient.status} size="sm" />
               </div>
@@ -379,7 +379,7 @@ export default function PatientsPage() {
                 <div className="flex items-center gap-1 ml-auto">
                   <Link
                     href={`/patients/${patient.id}`}
-                    className="p-1.5 text-gray-400 hover:text-[#55941E] hover:bg-[#F0F9EB] rounded-lg transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-kaime-blue hover:bg-kaime-blue-light rounded-lg transition-colors"
                     title="Manage patient"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -387,7 +387,7 @@ export default function PatientsPage() {
                   <button
                     type="button"
                     onClick={() => setPatientToEdit(patient)}
-                    className="p-1.5 text-gray-400 hover:text-[#55941E] hover:bg-[#F0F9EB] rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-gray-400 hover:text-kaime-blue hover:bg-kaime-blue-light rounded-lg transition-colors cursor-pointer"
                     title="Edit patient"
                   >
                     <Pencil className="w-3.5 h-3.5" />

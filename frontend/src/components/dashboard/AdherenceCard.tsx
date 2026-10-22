@@ -37,14 +37,14 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
 
   if (!history || history.length === 0 || (!hasRecordedCalls && overallRate === 0)) {
     return (
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
+      <div className="bg-white border border-subtle-border rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900 tracking-tight">Adherence Overview</h2>
           <div className="relative">
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value as '7d' | '30d' | '90d')}
-              className="appearance-none border border-gray-200 bg-white rounded-lg px-3 py-1.5 pr-8 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20"
+              className="appearance-none border border-gray-200 bg-white rounded-lg px-3 py-1.5 pr-8 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20"
             >
               <option value="7d">This Week</option>
               <option value="30d">30 Days</option>
@@ -55,7 +55,7 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-kaime-blue-light text-kaime-blue flex items-center justify-center mb-3">
             <BarChart3 className="w-6 h-6" />
           </div>
           <p className="text-base font-semibold text-gray-900">No adherence data yet</p>
@@ -66,7 +66,7 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
   }
 
   return (
-    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs min-h-[320px]">
+    <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs min-h-[320px]">
       <div>
         <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-3">
           <h2 className="text-sm sm:text-base font-semibold text-gray-900 tracking-tight">Adherence Overview</h2>
@@ -74,23 +74,23 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value as '7d' | '30d' | '90d')}
-              className="appearance-none border border-gray-200 bg-white rounded-lg px-2.5 sm:px-3 py-1.5 pr-7 sm:pr-8 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20"
+              className="appearance-none border border-gray-200 bg-white rounded-lg px-2.5 sm:px-3 py-1.5 pr-7 sm:pr-8 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 focus:border-kaime-blue"
             >
               <option value="7d">This Week</option>
               <option value="30d">30 Days</option>
               <option value="90d">90 Days</option>
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[11px] sm:text-xs mb-4 sm:mb-6">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#70BF2B] shrink-0" />
+            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-kaime-blue shrink-0" />
             <span className="text-gray-600 font-medium">Confirmed ({overallRate || 0}%)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-rose-400 shrink-0" />
+            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-kaime-coral shrink-0" />
             <span className="text-gray-600 font-medium">Missed / Barrier ({Math.max(0, 100 - (overallRate || 0))}%)</span>
           </div>
         </div>
@@ -119,14 +119,14 @@ export const AdherenceCard: React.FC<AdherenceCardProps> = ({
                   </div>
                 )}
 
-                <div className="w-full max-w-[34px] bg-[#F5F6F8] rounded-t-xl h-full flex items-end p-0.5 transition-colors group-hover:bg-[#EAEAEA]">
+                <div className="w-full max-w-[34px] bg-surface-subtle rounded-t-xl h-full flex items-end p-0.5 transition-colors group-hover:bg-subtle-border">
                   <div
                     className={`w-full rounded-t-lg transition-all duration-300 ${
                       isToday
-                        ? 'bg-[#70BF2B] group-hover:bg-[#62A825]'
+                        ? 'bg-kaime-blue group-hover:bg-kaime-blue-hover'
                         : item.rate >= 85
-                        ? 'bg-[#70BF2B]/85 group-hover:bg-[#70BF2B]'
-                        : 'bg-orange-400/90 group-hover:bg-orange-500'
+                        ? 'bg-kaime-blue/85 group-hover:bg-kaime-blue'
+                        : 'bg-kaime-amber group-hover:bg-kaime-amber-dark'
                     }`}
                     style={{ height: barHeight }}
                   />

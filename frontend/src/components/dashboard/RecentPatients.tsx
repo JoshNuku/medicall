@@ -25,7 +25,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
 
   return (
     <>
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+      <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs">
         <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 mb-3 sm:mb-4 gap-2">
           <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-semibold text-gray-900 tracking-tight truncate">
@@ -37,7 +37,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
           </div>
           <Link
             href="/patients"
-            className="text-xs font-semibold text-[#55941E] hover:underline flex items-center gap-1 transition-colors shrink-0"
+            className="text-xs font-semibold text-kaime-blue hover:underline flex items-center gap-1 transition-colors shrink-0"
           >
             <span>All patients ({patients.length})</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -69,17 +69,17 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                 return (
                   <tr
                     key={patient.id}
-                    className="hover:bg-[#F8F9FA] transition-colors group cursor-pointer"
+                    className="hover:bg-warm-bg transition-colors group cursor-pointer"
                   >
                     <td className="py-3.5 pr-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-[#F0F9EB] group-hover:text-[#55941E] transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-kaime-blue-light group-hover:text-kaime-blue transition-colors">
                           {initials}
                         </div>
                         <div>
                           <Link
                             href={`/patients/${patient.id}`}
-                            className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors block text-sm"
+                            className="font-semibold text-gray-900 group-hover:text-kaime-blue transition-colors block text-sm"
                           >
                             {patient.name}
                           </Link>
@@ -106,7 +106,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                         <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
                           {patient.adherence_rate !== null && patient.adherence_rate !== undefined ? (
                             <div
-                              className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-[#70BF2B]' : 'bg-orange-500'
+                              className={`h-full rounded-full ${patient.adherence_rate >= 85 ? 'bg-kaime-blue' : 'bg-kaime-coral'
                                 }`}
                               style={{ width: `${patient.adherence_rate}%` }}
                             />
@@ -130,7 +130,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                             loadPatientDetails(patient.id);
                             setAudioPreviewPatient(patient);
                           }}
-                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
+                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-kaime-blue-light hover:text-kaime-blue hover:border-kaime-blue-border text-gray-500 transition-colors"
                           title="Preview dose reminder & prescription audio"
                         >
                           <Volume2 className="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                             setActiveCallPatientId(patient.id);
                             setIsCallModalOpen(true);
                           }}
-                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 text-gray-500 transition-colors"
+                          className="p-1.5 rounded-lg border border-gray-200 hover:bg-kaime-blue-light hover:text-kaime-blue hover:border-kaime-blue-border text-gray-500 transition-colors"
                           title="Trigger live call"
                         >
                           <Phone className="w-3.5 h-3.5" />
@@ -182,13 +182,13 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
           {displayPatients.map((patient) => (
             <div
               key={patient.id}
-              className="p-3.5 rounded-xl border border-gray-100 bg-[#FAF9F6] space-y-2.5"
+              className="p-3.5 rounded-xl border border-gray-100 bg-warm-bg space-y-2.5"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <Link
                     href={`/patients/${patient.id}`}
-                    className="font-semibold text-sm text-gray-900 hover:text-[#55941E] truncate block"
+                    className="font-semibold text-sm text-gray-900 hover:text-kaime-blue truncate block"
                   >
                     {patient.name}
                   </Link>
@@ -215,7 +215,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                     loadPatientDetails(patient.id);
                     setAudioPreviewPatient(patient);
                   }}
-                  className="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-[#55941E] transition-colors"
+                  className="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-kaime-blue transition-colors"
                   title="Audio tracks"
                   aria-label="Preview audio"
                 >
@@ -228,12 +228,12 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                   }}
                   className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-700 flex items-center gap-1 shadow-2xs"
                 >
-                  <Phone className="w-3 h-3 text-[#70BF2B]" />
+                  <Phone className="w-3 h-3 text-kaime-blue" />
                   <span>Call</span>
                 </button>
                 <Link
                   href={`/patients/${patient.id}`}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#70BF2B] text-white shadow-2xs"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-kaime-blue hover:bg-kaime-blue-hover text-white shadow-2xs"
                 >
                   View Detail
                 </Link>
@@ -323,7 +323,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                         ? undefined
                         : isPrescriptionTrack
                           ? isMedEnglish
-                            ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press number nine to repeat, or press number zero for your pharmacist.`
+                            ? `This is your complete Kaime prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press number nine to repeat, or press number zero for your pharmacist.`
                             : `Fa wo nnuro ${med.drug_name}. ${twiDosage}. ${twiFreq}. ${twiTiming}. Mia nkron sɛ wopɛ sɛ wotie bio, anaa mia hwee ma wo duruyɛfoɔ.`
                           : (actualGeneratedScript || (isMedEnglish
                             ? `Hello ${audioPreviewPatient.name}, hope you are doing well. Please take your ${med.drug_name}: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press number one to confirm you are taking it now. Press number two if you feel better and stopped taking it. Press number three if you need a refill or have cost issues. Press number four for side effects. Press number zero for your pharmacist, or number six to repeat.`
@@ -333,7 +333,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                         <div className="space-y-2.5">
                           {/* Track Switcher */}
                           <div className="flex items-center justify-between">
-                            <div className="inline-flex p-1 bg-[#F2F0EC] rounded-xl text-xs gap-1 border border-[#E6E3DB]">
+                            <div className="inline-flex p-1 bg-surface-subtle rounded-xl text-xs gap-1 border border-subtle-border">
                               <button
                                 type="button"
                                 onClick={() => setDashboardAudioTrackByMed(prev => ({ ...prev, [med.id]: 'prescription' }))}
@@ -342,7 +342,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                                     : 'text-gray-500 hover:text-gray-800'
                                   }`}
                               >
-                                <span className={`w-1.5 h-1.5 rounded-full ${isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${isPrescriptionTrack ? 'bg-kaime-blue' : 'bg-gray-300'}`} />
                                 Full Prescription
                                 <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Helpline</span>
                               </button>
@@ -354,7 +354,7 @@ export const RecentPatients: React.FC<RecentPatientsProps> = ({ patients }) => {
                                     : 'text-gray-500 hover:text-gray-800'
                                   }`}
                               >
-                                <span className={`w-1.5 h-1.5 rounded-full ${!isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${!isPrescriptionTrack ? 'bg-kaime-blue' : 'bg-gray-300'}`} />
                                 Dose Reminder
                                 <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Outbound</span>
                               </button>

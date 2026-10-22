@@ -113,7 +113,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
   }, [pathname]);
 
   return (
-    <header className={`hidden md:flex h-16 bg-white border-b border-[#EAEAEA] px-4 sm:px-6 md:px-8 items-center justify-between sticky top-0 z-30 select-none transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <header className={`hidden md:flex h-16 bg-white border-b border-subtle-border px-4 sm:px-6 md:px-8 items-center justify-between sticky top-0 z-30 select-none transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onToggleSidebar}
@@ -141,10 +141,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
         {/* AI Voice Assistant Trigger Button */}
         <button
           onClick={() => setIsVoiceModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#70BF2B]/30 bg-[#F0F9EB] px-3.5 py-2 text-xs font-semibold text-[#447817] transition-colors hover:border-[#70BF2B]/50 hover:bg-[#E5F5D8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#70BF2B] focus-visible:ring-offset-2 cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-xl border border-kaime-blue/20 bg-kaime-blue-light px-3.5 py-2 text-xs font-semibold text-kaime-blue transition-colors hover:border-kaime-blue/40 hover:bg-kaime-blue-hover-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kaime-blue focus-visible:ring-offset-2 cursor-pointer"
           title="Open AI Voice Prescription Assistant"
         >
-          <Sparkles className="w-4 h-4 text-[#55941E]" />
+          <Sparkles className="w-4 h-4 text-kaime-coral" />
           <span className="hidden sm:inline">AI Voice Assistant</span>
           <span className="sm:hidden">AI Voice</span>
         </button>
@@ -166,7 +166,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-[#ECECEC] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-subtle-border z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               {/* Header */}
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
                       {metrics.open_alerts} open
                     </span>
                   ) : (
-                    <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30">
+                    <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       All clear
                     </span>
                   )}
@@ -184,7 +184,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
                 <Link
                   href="/alerts"
                   onClick={() => setIsNotificationsOpen(false)}
-                  className="text-xs font-semibold text-[#55941E] hover:underline"
+                  className="text-xs font-semibold text-kaime-blue hover:underline"
                 >
                   View all
                 </Link>
@@ -194,7 +194,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
               <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
                 {openAlerts.length === 0 ? (
                   <div className="py-8 px-4 text-center text-xs text-gray-400">
-                    <CheckCircle2 className="w-6 h-6 text-[#70BF2B] mx-auto mb-2 opacity-80" />
+                    <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2 opacity-80" />
                     <p className="font-medium text-gray-700">No unresolved escalations</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">All monitored patients are adherent</p>
                   </div>
@@ -204,14 +204,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
                       key={alert.id}
                       href={`/patients/${alert.patient_id}`}
                       onClick={() => setIsNotificationsOpen(false)}
-                      className="p-3.5 hover:bg-[#F8F9FA] transition-colors flex items-start gap-3 block group"
+                      className="p-3.5 hover:bg-warm-bg transition-colors flex items-start gap-3 block group"
                     >
                       <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
                         <AlertTriangle className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-semibold text-gray-900 group-hover:text-[#55941E] truncate transition-colors">
+                          <span className="text-xs font-semibold text-gray-900 group-hover:text-kaime-blue truncate transition-colors">
                             {alert.patient_name}
                           </span>
                           <span className="text-[10px] text-gray-400 shrink-0 font-mono">
@@ -231,11 +231,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
               </div>
 
               {/* Footer */}
-              <div className="p-2.5 bg-[#FAF9F6] border-t border-gray-100 text-center">
+              <div className="p-2.5 bg-warm-bg border-t border-gray-100 text-center">
                 <Link
                   href="/alerts"
                   onClick={() => setIsNotificationsOpen(false)}
-                  className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-[#55941E] py-1 transition-colors w-full"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-kaime-blue py-1 transition-colors w-full"
                 >
                   <span>Go to Alerts Center</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -253,7 +253,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
             onClick={() => setIsProfileOpen((prev) => !prev)}
             className="flex items-center gap-2.5 cursor-pointer py-1 px-1.5 rounded-xl hover:bg-gray-50 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
+            <div className="w-8 h-8 rounded-full bg-kaime-blue-light text-kaime-blue font-bold text-xs flex items-center justify-center shrink-0 border border-kaime-blue-border">
               {initials}
             </div>
             <div className="hidden sm:block text-left">
@@ -268,7 +268,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleSidebar }) => {
           </div>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#ECECEC] z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-xs">
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-subtle-border z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-xs">
               <div className="px-3.5 py-2 border-b border-gray-100">
                 <p className="font-semibold text-gray-900">{user?.name || 'Healthcare Worker'}</p>
                 <p className="text-[11px] text-gray-400 truncate">{user?.email || 'Logged in'}</p>

@@ -28,11 +28,20 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Fallback demo users in case backend is offline
 const DEMO_USERS: Record<string, { password: string; user: User }> = {
+  'pharmacist@kaime.gh': {
+    password: 'password123',
+    user: {
+      id: 1,
+      email: 'pharmacist@kaime.gh',
+      name: 'Dr. Kwame Mensah',
+      role: 'Lead Clinical Pharmacist'
+    }
+  },
   'pharmacist@medicall.gh': {
     password: 'password123',
     user: {
       id: 1,
-      email: 'pharmacist@medicall.gh',
+      email: 'pharmacist@kaime.gh',
       name: 'Dr. Kwame Mensah',
       role: 'Lead Clinical Pharmacist'
     }
@@ -46,12 +55,21 @@ const DEMO_USERS: Record<string, { password: string; user: User }> = {
       role: 'Pharmacist Admin'
     }
   },
+  'admin@kaime.gh': {
+    password: 'medicall2026',
+    user: {
+      id: 3,
+      email: 'admin@kaime.gh',
+      name: 'Kaime Admin',
+      role: 'Clinical Operations'
+    }
+  },
   'admin@medicall.gh': {
     password: 'medicall2026',
     user: {
       id: 3,
-      email: 'admin@medicall.gh',
-      name: 'MediCall Admin',
+      email: 'admin@kaime.gh',
+      name: 'Kaime Admin',
       role: 'Clinical Operations'
     }
   }

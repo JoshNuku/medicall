@@ -449,7 +449,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 setIsPromptManuallyEdited(false);
               }}
               className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${language === 'twi'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] shadow-xs'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
             >
@@ -462,7 +462,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 setIsPromptManuallyEdited(false);
               }}
               className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${language === 'english'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] shadow-xs'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
             >
@@ -472,7 +472,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
         </div>
 
         {/* Strict Two-Mode Switcher */}
-        <div className="bg-[#FAF9F6] p-1.5 rounded-2xl border border-gray-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="bg-warm-bg p-1.5 rounded-2xl border border-gray-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setMode('template')}
@@ -509,7 +509,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
               placeholder="e.g. Amoxicillin 500mg, Metformin 850mg"
               value={drugName}
               onChange={(e) => setDrugName(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/30 focus:border-kaime-blue transition-all"
             />
             <Pill className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           </div>
@@ -531,7 +531,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 <select
                   value={selectedDosageId}
                   onChange={(e) => setSelectedDosageId(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/30 focus:border-kaime-blue transition-all cursor-pointer"
                 >
                   {dosages.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -549,7 +549,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 <select
                   value={selectedFrequencyId}
                   onChange={(e) => setSelectedFrequencyId(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/30 focus:border-kaime-blue transition-all cursor-pointer"
                 >
                   {frequencies.map((f) => (
                     <option key={f.id} value={f.id}>
@@ -567,7 +567,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 <select
                   value={selectedTimingId}
                   onChange={(e) => setSelectedTimingId(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/30 focus:border-kaime-blue transition-all cursor-pointer"
                 >
                   {timings.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -591,7 +591,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                       setIsPromptManuallyEdited(false);
                       setInstructionPrompt(autoAssembledPrompt);
                     }}
-                    className="text-xs font-medium text-[#55941E] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-medium text-kaime-blue-hover hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Reset</span>
@@ -606,7 +606,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                   setIsPromptManuallyEdited(true);
                 }}
                 rows={2}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-[#F8F9FA] text-sm text-gray-900 leading-relaxed focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] transition-all resize-none"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-warm-bg text-sm text-gray-900 leading-relaxed focus:outline-none focus:bg-white focus:ring-2 focus:ring-kaime-blue/30 focus:border-kaime-blue transition-all resize-none"
                 placeholder={language === 'english' ? 'Assembled English instructions...' : 'Assembled Twi instructions...'}
               />
 
@@ -638,7 +638,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
             </div>
 
             {/* Voice Recording Widget */}
-            <div className="border border-gray-200 rounded-2xl p-5 bg-[#FAF9F6] text-center space-y-4">
+            <div className="border border-gray-200 rounded-2xl p-5 bg-warm-bg text-center space-y-4">
               {recordingState === 'ready' && (
                 <div className="space-y-3">
                   <div className="w-14 h-14 rounded-full bg-purple-100 text-purple-700 mx-auto flex items-center justify-center border border-purple-200">
@@ -745,7 +745,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                   />
 
                   {/* Automated Keypress Menu Attachment Indicator */}
-                  <div className="p-3 bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl flex items-center justify-between text-xs">
+                  <div className="p-3 bg-warm-bg border border-subtle-border rounded-xl flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                       <span className="font-semibold text-gray-800">IVR Keypad Menu Automatically Attached</span>
@@ -788,7 +788,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                           )
                         );
                       }}
-                      className="block h-11 w-full min-w-0 appearance-none rounded-xl border border-gray-200 py-2.5 pl-10 pr-2 text-sm font-mono transition-all focus:border-[#70BF2B] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
+                      className="block h-11 w-full min-w-0 appearance-none rounded-xl border border-gray-200 py-2.5 pl-10 pr-2 text-sm font-mono transition-all focus:border-kaime-blue focus:outline-none focus:ring-2 focus:ring-kaime-blue/30"
                     />
                   </div>
                   <button
@@ -808,7 +808,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 type="button"
                 disabled={scheduleTimes.length >= 4}
                 onClick={() => setScheduleTimes((times) => [...times, ''])}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#55941E] transition-colors hover:bg-[#F0F9EB] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-kaime-blue-hover transition-colors hover:bg-kaime-blue-light disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add reminder time
@@ -831,7 +831,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 disabled={isChronic}
                 value={isChronic ? 90 : durationDays}
                 onChange={(e) => setDurationDays(Number(e.target.value))}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30 focus:border-[#70BF2B] disabled:bg-gray-100 transition-all"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-kaime-blue/30 focus:border-kaime-blue disabled:bg-gray-100 transition-all"
               />
               <Calendar className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             </div>
@@ -841,7 +841,7 @@ export const PrescribeMedicationModal: React.FC<PrescribeMedicationModalProps> =
                 id="chronic"
                 checked={isChronic}
                 onChange={(e) => setIsChronic(e.target.checked)}
-                className="w-4 h-4 rounded text-[#70BF2B] focus:ring-[#70BF2B] cursor-pointer"
+                className="w-4 h-4 rounded text-kaime-blue focus:ring-kaime-blue cursor-pointer"
               />
               <label htmlFor="chronic" className="text-xs text-gray-700 font-medium cursor-pointer select-none">
                 Chronic medication (Ongoing regimen)

@@ -37,15 +37,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   // If loading authentication state, display a spinner
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#F8F9FA]">
-        <div className="w-8 h-8 border-2.5 border-gray-200 border-t-[#70BF2B] rounded-full animate-spin" />
+      <div className="min-h-screen w-full flex items-center justify-center bg-warm-bg">
+        <div className="w-8 h-8 border-2.5 border-gray-200 border-t-kaime-blue rounded-full animate-spin" />
       </div>
     );
   }
 
   // If on login page, render full screen without dashboard shell
   if (isLoginPage) {
-    return <div className="min-h-screen w-full bg-[#F8F9FA]">{children}</div>;
+    return <div className="min-h-screen w-full bg-warm-bg">{children}</div>;
   }
 
   // If not authenticated and not yet redirected, render nothing briefly
@@ -57,7 +57,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-screen w-full overflow-x-clip">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FA] w-full overflow-x-clip md:ml-64">
+      <div className="flex-1 flex flex-col min-w-0 bg-warm-bg w-full overflow-x-clip md:ml-64">
         <MobileNav />
         <TopHeader />
         <main className="flex-1 p-3.5 pb-24 sm:p-6 sm:pb-24 md:p-8 max-w-7xl w-full mx-auto">

@@ -141,12 +141,12 @@ export const CallActivityModal: React.FC<CallActivityModalProps> = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search patient, phone, drug..."
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B]"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 focus:border-kaime-blue"
               />
             </div>
 
             {/* Time Range Selector */}
-            <div className="flex items-center gap-1 bg-[#F5F4F0] p-1 rounded-xl text-xs font-medium text-gray-600 shrink-0 self-start sm:self-auto border border-gray-200/80">
+            <div className="flex items-center gap-1 bg-warm-bg p-1 rounded-xl text-xs font-medium text-gray-600 shrink-0 self-start sm:self-auto border border-gray-200/80">
               {(['today', '7d', '30d', 'all'] as RangeFilter[]).map((r) => (
                 <button
                   key={r}
@@ -231,7 +231,7 @@ export const CallActivityModal: React.FC<CallActivityModalProps> = ({
           <div className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-2xs max-h-[55vh] overflow-y-auto divide-y divide-gray-100">
             {filteredCalls.length === 0 ? (
               <div className="py-12 text-center text-sm text-gray-500">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#F8F9FA] text-gray-400 flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-warm-bg text-gray-400 flex items-center justify-center">
                   <Clock className="w-6 h-6" />
                 </div>
                 <p className="font-semibold text-gray-800">No matching call events found</p>
@@ -258,7 +258,7 @@ export const CallActivityModal: React.FC<CallActivityModalProps> = ({
                 return (
                   <div
                     key={call.id}
-                    className="p-3.5 sm:p-4 hover:bg-[#FAF9F6] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                    className="p-3.5 sm:p-4 hover:bg-warm-bg transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                   >
                     {/* Left: Time & Patient Identity */}
                     <div className="flex items-start gap-3 min-w-0">
@@ -271,7 +271,7 @@ export const CallActivityModal: React.FC<CallActivityModalProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <Link
                             href={`/patients/${call.patient_id}`}
-                            className="text-sm font-semibold text-gray-900 hover:text-[#55941E] transition-colors truncate"
+                            className="text-sm font-semibold text-gray-900 hover:text-kaime-blue transition-colors truncate"
                           >
                             {call.patient_name || 'Patient'}
                           </Link>
@@ -308,7 +308,7 @@ export const CallActivityModal: React.FC<CallActivityModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDial(call.patient_id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-[#70BF2B]/30 hover:bg-[#F0F9EB] text-[#55941E] text-xs font-medium transition-all shadow-2xs"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-kaime-blue/30 hover:bg-kaime-blue-light text-kaime-blue text-xs font-medium transition-all shadow-2xs"
                           title="Trigger instant voice call"
                         >
                           <Phone className="w-3.5 h-3.5" />
@@ -335,8 +335,8 @@ export const CallActivityModal: React.FC<CallActivityModalProps> = ({
             <span>
               Showing {filteredCalls.length} of {calls.length} total call events
             </span>
-            <span className="inline-flex items-center gap-1 text-[#55941E] font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1 text-kaime-blue font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-kaime-coral" />
               <span>Real-time telephony sync</span>
             </span>
           </div>

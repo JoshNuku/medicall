@@ -64,15 +64,15 @@ export const MobileNav: React.FC = () => {
   ];
 
   return (
-    <header className="md:hidden bg-white border-b border-[#EBEAE5] sticky top-0 z-40">
+    <header className="md:hidden bg-white border-b border-subtle-border sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
-            src="/logo.jpg"
-            alt="MediCall"
+            src="/Kaime Minimal Tech Logo.png"
+            alt="Kaime"
             width={120}
             height={40}
-            className="h-8 w-auto object-contain"
+            className="h-10 w-auto object-contain"
             priority
           />
         </Link>
@@ -80,10 +80,10 @@ export const MobileNav: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsVoiceModalOpen(true)}
-            className="p-1.5 text-[#447817] bg-[#F0F9EB] hover:bg-[#E5F5D8] rounded-full border border-[#70BF2B]/30 transition-colors"
+            className="p-1.5 text-kaime-blue bg-kaime-blue-light hover:bg-kaime-blue-hover-light rounded-full border border-kaime-blue/20 transition-colors"
             aria-label="Open AI Voice Assistant"
           >
-            <Sparkles className="w-5 h-5 text-[#55941E]" />
+            <Sparkles className="w-5 h-5 text-kaime-coral" />
           </button>
           <button
             type="button"
@@ -114,10 +114,10 @@ export const MobileNav: React.FC = () => {
 
       {/* Mobile Drawer Menu */}
       {isOpen && (
-        <div className="border-t border-gray-100 bg-[#FAF9F6] px-4 py-3 space-y-1 animate-in slide-in-from-top-2">
+        <div className="border-t border-gray-100 bg-warm-bg px-4 py-3 space-y-1 animate-in slide-in-from-top-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#E9F6DC] text-[#55941E] font-bold text-xs flex items-center justify-center shrink-0 border border-[#70BF2B]/20">
+              <div className="w-8 h-8 rounded-full bg-kaime-blue-light text-kaime-blue font-bold text-xs flex items-center justify-center shrink-0 border border-kaime-blue-border">
                 {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MP'}
               </div>
               <div>
@@ -137,8 +137,8 @@ export const MobileNav: React.FC = () => {
             onClick={() => setIsOpen(false)}
             className={`mt-2 flex items-center gap-3 border-t border-gray-200/80 px-3.5 py-2.5 pt-3 rounded-xl text-sm font-medium transition-colors ${
               pathname === '/support'
-                ? 'bg-[#70BF2B] text-white font-semibold'
-                : 'text-gray-700 hover:bg-[#F6FAF1]'
+                ? 'bg-kaime-blue text-white font-semibold'
+                : 'text-gray-700 hover:bg-surface-subtle'
             }`}
           >
             <HelpCircle
@@ -153,7 +153,7 @@ export const MobileNav: React.FC = () => {
 
       <nav
         aria-label="Primary navigation"
-        className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-[#EBEAE5] bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-subtle-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
       >
         <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 pt-2">
           {navItems.map((item) => {
@@ -164,7 +164,7 @@ export const MobileNav: React.FC = () => {
                 href={item.href}
                 aria-current={item.active ? 'page' : undefined}
                 className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors ${
-                  item.active ? 'text-[#55941E]' : 'text-gray-500 hover:text-gray-900'
+                  item.active ? 'text-kaime-blue' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
                 <span className="relative">
@@ -199,7 +199,7 @@ export const MobileNav: React.FC = () => {
         <div className="divide-y divide-gray-100">
           {openAlerts.length === 0 ? (
             <div className="py-8 text-center">
-              <CheckCircle2 className="mx-auto mb-2 h-7 w-7 text-[#70BF2B]" />
+              <CheckCircle2 className="mx-auto mb-2 h-7 w-7 text-emerald-500" />
               <p className="text-sm font-semibold text-gray-800">No unresolved escalations</p>
               <p className="mt-1 text-xs text-gray-500">All monitored patients are adherent.</p>
             </div>
@@ -209,7 +209,7 @@ export const MobileNav: React.FC = () => {
                 key={alert.id}
                 href={`/patients/${alert.patient_id}`}
                 onClick={() => setIsNotificationsOpen(false)}
-                className="flex items-start gap-3 py-4 transition-colors first:pt-1 hover:bg-[#F8F9FA]"
+                className="flex items-start gap-3 py-4 transition-colors first:pt-1 hover:bg-warm-bg"
               >
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600">
                   <AlertTriangle className="h-4 w-4" />
@@ -233,7 +233,7 @@ export const MobileNav: React.FC = () => {
         <Link
           href="/alerts"
           onClick={() => setIsNotificationsOpen(false)}
-          className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-[#70BF2B]/30 bg-[#F0F9EB] px-4 py-2.5 text-sm font-semibold text-[#447817] transition-colors hover:bg-[#E5F5D8]"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-kaime-blue/30 bg-kaime-blue-light px-4 py-2.5 text-sm font-semibold text-kaime-blue transition-colors hover:bg-kaime-blue-hover-light"
         >
           View all alerts
         </Link>

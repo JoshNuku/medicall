@@ -64,7 +64,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
               className="w-full rounded-t-3xl border border-gray-100 bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl animate-slide-in-up md:max-w-sm md:rounded-2xl md:pb-5 md:animate-slide-in-right"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#D8D8D2] md:hidden" />
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-subtle-border md:hidden" />
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">
                 <LogOut className="h-5 w-5" />
               </div>
