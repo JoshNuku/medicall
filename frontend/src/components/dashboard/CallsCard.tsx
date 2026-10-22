@@ -49,7 +49,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
 
   return (
     <>
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs">
+      <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 flex flex-col justify-between h-full shadow-xs">
         <div>
           <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4 pb-1">
             <div>
@@ -71,7 +71,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
                 <select
                   value={range}
                   onChange={(e) => setRange(e.target.value as CallRange)}
-                  className="appearance-none border border-gray-200 bg-white rounded-lg px-2.5 sm:px-3 py-1.5 pr-7 sm:pr-8 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 cursor-pointer"
+                  className="appearance-none border border-gray-200 bg-white rounded-lg px-2.5 sm:px-3 py-1.5 pr-7 sm:pr-8 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 cursor-pointer"
                 >
                   <option value="today">Today</option>
                   <option value="7d">Last 7 days</option>
@@ -96,7 +96,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
 
           {displayCalls.length === 0 ? (
             <div className="py-10 text-center text-sm text-gray-500">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#F8F9FA] text-gray-400 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-warm-bg text-gray-400 flex items-center justify-center">
                 <Clock className="w-6 h-6" />
               </div>
               <p className="font-medium text-gray-700">No call activity in this range</p>
@@ -117,14 +117,14 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
                 return (
                   <div
                     key={call.id}
-                    className="py-3 flex items-center justify-between gap-3 hover:bg-[#F8F9FA] -mx-2 px-2 rounded-xl transition-colors group"
+                    className="py-3 flex items-center justify-between gap-3 hover:bg-warm-bg -mx-2 px-2 rounded-xl transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xs font-mono font-medium text-gray-400 w-12 shrink-0">{timeFormatted}</span>
                       <div className="min-w-0">
                         <Link
                           href={`/patients/${call.patient_id}`}
-                          className="text-sm font-semibold text-gray-900 group-hover:text-[#55941E] truncate block transition-colors"
+                          className="text-sm font-semibold text-gray-900 group-hover:text-kaime-blue truncate block transition-colors"
                         >
                           {call.patient_name || 'Unknown patient'}
                         </Link>
@@ -154,7 +154,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
                           setSelectedPatientId(call.patient_id);
                           setIsDemoModalOpen(true);
                         }}
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-emerald-50 text-[#70BF2B] transition-all cursor-pointer"
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-kaime-blue-light text-kaime-blue transition-all cursor-pointer"
                         title="Trigger live test call to this patient"
                         aria-label="Trigger a test call"
                       >
@@ -183,7 +183,7 @@ export const CallsCard: React.FC<CallsCardProps> = ({ calls }) => {
 
           <button
             onClick={() => setIsDemoModalOpen(true)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#55941E] hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-kaime-blue hover:underline cursor-pointer"
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
             <span>Dial Patient</span>

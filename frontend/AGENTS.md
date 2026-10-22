@@ -4,9 +4,9 @@ Put this file at the root of the Next.js project.
 
 # AGENTS.md
 
-## MediCall Frontend — Agent Instructions
+## Kaime Frontend — Agent Instructions
 
-MediCall is a voice-call medication adherence platform designed for Ghanaian healthcare workers and pharmacists.
+Kaime is a voice-call medication adherence platform designed for Ghanaian healthcare workers and pharmacists.
 
 This repository contains the frontend application.
 
@@ -21,7 +21,7 @@ Backend:
 
 # 1. Product Principles
 
-MediCall is an MVP.
+Kaime is an MVP.
 
 Prioritize:
 
@@ -33,7 +33,7 @@ Prioritize:
 6. Patient support
 7. Visual consistency
 
-Do not turn MediCall into a generic hospital-management platform.
+Do not turn Kaime into a generic hospital-management platform.
 
 The primary dashboard should answer:
 
@@ -52,7 +52,7 @@ Reference characteristics:
 
 - Large editorial typography
 - Generous whitespace
-- Warm off-white backgrounds
+- Cool off-white backgrounds
 - White surfaces
 - Thin borders
 - Rounded cards
@@ -66,7 +66,7 @@ Reference characteristics:
 
 Do not copy external branding.
 
-MediCall should remain visually distinct.
+Kaime should remain visually distinct.
 
 The interface should feel:
 
@@ -129,13 +129,13 @@ Avoid excessive use of 700.
 
 # 4. Color System
 
-Use a restrained healthcare-oriented palette.
+Use the Kaime palette as the restrained healthcare-oriented palette.
 
 ## Base
 
 ````text
 Background:
-warm off-white
+clean white and cool off-white (#F8FAFC)
 
 Surface:
 white
@@ -147,51 +147,34 @@ Secondary text:
 muted neutral gray
 
 Border:
-very light neutral
+cool neutral gray (#E2E8F0)
 Accent Families
-MediCall Green
+Kaime Cobalt Blue (#1A4AB0)
 
-Primary positive/action color.
+Primary brand and action color.
 
 Use for:
 
-Confirmed
-Adherence
 Active states
 Primary actions
-Lavender
-
-Use for:
-
-Informational sections
-Secondary UI
-Decorative surfaces
-Warm Yellow
-
-Use for:
-
-Attention
-Reminder states
-Mild warnings
-Soft Coral / Orange
-
-Use for:
-
-Alerts
-Not taken
-No answer
-Escalation states
-Blue
+Links and focus indicators
+Warm Amber (#F2B544)
 
 Use sparingly for:
 
-Voice/audio
-Informational states
-Secondary interaction
+Highlights and secondary emphasis.
+
+Coral Red (#FF6B45)
+
+Use for:
+
+Selected highlights and callouts.
 
 Do not make every component colorful.
 
 Most of the interface should remain neutral.
+
+Keep success, warning, and error colors semantically distinct from the brand palette.
 
 5. Status Colors
 Confirmed
@@ -433,7 +416,7 @@ The main number should remain obvious:
 Overall adherence
 15. Audio Player
 
-Audio is an important MediCall component.
+Audio is an important Kaime component.
 
 Never use browser-default audio controls as the primary design.
 
@@ -948,7 +931,7 @@ Before completing UI work, verify:
 
 34. Final Product Principle
 
-MediCall should not feel like software built around databases.
+Kaime should not feel like software built around databases.
 
 It should feel like a healthcare worker's simple daily workspace.
 

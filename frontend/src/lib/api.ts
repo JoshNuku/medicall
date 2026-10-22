@@ -1,5 +1,5 @@
 /**
- * MediCall Backend API Client
+ * Kaime Backend API Client
  *
  * Connects directly to the Express + SQLite backend at http://localhost:3000.
  * Supports retries with exponential backoff and friendly offline status reporting.

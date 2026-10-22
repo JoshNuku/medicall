@@ -110,12 +110,12 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
     >
       <div className="space-y-4 pt-1">
         {/* Minimalist Gateway Status */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#F8F9FA] border border-[#EAEAEA] rounded-xl text-xs">
+        <div className="flex items-center justify-between px-3.5 py-2.5 bg-warm-bg border border-subtle-border rounded-xl text-xs">
           <div className="flex items-center gap-2 text-gray-700">
             <span className="font-semibold text-gray-900">Voice Adherence Call</span>
             <span className="text-gray-500">Twi &amp; English IVR</span>
           </div>
-          <span className="text-[11px] font-semibold text-[#55941E] bg-[#F0F9EB] px-2 py-0.5 rounded-md border border-[#70BF2B]/30">
+          <span className="text-[11px] font-semibold text-kaime-blue-hover bg-kaime-blue-light px-2 py-0.5 rounded-md border border-kaime-blue/30">
             Live Gateway
           </span>
         </div>
@@ -131,12 +131,12 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
               onClick={() => setCallType('reminder')}
               className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                 callType === 'reminder'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#55941E] ring-1 ring-[#70BF2B]'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover ring-1 ring-kaime-blue'
                   : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
               <div className={`flex items-center gap-2 font-semibold text-xs mb-0.5 ${
-                callType === 'reminder' ? 'text-[#55941E]' : 'text-gray-900'
+                callType === 'reminder' ? 'text-kaime-blue-hover' : 'text-gray-900'
               }`}>
                 Medication Reminder
               </div>
@@ -178,7 +178,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
               const p = patients.find((pat) => pat.id === Number(e.target.value));
               if (p) setCustomPhone(p.phone_number);
             }}
-            className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/40 focus:border-[#70BF2B] transition-all"
+            className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/40 focus:border-kaime-blue transition-all"
           >
             {patients.map((p) => (
               <option key={p.id} value={p.id}>
@@ -198,7 +198,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
             <select
               value={selectedMedId}
               onChange={(e) => setSelectedMedId(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/40 focus:border-[#70BF2B] transition-all"
+              className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/40 focus:border-kaime-blue transition-all"
             >
               {patientMeds.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -217,8 +217,8 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
                 Recipient Phone Number
               </label>
               {customPhoneValidation.isValid && customPhoneValidation.network && (
-                <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+                <span className="text-[11px] font-medium text-kaime-blue-hover bg-kaime-blue-light px-2 py-0.5 rounded-full border border-kaime-blue/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-kaime-blue" />
                   {customPhoneValidation.network} ({customPhoneValidation.formatted})
                 </span>
               )}
@@ -232,7 +232,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
                 className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm font-mono text-gray-900 focus:outline-none focus:ring-2 ${
                   customPhone.trim() && !customPhoneValidation.isValid
                     ? 'border-amber-300 focus:ring-amber-500/20 focus:border-amber-500'
-                    : 'border-gray-200 focus:ring-[#70BF2B]/40 focus:border-[#70BF2B]'
+                    : 'border-gray-200 focus:ring-kaime-blue/40 focus:border-kaime-blue'
                 }`}
               />
               <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
@@ -246,7 +246,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
         )}
 
         {/* Keypad Menu Guide */}
-        <div className="bg-[#F8F9FA] border border-[#ECECEC] rounded-xl p-3.5 text-xs text-gray-600">
+        <div className="bg-warm-bg border border-subtle-border rounded-xl p-3.5 text-xs text-gray-600">
           <p className="font-semibold text-gray-800 mb-2.5 flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5">
               <Volume2 className="w-3.5 h-3.5 text-gray-400" />
@@ -367,7 +367,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
             onClick={handleStartCall}
             disabled={isCalling || (isCustomPhone && !customPhoneValidation.isValid)}
             icon={<Phone className={`w-4 h-4 ${isCalling ? 'animate-bounce' : ''}`} />}
-            className="bg-[#70BF2B] hover:bg-[#62A825] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-kaime-blue hover:bg-kaime-blue-hover text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCalling ? 'Dialing Phone...' : 'Start Live Call'}
           </Button>

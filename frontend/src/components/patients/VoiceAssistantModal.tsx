@@ -392,7 +392,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
       <div className="absolute inset-0 flex items-end justify-center md:justify-end">
         <section
-          className={`voice-assistant-sheet relative flex w-full flex-col overflow-hidden rounded-t-3xl border border-[#EBEAE5] bg-white shadow-2xl animate-slide-in-up ${isSheetDragging ? 'sheet-dragging' : ''} md:max-h-full md:max-w-xl md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          className={`voice-assistant-sheet relative flex w-full flex-col overflow-hidden rounded-t-3xl border border-subtle-border bg-white shadow-2xl animate-slide-in-up ${isSheetDragging ? 'sheet-dragging' : ''} md:max-h-full md:max-w-xl md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
           style={sheetHeight === null ? undefined : { height: `${sheetHeight}px` }}
           role="dialog"
           aria-modal="true"
@@ -421,18 +421,18 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             tabIndex={0}
             aria-label="Drag up to expand or drag down to close"
           >
-            <span className="h-1 w-10 rounded-full bg-[#D8D8D2]" />
+            <span className="h-1 w-10 rounded-full bg-subtle-border" />
           </div>
           
           {/* Header */}
-          <div className="px-4 sm:px-6 py-4 border-b border-[#EBEAE5] flex items-center justify-between bg-white shrink-0">
+          <div className="px-4 sm:px-6 py-4 border-b border-subtle-border flex items-center justify-between bg-white shrink-0">
             <div className="flex items-center gap-3">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 id="voice-pane-title" className="text-sm font-semibold text-neutral-900 tracking-tight">
                     Voice Prescription Assistant
                   </h2>
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#F0F9EB] text-[#447817] border border-[#70BF2B]/20">
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-kaime-blue-light text-kaime-blue-hover border border-kaime-blue/20">
                     AI
                   </span>
                 </div>
@@ -447,7 +447,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-700 p-1.5 rounded-lg hover:bg-[#F5F4F0] transition-colors cursor-pointer"
+              className="text-neutral-400 hover:text-neutral-700 p-1.5 rounded-lg hover:bg-warm-bg transition-colors cursor-pointer"
               aria-label="Close voice prescription assistant"
             >
               <X className="w-4 h-4" />
@@ -473,7 +473,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                     onClick={() => setPreferredLanguage('english')}
                     className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       preferredLanguage === 'english'
-                        ? 'bg-white text-[#447817] shadow-2xs border border-[#70BF2B]/30'
+                        ? 'bg-white text-kaime-blue-hover shadow-2xs border border-kaime-blue/30'
                         : 'text-neutral-500 hover:text-neutral-900'
                     }`}
                   >
@@ -484,7 +484,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                     onClick={() => setPreferredLanguage('twi')}
                     className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       preferredLanguage === 'twi'
-                        ? 'bg-white text-[#447817] shadow-2xs border border-[#70BF2B]/30'
+                        ? 'bg-white text-kaime-blue-hover shadow-2xs border border-kaime-blue/30'
                         : 'text-neutral-500 hover:text-neutral-900'
                     }`}
                   >
@@ -530,7 +530,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         className={`relative w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform shadow-md cursor-pointer border-3 border-white ${
                           isProcessing
                             ? 'bg-neutral-800 cursor-not-allowed shadow-neutral-800/20'
-                            : 'bg-[#70BF2B] hover:bg-[#62A825] hover:scale-105 shadow-[#70BF2B]/30 ring-4 ring-[#70BF2B]/15 active:scale-95'
+                            : 'bg-kaime-blue hover:bg-kaime-blue-hover hover:scale-105 shadow-kaime-blue/30 ring-4 ring-kaime-blue/15 active:scale-95'
                         }`}
                         aria-label="Start recording"
                       >
@@ -549,7 +549,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                   {isProcessing ? (
                     <div className="space-y-1">
                       <p className="text-xs font-semibold text-neutral-900 flex items-center justify-center gap-2">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#55941E]" />
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-kaime-blue-hover" />
                         Processing Audio...
                       </p>
                       <p className="text-xs text-neutral-500">Transcribing speech and extracting prescription data</p>
@@ -576,7 +576,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                 {!isRecording && !isProcessing && (
                   <div className="w-full bg-neutral-50/80 border border-neutral-200/60 rounded-2xl p-4 text-left space-y-2.5">
                     <div className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-                      <Info className="w-3.5 h-3.5 text-[#55941E] shrink-0" />
+                      <Info className="w-3.5 h-3.5 text-kaime-blue-hover shrink-0" />
                       <span>Example Dictation ({preferredLanguage === 'english' ? 'English' : 'Asante Twi'}):</span>
                     </div>
                     <p className="text-xs text-neutral-700 italic bg-white p-3 rounded-xl border border-neutral-200/50 shadow-2xs leading-relaxed font-sans">
@@ -615,13 +615,13 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                 <div className="bg-neutral-50 border border-neutral-200/70 rounded-2xl p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-neutral-900 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#55941E]" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-kaime-blue-hover" />
                       Extracted from Voice
                     </span>
                     <button
                       type="button"
                       onClick={() => setStep('record')}
-                      className="text-xs text-[#55941E] hover:text-[#447817] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-kaime-blue-hover hover:text-kaime-blue-hover font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3 h-3" />
                       Record Again
@@ -655,7 +655,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                       1. Patient Details
                     </h3>
                     {isExistingPatient && (
-                      <span className="text-[10px] font-semibold text-[#447817] bg-[#F0F9EB] border border-[#70BF2B]/30 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold text-kaime-blue-hover bg-kaime-blue-light border border-kaime-blue/30 px-2 py-0.5 rounded-full">
                         Existing Patient Matched
                       </span>
                     )}
@@ -672,7 +672,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         onChange={(e) => setPatientName(e.target.value)}
                         placeholder="e.g. Samuel Mensah"
                         required
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       />
                     </div>
 
@@ -686,7 +686,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="+233XXXXXXXXX"
                         required
-                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       />
                     </div>
 
@@ -697,7 +697,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                       <select
                         value={preferredLanguage}
                         onChange={(e) => setPreferredLanguage(e.target.value as 'english' | 'twi')}
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       >
                         <option value="english">English (Standard)</option>
                         <option value="twi">Asante Twi (Khaya)</option>
@@ -713,7 +713,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         value={caregiverPhone}
                         onChange={(e) => setCaregiverPhone(e.target.value)}
                         placeholder="+233XXXXXXXXX"
-                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       />
                     </div>
                   </div>
@@ -739,7 +739,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         onChange={(e) => setDrugName(e.target.value)}
                         placeholder="e.g. Paracetamol 500mg"
                         required
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       />
                     </div>
 
@@ -750,7 +750,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                       <select
                         value={dosageId}
                         onChange={(e) => setDosageId(Number(e.target.value))}
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       >
                         {dosages.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -767,7 +767,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                       <select
                         value={frequencyId}
                         onChange={(e) => setFrequencyId(Number(e.target.value))}
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       >
                         {frequencies.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -784,7 +784,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                       <select
                         value={timingId}
                         onChange={(e) => setTimingId(Number(e.target.value))}
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       >
                         {timings.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -804,7 +804,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         max={365}
                         value={durationDays}
                         onChange={(e) => setDurationDays(Number(e.target.value))}
-                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       />
                     </div>
 
@@ -818,7 +818,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                         onChange={(e) => setScheduleTimes(e.target.value)}
                         placeholder="08:00, 14:00, 20:00"
                         required
-                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-[#70BF2B] focus:ring-2 focus:ring-[#70BF2B]/20 transition-all"
+                        className="w-full h-9 px-3 text-xs font-mono bg-white border border-neutral-200 rounded-xl focus:outline-none focus:border-kaime-blue focus:ring-2 focus:ring-kaime-blue/20 transition-all"
                       />
                     </div>
 
@@ -829,7 +829,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                           type="checkbox"
                           checked={isChronic}
                           onChange={(e) => setIsChronic(e.target.checked)}
-                          className="w-4 h-4 rounded text-[#70BF2B] focus:ring-[#70BF2B] border-neutral-300"
+                          className="w-4 h-4 rounded text-kaime-blue focus:ring-kaime-blue border-neutral-300"
                         />
                         <span>Chronic / Long-term Medication</span>
                       </label>
@@ -842,7 +842,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             {/* STEP 3: SUCCESS CONFIRMATION */}
             {step === 'success' && (
               <div className="py-12 text-center space-y-4">
-                <div className="w-14 h-14 rounded-full bg-[#F0F9EB] text-[#55941E] flex items-center justify-center mx-auto border border-[#70BF2B]/20">
+                <div className="w-14 h-14 rounded-full bg-kaime-blue-light text-kaime-blue-hover flex items-center justify-center mx-auto border border-kaime-blue/20">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
@@ -867,7 +867,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                     onClick={() => {
                       setStep('record');
                     }}
-                    className="px-4 py-2 text-xs font-semibold text-white bg-[#70BF2B] hover:bg-[#62A825] rounded-xl flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    className="px-4 py-2 text-xs font-semibold text-white bg-kaime-blue hover:bg-kaime-blue-hover rounded-xl flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     Dictate Another
@@ -879,7 +879,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
           {/* Sticky Action Footer for Review Step */}
           {step === 'review' && (
-            <div className="shrink-0 border-t border-[#EBEAE5] bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-4 sm:pb-4 flex items-center justify-end gap-3">
+            <div className="shrink-0 border-t border-subtle-border bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-4 sm:pb-4 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setStep('record')}
@@ -892,7 +892,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                 type="submit"
                 form="voice-assistant-form"
                 disabled={isSaving}
-                className="px-5 py-2.5 text-xs font-semibold text-white bg-[#70BF2B] hover:bg-[#62A825] active:bg-[#55941E] rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 text-xs font-semibold text-white bg-kaime-blue hover:bg-kaime-blue-hover active:bg-kaime-blue-hover rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSaving ? (
                   <>

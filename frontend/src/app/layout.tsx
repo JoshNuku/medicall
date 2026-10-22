@@ -19,17 +19,15 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "MediCall — Medication Adherence Platform",
+  title: "Kaime — Medication Adherence Platform",
   description:
     "Voice-call medication adherence platform for Ghanaian healthcare workers and pharmacists.",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/Minimal Blue and Coral Leaf Emblem.png", type: "image/png" },
     ],
-    shortcut: "/favicon.svg",
-    apple: "/apple-icon.png",
+    shortcut: "/Minimal Blue and Coral Leaf Emblem.png",
+    apple: "/Minimal Blue and Coral Leaf Emblem.png",
   },
 };
 
@@ -40,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${outfit.variable}`}>
-      <body className="bg-[#F8F9FA] text-[#111827] min-h-screen antialiased selection:bg-[#70BF2B]/20 selection:text-[#55941E]">
+      <body className="bg-warm-bg text-primary-text min-h-screen antialiased selection:bg-kaime-blue/20 selection:text-kaime-blue">
         <AuthProvider>
           <DataProvider>
             <AppShell>{children}</AppShell>

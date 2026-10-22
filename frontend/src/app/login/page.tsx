@@ -59,7 +59,7 @@ function LoginForm() {
           {/* Background Photo with Ambient Atmosphere */}
           <Image
             src="/login-hero.jpg"
-            alt="MediCall Clinical Workspace"
+            alt="Kaime Clinical Workspace"
             fill
             priority
             className="object-cover object-center filter brightness-[0.88]"
@@ -86,11 +86,11 @@ function LoginForm() {
           <div>
             <div className="mb-8">
               <Image
-                src="/logo.jpg"
-                alt="MediCall"
+                src="/Kaime Minimal Tech Logo.png"
+                alt="Kaime"
                 width={160}
                 height={52}
-                className="h-10 w-auto object-contain"
+                className="h-12 w-auto object-contain"
                 priority
               />
             </div>
@@ -119,7 +119,7 @@ function LoginForm() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
-              <div className="relative rounded-xl border border-gray-200/90 focus-within:border-[#70BF2B] focus-within:ring-2 focus-within:ring-[#70BF2B]/20 transition-all bg-white shadow-2xs">
+              <div className="relative rounded-xl border border-gray-200/90 focus-within:border-kaime-blue focus-within:ring-2 focus-within:ring-kaime-blue/20 transition-all bg-white shadow-2xs">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                   <Mail className="w-4 h-4" />
                 </div>
@@ -129,7 +129,7 @@ function LoginForm() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder="pharmacist@kaime.gh"
                   className="w-full py-3 pl-11 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none bg-transparent rounded-xl"
                   required
                 />
@@ -141,7 +141,7 @@ function LoginForm() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="relative rounded-xl border border-gray-200/90 focus-within:border-[#70BF2B] focus-within:ring-2 focus-within:ring-[#70BF2B]/20 transition-all bg-white shadow-2xs">
+              <div className="relative rounded-xl border border-gray-200/90 focus-within:border-kaime-blue focus-within:ring-2 focus-within:ring-kaime-blue/20 transition-all bg-white shadow-2xs">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                   <Lock className="w-4 h-4" />
                 </div>
@@ -177,11 +177,11 @@ function LoginForm() {
               </div>
             </div>
 
-            {/* Submit Button matching green pill/button in reference */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 px-4 bg-[#70BF2B] hover:bg-[#62A825] active:bg-[#55941E] disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed mt-4"
+              className="w-full py-3.5 px-4 bg-kaime-blue hover:bg-kaime-blue-hover active:bg-kaime-blue-active disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed mt-4"
             >
               {isSubmitting ? (
                 <>
@@ -213,7 +213,7 @@ function LoginForm() {
                 {hideSettings ? 'Settings hidden' : 'Off'}
               </span>
               <span
-                className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border border-transparent transition-colors duration-200 ease-in-out ${hideSettings ? 'bg-[#70BF2B]' : 'bg-gray-200'
+                className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border border-transparent transition-colors duration-200 ease-in-out ${hideSettings ? 'bg-kaime-blue' : 'bg-gray-200'
                   }`}
               >
                 <span
@@ -230,17 +230,17 @@ function LoginForm() {
       {showForgotModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-end justify-center z-50 animate-in fade-in md:items-center md:p-4">
           <div className="bg-white rounded-t-3xl md:max-w-sm w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border border-gray-100 shadow-xl space-y-4 animate-slide-in-up md:rounded-2xl md:pb-6 md:animate-slide-in-right">
-            <div className="mx-auto -mt-3 mb-4 h-1 w-10 rounded-full bg-[#D8D8D2] md:hidden" />
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#70BF2B] flex items-center justify-center border border-[#70BF2B]/20">
+            <div className="mx-auto -mt-3 mb-4 h-1 w-10 rounded-full bg-subtle-border md:hidden" />
+            <div className="w-10 h-10 rounded-full bg-kaime-blue-light text-kaime-blue flex items-center justify-center border border-kaime-blue-border">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-gray-900">Hospital Staff Account Support</h3>
               <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                MediCall accounts are managed by your healthcare facility administrator. For credential resets, contact:
+                Kaime accounts are managed by your healthcare facility administrator. For credential resets, contact:
               </p>
               <div className="mt-3 p-3 rounded-xl bg-gray-50 text-xs font-mono text-gray-800 border border-gray-200/70">
-                admin@medicall.gh
+                admin@kaime.gh
               </div>
             </div>
             <button
@@ -260,8 +260,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full flex items-center justify-center bg-[#F8F9FA]">
-          <div className="w-6 h-6 border-2 border-[#70BF2B] border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen w-full flex items-center justify-center bg-warm-bg">
+          <div className="w-6 h-6 border-2 border-kaime-blue border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

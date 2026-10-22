@@ -3,21 +3,47 @@
 @theme {
   --font-sans: var(--font-outfit), sans-serif;
   --font-outfit: var(--font-outfit), sans-serif;
-  --color-warm-bg: #FAF9F6;
+  --color-warm-bg: #F8FAFC;
   --color-surface: #FFFFFF;
-  --color-surface-subtle: #F5F4F0;
-  --color-primary-text: #111827;
+  --color-surface-subtle: #F1F5F9;
+  --color-primary-text: #0F172A;
   --color-muted-text: #64748B;
-  --color-subtle-border: #EBEAE5;
-  --color-medicall-green: #0D9488;
-  --color-medicall-green-light: #F0FDF4;
+  --color-subtle-border: #E2E8F0;
+  
+  /* Kaime Brand Palette */
+  --color-kaime-blue: #1A4AB0;
+  --color-kaime-blue-hover: #153D94;
+  --color-kaime-blue-active: #102E72;
+  --color-kaime-blue-light: #EEF3FC;
+  --color-kaime-blue-hover-light: #E2EDFA;
+  --color-kaime-blue-border: #C2D6FB;
+
+  --color-kaime-amber: #F2B544;
+  --color-kaime-amber-light: #FEF8EC;
+  --color-kaime-amber-dark: #946300;
+  --color-kaime-amber-border: #FDE5A9;
+
+  --color-kaime-coral: #FF6B45;
+  --color-kaime-coral-light: #FFF2EE;
+  --color-kaime-coral-dark: #C24120;
+  --color-kaime-coral-border: #FFC4B5;
 }
 
 :root {
-  --background: #FAF9F6;
-  --foreground: #111827;
-  --surface: #FFFFFF;
-  --border-subtle: #EBEAE5;
+  --background: var(--color-warm-bg);
+  --foreground: var(--color-primary-text);
+  --surface: var(--color-surface);
+  --border-subtle: var(--color-subtle-border);
+  --primary: var(--color-kaime-blue);
+  --primary-hover: var(--color-kaime-blue-hover);
+  --primary-active: var(--color-kaime-blue-active);
+  --primary-light: var(--color-kaime-blue-light);
+  --amber: var(--color-kaime-amber);
+  --amber-light: var(--color-kaime-amber-light);
+  --amber-dark: var(--color-kaime-amber-dark);
+  --coral: var(--color-kaime-coral);
+  --coral-light: var(--color-kaime-coral-light);
+  --coral-dark: var(--color-kaime-coral-dark);
 }
 
 * {
@@ -26,8 +52,8 @@
 }
 
 html, body {
-  background-color: #FAF9F6;
-  color: #111827;
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -45,7 +71,7 @@ html, body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E2E8F0;
+  background: var(--border-subtle);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {

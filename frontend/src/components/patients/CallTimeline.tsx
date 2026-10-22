@@ -57,7 +57,7 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
   };
 
   return (
-    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+    <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs">
       <div className="pb-3 sm:pb-4 border-b border-gray-100 mb-4 sm:mb-5">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 tracking-tight">
           Adherence history & call timeline
@@ -94,7 +94,7 @@ export const CallTimeline: React.FC<CallTimelineProps> = ({ logs }) => {
                 {/* Timeline Dot */}
                 <div className="absolute -left-5 sm:-left-6 top-1.5 w-3 h-3 rounded-full bg-white border-2 border-emerald-600 group-hover:scale-125 transition-transform" />
 
-                <div className="bg-[#FAF9F6] border border-[#E8E6E0] rounded-xl p-3 sm:p-3.5 hover:border-gray-300 transition-colors">
+                <div className="bg-warm-bg border border-subtle-border rounded-xl p-3 sm:p-3.5 hover:border-gray-300 transition-colors">
                   <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-bold text-gray-900">

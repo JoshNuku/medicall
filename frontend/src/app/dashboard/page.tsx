@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {/* Date Pill */}
-          <div className="hidden lg:inline-flex items-center gap-2 bg-white border border-[#EAEAEA] px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 shadow-2xs">
+          <div className="hidden lg:inline-flex items-center gap-2 bg-white border border-subtle-border px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-gray-400" />
             <span>Today &middot; {new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())}</span>
           </div>
@@ -85,16 +85,16 @@ export default function DashboardPage() {
           {/* Quick Demo Call Button */}
           <button
             onClick={() => setIsCallModalOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-[#70BF2B]/40 text-[#55941E] hover:bg-[#F0F9EB] transition-all shadow-2xs flex-1 sm:flex-initial"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-kaime-blue/30 text-kaime-blue hover:bg-kaime-blue-light transition-all shadow-2xs flex-1 sm:flex-initial"
           >
-            <Phone className="w-3.5 h-3.5 text-[#70BF2B]" />
+            <Phone className="w-3.5 h-3.5 text-kaime-blue" />
             <span>Test Voice Call</span>
           </button>
 
           {/* Enroll Patient Button */}
           <button
             onClick={() => setIsEnrollModalOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-[#70BF2B] hover:bg-[#62A825] text-white transition-all shadow-xs flex-1 sm:flex-initial"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-kaime-blue hover:bg-kaime-blue-hover active:bg-kaime-blue-active text-white transition-all shadow-xs flex-1 sm:flex-initial"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Enroll Patient</span>
@@ -148,8 +148,8 @@ export default function DashboardPage() {
                   ? "No calls scheduled today"
                   : `${metrics.calls_today_confirmed} confirmed · ${Math.max(0, metrics.calls_today - metrics.calls_today_confirmed)} pending/retry`
               }
-              icon={<PhoneCall className="w-5 h-5 text-[#70BF2B] transition-transform group-hover:scale-110" />}
-              iconBg="bg-[#F0F9EB]"
+              icon={<PhoneCall className="w-5 h-5 text-kaime-blue transition-transform group-hover:scale-110" />}
+              iconBg="bg-kaime-blue-light"
             />
           </div>
 

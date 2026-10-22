@@ -62,16 +62,16 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="hidden md:flex fixed inset-y-0 left-0 z-30 flex-col w-64 bg-white border-r border-[#EAEAEA] h-screen shrink-0 select-none">
+    <aside className="hidden md:flex fixed inset-y-0 left-0 z-30 flex-col w-64 bg-white border-r border-subtle-border h-screen shrink-0 select-none">
       {/* Top Brand Logo Header */}
-      <div className="h-16 px-5 border-b border-[#F0F0F0] flex items-center">
+      <div className="h-16 px-5 border-b border-surface-subtle flex items-center">
         <Link href="/dashboard" className="flex items-center gap-2 group">
           <Image
-            src="/logo.jpg"
-            alt="MediCall"
+            src="/Kaime Minimal Tech Logo.png"
+            alt="Kaime"
             width={140}
             height={46}
-            className="h-9 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
             priority
           />
         </Link>
@@ -93,8 +93,8 @@ export const Sidebar: React.FC = () => {
                   href={item.href}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     item.active
-                      ? 'bg-[#70BF2B] text-white font-semibold shadow-xs'
-                      : 'text-gray-600 hover:text-gray-950 hover:bg-[#F8F9FA]'
+                      ? 'bg-kaime-blue text-white font-semibold shadow-xs'
+                      : 'text-gray-600 hover:text-gray-950 hover:bg-warm-bg'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export const Sidebar: React.FC = () => {
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                         item.active
-                          ? 'bg-white text-[#70BF2B]'
+                          ? 'bg-white text-kaime-blue'
                           : 'bg-rose-50 text-rose-700 border border-rose-200'
                       }`}
                     >
@@ -136,8 +136,8 @@ export const Sidebar: React.FC = () => {
                   href={item.href}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     item.active
-                      ? 'bg-[#70BF2B] text-white font-semibold shadow-xs'
-                      : 'text-gray-600 hover:text-gray-950 hover:bg-[#F8F9FA]'
+                      ? 'bg-kaime-blue text-white font-semibold shadow-xs'
+                      : 'text-gray-600 hover:text-gray-950 hover:bg-warm-bg'
                   }`}
                 >
                   <Icon
@@ -154,7 +154,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Bottom Logout Button */}
-      <div className="p-3 border-t border-[#F0F0F0]">
+      <div className="p-3 border-t border-surface-subtle">
         <LogoutButton
           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           iconClassName="w-4 h-4 text-rose-500"

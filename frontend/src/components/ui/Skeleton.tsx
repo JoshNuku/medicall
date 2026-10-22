@@ -18,7 +18,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', style }) => 
 };
 
 export const MetricSkeleton = () => (
-  <div className="bg-white border border-[#EBEAE5] rounded-2xl p-3.5 sm:p-5 space-y-2 sm:space-y-3 shadow-xs">
+  <div className="bg-white border border-subtle-border rounded-2xl p-3.5 sm:p-5 space-y-2 sm:space-y-3 shadow-xs">
     <div className="flex items-center justify-between">
       <Skeleton className="h-3 w-16 sm:w-20" />
       <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl" />
@@ -29,7 +29,7 @@ export const MetricSkeleton = () => (
 );
 
 export const AdherenceCardSkeleton = () => (
-  <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
+  <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
     <div>
       <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
         <Skeleton className="h-5 w-36" />
@@ -58,7 +58,7 @@ export const AdherenceCardSkeleton = () => (
 );
 
 export const CallsCardSkeleton = () => (
-  <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
+  <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col justify-between h-full min-h-[320px]">
     <div>
       <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4 pb-1">
         <div>
@@ -86,7 +86,7 @@ export const CallsCardSkeleton = () => (
 );
 
 export const AlertPreviewSkeleton = () => (
-  <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+  <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs">
     <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 mb-3 sm:mb-4 gap-2">
       <div className="flex items-center gap-2 sm:gap-2.5">
         <Skeleton className="w-7 h-7 sm:w-8 sm:h-8 rounded-full" />
@@ -114,7 +114,7 @@ export const AlertPreviewSkeleton = () => (
 );
 
 export const RecentPatientsSkeleton = () => (
-  <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+  <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs">
     <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 mb-3 sm:mb-4 gap-2">
       <div>
         <Skeleton className="h-5 w-36 mb-1" />

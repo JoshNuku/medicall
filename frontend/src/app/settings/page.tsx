@@ -227,7 +227,7 @@ export default function SettingsPage() {
     setTestingEngine(engine);
     setTestAudioStatus(`Synthesizing voice sample via ${engine === 'lab' ? 'Lab Platform' : 'Khaya AI'}...`);
     try {
-      const res = await testTtsProviderApi(engine, 'Meda wo akye, yɛfrɛ wo firi MediCall sɛ yɛbɛkae wo wo nnuro no ho.');
+      const res = await testTtsProviderApi(engine, 'Meda wo akye, yɛfrɛ wo firi Kaime sɛ yɛbɛkae wo wo nnuro no ho.');
       if (res?.audioUrl) {
         setTestAudioStatus(`Playing ${engine.toUpperCase()} voice sample...`);
         const audio = new Audio(res.audioUrl);
@@ -324,7 +324,7 @@ export default function SettingsPage() {
       {/* Toast Notification */}
       {saved && (
         <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-xs px-4 py-3 rounded-xl shadow-lg border border-gray-700 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <CheckCircle2 className="w-4 h-4 text-[#70BF2B]" />
+          <CheckCircle2 className="w-4 h-4 text-kaime-blue" />
           <span>{toastText}</span>
         </div>
       )}
@@ -337,10 +337,10 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSave} className="space-y-5">
         {/* Clinician Profile (Fully Editable) */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 shrink-0 rounded-xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center border border-[#70BF2B]/20">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-kaime-blue-light text-kaime-blue-hover flex items-center justify-center border border-kaime-blue/20">
                 <User className="w-4 h-4" />
               </div>
               <div>
@@ -366,7 +366,7 @@ export default function SettingsPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Dr. Kwame Mensah"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
                   required
                 />
               </div>
@@ -386,8 +386,8 @@ export default function SettingsPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="pharmacist@medicall.gh"
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                  placeholder="pharmacist@kaime.gh"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
                   required
                 />
               </div>
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+233 53 628 7642"
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
                 />
               </div>
               <p className="text-[10px] text-gray-400 mt-1">
@@ -419,7 +419,7 @@ export default function SettingsPage() {
         </div>
 
         {/* TTS Voice Engine Configuration (Seamless Toggle between Lab & Khaya) */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 shrink-0 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
@@ -442,7 +442,7 @@ export default function SettingsPage() {
               onClick={() => handleSwitchTtsEngine('lab')}
               className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
                 activeTtsEngine === 'lab'
-                  ? 'bg-[#FAFDF8] border-[#70BF2B] shadow-2xs ring-2 ring-[#70BF2B]/20'
+                  ? 'bg-warm-bg border-kaime-blue shadow-2xs ring-2 ring-kaime-blue/20'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
               }`}
             >
@@ -459,7 +459,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {activeTtsEngine === 'lab' ? (
-                  <span className="w-5 h-5 rounded-full bg-[#70BF2B] text-white flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-kaime-blue text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 ) : (
@@ -496,7 +496,7 @@ export default function SettingsPage() {
               onClick={() => handleSwitchTtsEngine('khaya')}
               className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
                 activeTtsEngine === 'khaya'
-                  ? 'bg-[#FAFDF8] border-[#70BF2B] shadow-2xs ring-2 ring-[#70BF2B]/20'
+                  ? 'bg-warm-bg border-kaime-blue shadow-2xs ring-2 ring-kaime-blue/20'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
               }`}
             >
@@ -513,7 +513,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {activeTtsEngine === 'khaya' ? (
-                  <span className="w-5 h-5 rounded-full bg-[#70BF2B] text-white flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-kaime-blue text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 ) : (
@@ -550,7 +550,7 @@ export default function SettingsPage() {
           {testAudioStatus && (
             <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-700 flex items-center justify-between animate-in fade-in">
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#70BF2B] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-kaime-blue animate-pulse" />
                 {testAudioStatus}
               </span>
               {isPlayingSample && (
@@ -565,7 +565,7 @@ export default function SettingsPage() {
         </div>
 
         {/* ASR Speech-to-Text Engine Configuration (Seamless Toggle between Groq & Lab) */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
@@ -588,7 +588,7 @@ export default function SettingsPage() {
               onClick={() => handleSwitchAsrEngine('groq')}
               className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
                 activeAsrEngine === 'groq'
-                  ? 'bg-[#FAFDF8] border-[#70BF2B] shadow-2xs ring-2 ring-[#70BF2B]/20'
+                  ? 'bg-warm-bg border-kaime-blue shadow-2xs ring-2 ring-kaime-blue/20'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
               }`}
             >
@@ -605,7 +605,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {activeAsrEngine === 'groq' ? (
-                  <span className="w-5 h-5 rounded-full bg-[#70BF2B] text-white flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-kaime-blue text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 ) : (
@@ -642,7 +642,7 @@ export default function SettingsPage() {
               onClick={() => handleSwitchAsrEngine('lab')}
               className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
                 activeAsrEngine === 'lab'
-                  ? 'bg-[#FAFDF8] border-[#70BF2B] shadow-2xs ring-2 ring-[#70BF2B]/20'
+                  ? 'bg-warm-bg border-kaime-blue shadow-2xs ring-2 ring-kaime-blue/20'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
               }`}
             >
@@ -659,7 +659,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 {activeAsrEngine === 'lab' ? (
-                  <span className="w-5 h-5 rounded-full bg-[#70BF2B] text-white flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-kaime-blue text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 ) : (
@@ -700,7 +700,7 @@ export default function SettingsPage() {
                   {testingAsrEngine ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
                   ) : (
-                    <span className="w-2 h-2 rounded-full bg-[#70BF2B]" />
+                    <span className="w-2 h-2 rounded-full bg-kaime-blue" />
                   )}
                   {asrTestStatus}
                 </span>
@@ -719,7 +719,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Live System Diagnostics & Infrastructure Health */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-3 sm:gap-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 shrink-0 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
@@ -743,7 +743,7 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Database Card */}
-            <div className="p-3.5 rounded-xl border border-gray-100 bg-[#FBFBFA] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-gray-100 bg-warm-bg space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-gray-500 flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5 text-emerald-600" />
@@ -768,7 +768,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Cloudinary Card */}
-            <div className="p-3.5 rounded-xl border border-gray-100 bg-[#FBFBFA] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-gray-100 bg-warm-bg space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-gray-500 flex items-center gap-1.5">
                   <Cloud className="w-3.5 h-3.5 text-sky-600" />
@@ -787,7 +787,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Telephony Card */}
-            <div className="p-3.5 rounded-xl border border-gray-100 bg-[#FBFBFA] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-gray-100 bg-warm-bg space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-gray-500 flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-purple-600" />
@@ -806,7 +806,7 @@ export default function SettingsPage() {
             </div>
 
             {/* AI Agent Card */}
-            <div className="p-3.5 rounded-xl border border-gray-100 bg-[#FBFBFA] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-gray-100 bg-warm-bg space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-gray-500 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
@@ -827,7 +827,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Telephony & IVR Webhook Simulator */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
               <PhoneForwarded className="w-4 h-4" />
@@ -857,11 +857,11 @@ export default function SettingsPage() {
                   onClick={() => setSimScenario(item.id)}
                   className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
                     simScenario === item.id
-                      ? 'bg-[#F0F9EB] border-[#70BF2B] ring-2 ring-[#70BF2B]/20'
+                      ? 'bg-kaime-blue-light border-kaime-blue ring-2 ring-kaime-blue/20'
                       : 'bg-white border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  <p className={`text-xs font-semibold ${simScenario === item.id ? 'text-[#447817]' : 'text-gray-900'}`}>
+                  <p className={`text-xs font-semibold ${simScenario === item.id ? 'text-kaime-blue-hover' : 'text-gray-900'}`}>
                     {item.title}
                   </p>
                   <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
@@ -888,7 +888,7 @@ export default function SettingsPage() {
               <div className="mt-3 p-4 rounded-xl border border-gray-200 bg-gray-50/70 space-y-3 animate-in fade-in">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F0F9EB] text-[#447817] border border-[#70BF2B]/30">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-kaime-blue-light text-kaime-blue-hover border border-kaime-blue/30">
                       ✓ Simulation Executed
                     </span>
                     <p className="text-xs font-semibold text-gray-900 mt-1.5">
@@ -904,7 +904,7 @@ export default function SettingsPage() {
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
                     >
-                      <Volume2 className="w-3.5 h-3.5 text-[#70BF2B]" />
+                      <Volume2 className="w-3.5 h-3.5 text-kaime-blue" />
                       Listen Audio
                     </button>
                   )}
@@ -934,7 +934,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Reminder Windows & Dialect Configuration (Fully Editable) */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
           <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
               <Clock className="w-4 h-4" />
@@ -955,7 +955,7 @@ export default function SettingsPage() {
                 type="time"
                 value={morningTime}
                 onChange={(e) => setMorningTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
               />
               <p className="text-[10px] text-gray-400 mt-1">Default start time for morning dose phone reminders.</p>
             </div>
@@ -969,7 +969,7 @@ export default function SettingsPage() {
                 type="time"
                 value={eveningTime}
                 onChange={(e) => setEveningTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
               />
               <p className="text-[10px] text-gray-400 mt-1">Default start time for evening dose phone reminders.</p>
             </div>
@@ -985,7 +985,7 @@ export default function SettingsPage() {
                 id="retry-interval"
                 value={retryInterval}
                 onChange={(e) => setRetryInterval(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
               >
                 <option value="15">15 minutes</option>
                 <option value="30">30 minutes (Standard)</option>
@@ -1003,7 +1003,7 @@ export default function SettingsPage() {
                 id="no-answer-window"
                 value={noAnswerWindow}
                 onChange={(e) => setNoAnswerWindow(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
               >
                 <option value="60">1 hour</option>
                 <option value="120">2 hours (Standard)</option>
@@ -1024,24 +1024,24 @@ export default function SettingsPage() {
                 onClick={() => setDefaultLanguage('twi')}
                 className={`px-3.5 py-2.5 rounded-xl border text-xs font-medium flex items-center justify-between cursor-pointer transition-all ${
                   defaultLanguage === 'twi'
-                    ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold ring-2 ring-[#70BF2B]/20'
+                    ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover font-semibold ring-2 ring-kaime-blue/20'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 <span>Asante Twi</span>
-                {defaultLanguage === 'twi' && <Check className="w-4 h-4 text-[#70BF2B]" />}
+                {defaultLanguage === 'twi' && <Check className="w-4 h-4 text-kaime-blue" />}
               </button>
               <button
                 type="button"
                 onClick={() => setDefaultLanguage('english')}
                 className={`px-3.5 py-2.5 rounded-xl border text-xs font-medium flex items-center justify-between cursor-pointer transition-all ${
                   defaultLanguage === 'english'
-                    ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold ring-2 ring-[#70BF2B]/20'
+                    ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover font-semibold ring-2 ring-kaime-blue/20'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 <span>English</span>
-                {defaultLanguage === 'english' && <Check className="w-4 h-4 text-[#70BF2B]" />}
+                {defaultLanguage === 'english' && <Check className="w-4 h-4 text-kaime-blue" />}
               </button>
             </div>
             <p className="text-[10px] text-gray-400 mt-1.5">
@@ -1058,7 +1058,7 @@ export default function SettingsPage() {
               id="escalation-threshold"
               value={escalationThreshold}
               onChange={(e) => setEscalationThreshold(e.target.value)}
-              className="w-full sm:w-80 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/25 focus:border-[#70BF2B] transition-all"
+              className="w-full sm:w-80 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/25 focus:border-kaime-blue transition-all"
             >
               <option value="1">Trigger alert after 1 missed dose</option>
               <option value="2">Trigger alert after 2 consecutive missed doses (Recommended)</option>
@@ -1079,7 +1079,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => setEnableSoundAlerts(!enableSoundAlerts)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                enableSoundAlerts ? 'bg-[#70BF2B]' : 'bg-gray-200'
+                enableSoundAlerts ? 'bg-kaime-blue' : 'bg-gray-200'
               }`}
             >
               <span

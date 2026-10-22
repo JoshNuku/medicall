@@ -29,15 +29,15 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary:
-      'bg-[#70BF2B] text-white hover:bg-[#62A825] shadow-xs border border-[#70BF2B] font-semibold',
+      'bg-kaime-blue text-white hover:bg-kaime-blue-hover active:bg-kaime-blue-active shadow-xs border border-kaime-blue font-semibold focus-visible:ring-2 focus-visible:ring-kaime-blue/30',
     secondary:
-      'bg-white text-gray-800 hover:bg-gray-50 border border-[#EAEAEA] shadow-2xs hover:border-gray-300 font-medium',
+      'bg-white text-gray-800 hover:bg-gray-50 border border-subtle-border shadow-2xs hover:border-gray-300 font-medium',
     ghost:
       'bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100/70',
     danger:
       'bg-rose-50 text-rose-700 hover:bg-rose-100/80 border border-rose-200/80 font-medium',
     subtle:
-      'bg-[#F5F4F0] text-gray-800 hover:bg-[#EBE9E3] border border-[#E8E6E0] font-medium',
+      'bg-kaime-blue-light text-kaime-blue hover:bg-kaime-blue-hover-light border border-kaime-blue-border font-medium',
   }[variant];
 
   return (

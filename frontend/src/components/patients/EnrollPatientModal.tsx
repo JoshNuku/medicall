@@ -135,8 +135,8 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               Phone number (Voice calls) *
             </label>
             {phoneValidation.isValid && phoneValidation.network && (
-              <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+              <span className="text-[11px] font-medium text-kaime-blue-hover bg-kaime-blue-light px-2 py-0.5 rounded-full border border-kaime-blue/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-kaime-blue" />
                 {phoneValidation.network} ({phoneValidation.formatted})
               </span>
             )}
@@ -179,7 +179,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               onClick={() => setPreferredLanguage('twi')}
               className={`py-2.5 px-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 preferredLanguage === 'twi'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold shadow-xs'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover font-semibold shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -190,7 +190,7 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               onClick={() => setPreferredLanguage('english')}
               className={`py-2.5 px-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 preferredLanguage === 'english'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold shadow-xs'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover font-semibold shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -206,8 +206,8 @@ export const EnrollPatientModal: React.FC<EnrollPatientModalProps> = ({
               Caregiver phone (Optional)
             </label>
             {isCaregiverFilled && caregiverValidation.isValid && caregiverValidation.network && (
-              <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+              <span className="text-[11px] font-medium text-kaime-blue-hover bg-kaime-blue-light px-2 py-0.5 rounded-full border border-kaime-blue/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-kaime-blue" />
                 {caregiverValidation.network} ({caregiverValidation.formatted})
               </span>
             )}

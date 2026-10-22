@@ -29,7 +29,7 @@ export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
   };
 
   return (
-    <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 shadow-xs">
+    <div className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 shadow-xs">
       <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-100 mb-3 sm:mb-4 gap-2">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
@@ -44,7 +44,7 @@ export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
         </div>
         <Link
           href="/alerts"
-          className="text-xs font-semibold text-[#55941E] hover:underline flex items-center gap-1 transition-colors shrink-0"
+          className="text-xs font-semibold text-kaime-blue hover:underline flex items-center gap-1 transition-colors shrink-0"
         >
           <span>View all ({alerts.filter((a) => a.status === 'open').length})</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -60,7 +60,7 @@ export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
           {openAlerts.map((alert) => (
             <div
               key={alert.id}
-              className="bg-[#FAF9F6] border border-gray-200/80 rounded-xl p-4 flex flex-col justify-between hover:border-gray-300 transition-all hover:bg-white"
+              className="bg-warm-bg border border-gray-200/80 rounded-xl p-4 flex flex-col justify-between hover:border-gray-300 transition-all hover:bg-white"
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -74,7 +74,7 @@ export const AlertPreview: React.FC<AlertPreviewProps> = ({ alerts }) => {
                 </div>
                 <Link
                   href={`/patients/${alert.patient_id}`}
-                  className="font-semibold text-sm text-gray-900 hover:text-[#55941E] block truncate"
+                  className="font-semibold text-sm text-gray-900 hover:text-kaime-blue block truncate"
                 >
                   {alert.patient_name}
                 </Link>

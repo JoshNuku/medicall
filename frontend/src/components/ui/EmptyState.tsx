@@ -21,8 +21,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   actionIcon,
 }) => {
   return (
-    <div className="bg-white border border-[#EBEAE5] rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center max-w-md mx-auto my-6">
-      <div className="w-12 h-12 shrink-0 rounded-2xl bg-[#FAF9F6] border border-[#E8E6E0] flex items-center justify-center text-gray-500 mb-4 shadow-xs">
+    <div className="bg-white border border-subtle-border rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center max-w-md mx-auto my-6">
+      <div className="w-12 h-12 shrink-0 rounded-2xl bg-warm-bg border border-subtle-border flex items-center justify-center text-gray-500 mb-4 shadow-xs">
         {icon}
       </div>
       <h3 className="text-base font-semibold text-gray-900 tracking-tight mb-1">

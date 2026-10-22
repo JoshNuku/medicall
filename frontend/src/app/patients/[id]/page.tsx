@@ -298,7 +298,7 @@ export default function PatientDetailPage() {
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setIsPrescribeOpen(true)}
-              className="order-first col-span-2 h-11 w-full whitespace-nowrap bg-[#70BF2B] text-xs text-white hover:bg-[#62A825] sm:order-last sm:col-span-1 sm:h-10 sm:w-auto"
+              className="order-first col-span-2 h-11 w-full whitespace-nowrap bg-kaime-blue text-xs text-white hover:bg-kaime-blue-hover active:bg-kaime-blue-active sm:order-last sm:col-span-1 sm:h-10 sm:w-auto"
             >
               <span className="flex items-center gap-2">Prescribe medication</span>
             </Button>
@@ -307,11 +307,11 @@ export default function PatientDetailPage() {
               <Button
                 type="button"
                 variant="secondary"
-                icon={<Phone className="h-4 w-4 text-[#55941E]" />}
+                icon={<Phone className="h-4 w-4 text-kaime-blue" />}
                 onClick={() => setOpenActionMenu((menu) => menu === 'call' ? null : 'call')}
                 aria-haspopup="menu"
                 aria-expanded={openActionMenu === 'call'}
-                className="h-11 w-full gap-1.5 whitespace-nowrap border-[#70BF2B]/40 px-2 text-xs text-[#55941E] hover:bg-[#F0F9EB] sm:h-10 sm:gap-2 sm:px-4 sm:w-auto"
+                className="h-11 w-full gap-1.5 whitespace-nowrap border-kaime-blue/30 px-2 text-xs text-kaime-blue hover:bg-kaime-blue-light sm:h-10 sm:gap-2 sm:px-4 sm:w-auto"
               >
                 <span className="flex items-center gap-1.5">
                   <span>Call</span>
@@ -328,9 +328,9 @@ export default function PatientDetailPage() {
                       setCallModalType('reminder');
                       setIsCallModalOpen(true);
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-[#F0F9EB] hover:text-[#55941E]"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-kaime-blue-light hover:text-kaime-blue"
                   >
-                    <Phone className="h-4 w-4 text-[#55941E]" />
+                    <Phone className="h-4 w-4 text-kaime-blue" />
                     Reminder call
                   </button>
                   <button
@@ -406,9 +406,9 @@ export default function PatientDetailPage() {
           className={`rounded-2xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-colors ${
             patient.adherence_rate !== null
               ? patient.adherence_rate >= 80
-                ? 'bg-[#70BF2B] text-white'
-                : 'bg-[#DE6600] text-white'
-              : 'bg-white border border-[#ECECEC] text-gray-900'
+                ? 'bg-kaime-blue text-white'
+                : 'bg-kaime-coral-dark text-white'
+              : 'bg-white border border-subtle-border text-gray-900'
           }`}
         >
           {patient.adherence_rate !== null && (
@@ -428,7 +428,7 @@ export default function PatientDetailPage() {
               className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                 patient.adherence_rate !== null
                   ? 'bg-white/20 text-white'
-                  : 'bg-[#F0F9EB] text-[#70BF2B]'
+                  : 'bg-kaime-blue-light text-kaime-blue'
               }`}
             >
               <Activity className="w-4 h-4 stroke-[2.2]" />
@@ -461,7 +461,7 @@ export default function PatientDetailPage() {
         </div>
 
         {/* Current Medications */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Current Medications
@@ -481,12 +481,12 @@ export default function PatientDetailPage() {
         </div>
 
         {/* Last Call */}
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-subtle-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Last Call Result
             </span>
-            <div className="w-8 h-8 rounded-full bg-[#F0F9EB] flex items-center justify-center text-[#70BF2B]">
+            <div className="w-8 h-8 rounded-full bg-kaime-blue-light flex items-center justify-center text-kaime-blue">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -530,8 +530,8 @@ export default function PatientDetailPage() {
         </div>
 
         {medications.length === 0 ? (
-          <div className="bg-white border border-[#EAEAEA] rounded-2xl py-12 px-6 text-center flex flex-col items-center justify-center">
-            <div className="w-10 h-10 rounded-xl bg-[#F8F9FA] border border-[#ECECEC] flex items-center justify-center text-gray-400 mb-3">
+          <div className="bg-white border border-subtle-border rounded-2xl py-12 px-6 text-center flex flex-col items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-warm-bg border border-subtle-border flex items-center justify-center text-gray-400 mb-3">
               <Pill className="w-5 h-5 stroke-[1.5]" />
             </div>
             <h3 className="text-sm font-semibold text-gray-900">
@@ -554,7 +554,7 @@ export default function PatientDetailPage() {
             {medications.map((med) => (
               <div
                 key={med.id}
-                className="bg-white border border-[#ECECEC] rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 hover:border-gray-300 transition-colors shadow-xs relative"
+                className="bg-white border border-subtle-border rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 hover:border-gray-300 transition-colors shadow-xs relative"
               >
                 {/* Delete Confirmation Overlay */}
                 {deletingMedId === med.id && (
@@ -596,7 +596,7 @@ export default function PatientDetailPage() {
                         type="text"
                         value={editFields.drug_name}
                         onChange={(e) => setEditFields((f) => ({ ...f, drug_name: e.target.value }))}
-                        className="text-base font-bold text-gray-900 tracking-tight w-full px-2.5 py-1.5 rounded-lg border border-[#70BF2B] bg-[#FAFFF6] focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/30"
+                        className="text-base font-bold text-gray-900 tracking-tight w-full px-2.5 py-1.5 rounded-lg border border-kaime-blue bg-kaime-blue-light/30 focus:outline-none focus:ring-2 focus:ring-kaime-blue/30"
                       />
                     ) : (
                       <div className="flex items-center gap-2">
@@ -642,7 +642,7 @@ export default function PatientDetailPage() {
                         <button
                           type="button"
                           onClick={() => startEditing(med)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#55941E] hover:bg-[#F0F9EB] transition-colors"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-kaime-blue hover:bg-kaime-blue-light transition-colors"
                           title="Edit medication"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -662,8 +662,8 @@ export default function PatientDetailPage() {
 
                 {/* Regimen timings & duration */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl px-3.5 py-2.5 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-[#E8E6E0] flex items-center justify-center text-[#55941E] shadow-2xs shrink-0">
+                  <div className="bg-warm-bg border border-subtle-border rounded-xl px-3.5 py-2.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-subtle-border flex items-center justify-center text-kaime-blue shadow-2xs shrink-0">
                       <Clock className="w-4 h-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -675,7 +675,7 @@ export default function PatientDetailPage() {
                           type="text"
                           value={editFields.schedule_times}
                           onChange={(e) => setEditFields((f) => ({ ...f, schedule_times: e.target.value }))}
-                          className="font-mono font-semibold text-gray-900 text-xs w-full px-2 py-0.5 rounded border border-[#70BF2B] bg-white mt-0.5"
+                          className="font-mono font-semibold text-gray-900 text-xs w-full px-2 py-0.5 rounded border border-kaime-blue focus:ring-1 focus:ring-kaime-blue bg-white mt-0.5"
                         />
                       ) : (
                         <span className="font-mono font-semibold text-gray-800 text-xs">
@@ -685,8 +685,8 @@ export default function PatientDetailPage() {
                     </div>
                   </div>
 
-                  <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl px-3.5 py-2.5 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-[#E8E6E0] flex items-center justify-center text-purple-600 shadow-2xs shrink-0">
+                  <div className="bg-warm-bg border border-subtle-border rounded-xl px-3.5 py-2.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-subtle-border flex items-center justify-center text-kaime-blue shadow-2xs shrink-0">
                       <Calendar className="w-4 h-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -702,14 +702,14 @@ export default function PatientDetailPage() {
                             disabled={editFields.is_chronic}
                             value={editFields.is_chronic ? 90 : editFields.duration_days}
                             onChange={(e) => setEditFields((f) => ({ ...f, duration_days: Number(e.target.value) }))}
-                            className="w-16 px-1.5 py-0.5 rounded border border-[#70BF2B] bg-white text-xs font-medium"
+                            className="w-16 px-1.5 py-0.5 rounded border border-kaime-blue focus:ring-1 focus:ring-kaime-blue bg-white text-xs font-medium"
                           />
                           <label className="flex items-center gap-1 text-[11px] text-gray-600 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={editFields.is_chronic}
                               onChange={(e) => setEditFields((f) => ({ ...f, is_chronic: e.target.checked }))}
-                              className="w-3.5 h-3.5 rounded text-[#70BF2B]"
+                              className="w-3.5 h-3.5 rounded text-kaime-blue accent-kaime-blue"
                             />
                             Chronic
                           </label>
@@ -724,7 +724,7 @@ export default function PatientDetailPage() {
                 </div>
 
                 {/* Single Elegant Audio Player with Track Switcher */}
-                <div className="pt-2.5 border-t border-[#F0EFEB] space-y-2.5">
+                <div className="pt-2.5 border-t border-surface-subtle space-y-2.5">
                   {(() => {
                     const isMedEnglish =
                       med.language === 'english' ||
@@ -756,7 +756,7 @@ export default function PatientDetailPage() {
                       ? undefined
                       : isPrescriptionTrack
                         ? isMedEnglish
-                          ? `This is your complete MediCall prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press 1 if you have taken your dose, Press 2 if you stopped or could not take it, Press 9 to repeat, or Press 0 for your pharmacist.`
+                          ? `This is your complete Kaime prescription for ${med.drug_name}. Take ${med.dosage_label || '1 tablet'}, ${med.frequency_label || 'twice daily'}, ${med.timing_label || 'after meals'}. Your treatment course is ${med.is_chronic ? 'ongoing chronic management' : `${med.duration_days} days`}. Press 1 if you have taken your dose, Press 2 if you stopped or could not take it, Press 9 to repeat, or Press 0 for your pharmacist.`
                           : `Fa wo nnuro ${med.drug_name}. ${twiDosage}. ${twiFreq}. ${twiTiming}. Sɛ woanom a, mia baako (1). Sɛ woantom a, mia mmienu (2). Mia nkron (9) sɛ wopɛ sɛ wotie bio, anaa mia hwee (0) ma wo duruyɛfoɔ.`
                         : (actualGeneratedScript || (isMedEnglish
                             ? `Hello ${patient.name}, hope you are doing well. Please take your ${med.drug_name}: ${med.dosage_label || '1 tablet'} ${med.timing_label || 'after meals'}. Press 1 if you have taken your dose, Press 2 if you stopped or could not take it, Press 9 to repeat, or Press 0 for your pharmacist.`
@@ -766,7 +766,7 @@ export default function PatientDetailPage() {
                       <div className="space-y-2.5">
                         {/* Track Segment Switcher & Script Action */}
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="inline-flex p-1 bg-[#F2F0EC] rounded-xl text-xs gap-1 border border-[#E6E3DB]">
+                          <div className="inline-flex p-1 bg-surface-subtle rounded-xl text-xs gap-1 border border-subtle-border">
                             <button
                               type="button"
                               onClick={() => setAudioTrackByMed(prev => ({ ...prev, [med.id]: 'prescription' }))}
@@ -776,7 +776,7 @@ export default function PatientDetailPage() {
                                   : 'text-gray-500 hover:text-gray-800'
                               }`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full ${isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${isPrescriptionTrack ? 'bg-kaime-blue' : 'bg-gray-300'}`} />
                               Full Prescription
                               <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Helpline</span>
                             </button>
@@ -789,7 +789,7 @@ export default function PatientDetailPage() {
                                   : 'text-gray-500 hover:text-gray-800'
                               }`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full ${!isPrescriptionTrack ? 'bg-[#70BF2B]' : 'bg-gray-300'}`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${!isPrescriptionTrack ? 'bg-kaime-blue' : 'bg-gray-300'}`} />
                               Dose Reminder
                               <span className="text-[10px] text-gray-400 font-normal hidden sm:inline">&middot; Outbound</span>
                             </button>
@@ -802,7 +802,7 @@ export default function PatientDetailPage() {
                                 ...prev,
                                 [`script-${med.id}`]: !prev[`script-${med.id}`]
                               }))}
-                              className="text-xs text-gray-500 hover:text-[#55941E] font-medium transition-colors cursor-pointer flex items-center gap-1"
+                              className="text-xs text-gray-500 hover:text-kaime-blue font-medium transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <FileText className="w-3.5 h-3.5" />
                               {showScriptByMed[`script-${med.id}`] ? 'Hide script' : 'View spoken script'}
@@ -829,7 +829,7 @@ export default function PatientDetailPage() {
 
                         {/* Expandable Spoken Script (only for verified template instructions) */}
                         {med.instruction_source !== 'recorded' && showScriptByMed[`script-${med.id}`] && (
-                          <div className="p-3 bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl space-y-1.5 text-xs text-gray-600 animate-in fade-in">
+                          <div className="p-3 bg-warm-bg border border-subtle-border rounded-xl space-y-1.5 text-xs text-gray-600 animate-in fade-in">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="font-semibold text-gray-700">
                                 {isPrescriptionTrack ? `Full Prescription Instruction (${medLangLabel})` : `Outbound Reminder Audio Prompt (${medLangLabel})`}

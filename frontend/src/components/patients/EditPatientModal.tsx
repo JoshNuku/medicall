@@ -118,7 +118,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             placeholder="e.g. Kwame Mensah"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B] transition-all"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 focus:border-kaime-blue transition-all"
           />
         </div>
 
@@ -129,8 +129,8 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               Phone number (Voice calls) *
             </label>
             {phoneValidation.isValid && phoneValidation.network && (
-              <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+              <span className="text-[11px] font-medium text-kaime-blue-hover bg-kaime-blue-light px-2 py-0.5 rounded-full border border-kaime-blue/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-kaime-blue" />
                 {phoneValidation.network} ({phoneValidation.formatted})
               </span>
             )}
@@ -145,7 +145,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 font-mono transition-all ${
                 phoneNumber.trim() && !phoneValidation.isValid
                   ? 'border-amber-300 focus:ring-amber-500/20 focus:border-amber-500'
-                  : 'border-gray-200 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B]'
+                  : 'border-gray-200 focus:ring-kaime-blue/20 focus:border-kaime-blue'
               }`}
             />
             <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
@@ -173,7 +173,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               onClick={() => setPreferredLanguage('twi')}
               className={`py-2.5 px-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 preferredLanguage === 'twi'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold shadow-xs'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover font-semibold shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -184,7 +184,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               onClick={() => setPreferredLanguage('english')}
               className={`py-2.5 px-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 preferredLanguage === 'english'
-                  ? 'bg-[#F0F9EB] border-[#70BF2B] text-[#447817] font-semibold shadow-xs'
+                  ? 'bg-kaime-blue-light border-kaime-blue text-kaime-blue-hover font-semibold shadow-xs'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -200,8 +200,8 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               Caregiver phone (Optional)
             </label>
             {isCaregiverFilled && caregiverValidation.isValid && caregiverValidation.network && (
-              <span className="text-[11px] font-medium text-[#447817] bg-[#F0F9EB] px-2 py-0.5 rounded-full border border-[#70BF2B]/30 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#70BF2B]" />
+              <span className="text-[11px] font-medium text-kaime-blue-hover bg-kaime-blue-light px-2 py-0.5 rounded-full border border-kaime-blue/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-kaime-blue" />
                 {caregiverValidation.network} ({caregiverValidation.formatted})
               </span>
             )}
@@ -215,7 +215,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 font-mono transition-all ${
                 isCaregiverFilled && !caregiverValidation.isValid
                   ? 'border-amber-300 focus:ring-amber-500/20 focus:border-amber-500'
-                  : 'border-gray-200 focus:ring-[#70BF2B]/20 focus:border-[#70BF2B]'
+                  : 'border-gray-200 focus:ring-kaime-blue/20 focus:border-kaime-blue'
               }`}
             />
             <HeartHandshake className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
@@ -242,7 +242,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             variant="primary"
             disabled={isSubmitting}
             icon={<Check className="w-4 h-4" />}
-            className="bg-[#70BF2B] hover:bg-[#62A825] text-white"
+            className="bg-kaime-blue hover:bg-kaime-blue-hover text-white"
           >
             {isSubmitting ? 'Saving changes...' : 'Save changes'}
           </Button>

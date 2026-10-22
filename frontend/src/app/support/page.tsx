@@ -19,7 +19,7 @@ const faqs: FaqItem[] = [
   {
     question: 'How do automated outbound calls work?',
     answer:
-      'MediCall connects through Africa’s Talking telephony in Accra. At scheduled reminder times, the system calls the patient’s phone (+233 30 804 8104), plays the Asante Twi or English instruction, and captures touch-tone keypad responses (1 for confirmed, 2 for not taken).',
+      'Kaime connects through Africa’s Talking telephony in Accra. At scheduled reminder times, the system calls the patient’s phone (+233 30 804 8104), plays the Asante Twi or English instruction, and captures touch-tone keypad responses (1 for confirmed, 2 for not taken).',
   },
   {
     question: 'What happens when a patient reports not taking medication?',
@@ -46,9 +46,9 @@ export default function SupportPage() {
 
       {/* 3 Simple Contact Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-subtle-border rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="space-y-2">
-            <div className="w-8 h-8 rounded-xl bg-[#F0F9EB] text-[#55941E] flex items-center justify-center border border-[#70BF2B]/20">
+            <div className="w-8 h-8 rounded-xl bg-kaime-blue-light text-kaime-blue flex items-center justify-center border border-kaime-blue-border">
               <Phone className="w-4 h-4" />
             </div>
             <h3 className="font-semibold text-xs text-gray-900">Emergency Escalations</h3>
@@ -57,16 +57,16 @@ export default function SupportPage() {
           <div className="pt-3 border-t border-gray-100 mt-3">
             <a
               href="tel:+233308048104"
-              className="font-mono text-xs font-semibold text-[#55941E] hover:underline"
+              className="font-mono text-xs font-semibold text-kaime-blue hover:underline"
             >
               +233 30 804 8104
             </a>
           </div>
         </div>
 
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-subtle-border rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="space-y-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <div className="w-8 h-8 rounded-xl bg-kaime-blue-light text-kaime-blue flex items-center justify-center border border-kaime-blue-border">
               <Mail className="w-4 h-4" />
             </div>
             <h3 className="font-semibold text-xs text-gray-900">Clinical Desk Email</h3>
@@ -74,32 +74,32 @@ export default function SupportPage() {
           </div>
           <div className="pt-3 border-t border-gray-100 mt-3">
             <a
-              href="mailto:support@medicall.gh"
-              className="font-mono text-xs font-semibold text-blue-600 hover:underline"
+              href="mailto:support@kaime.gh"
+              className="font-mono text-xs font-semibold text-kaime-blue hover:underline"
             >
-              support@medicall.gh
+              support@kaime.gh
             </a>
           </div>
         </div>
 
-        <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-subtle-border rounded-2xl p-4 shadow-xs flex flex-col justify-between">
           <div className="space-y-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+            <div className="w-8 h-8 rounded-xl bg-kaime-amber-light text-kaime-amber-dark flex items-center justify-center border border-kaime-amber-border">
               <BookOpen className="w-4 h-4" />
             </div>
             <h3 className="font-semibold text-xs text-gray-900">Clinical Guide</h3>
             <p className="text-[11px] text-gray-500">Adherence protocols for Ghana</p>
           </div>
           <div className="pt-3 border-t border-gray-100 mt-3">
-            <span className="text-xs font-medium text-purple-700">
-              MediCall Protocols v1.0
+            <span className="text-xs font-semibold text-kaime-amber-dark">
+              Kaime Protocols v1.0
             </span>
           </div>
         </div>
       </div>
 
       {/* Telephony Keypress Reference */}
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
+      <div className="bg-white border border-subtle-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
         <div className="pb-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900 tracking-tight">
             Keypad Responses (DTMF)
@@ -119,7 +119,7 @@ export default function SupportPage() {
           </div>
 
           <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   1
@@ -134,7 +134,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   2
@@ -149,7 +149,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   3
@@ -164,7 +164,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   4
@@ -179,7 +179,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   9
@@ -194,7 +194,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   0
@@ -221,7 +221,7 @@ export default function SupportPage() {
           </div>
 
           <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-8 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   1..N
@@ -233,7 +233,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-8 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   9
@@ -245,7 +245,7 @@ export default function SupportPage() {
               </span>
             </div>
 
-            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-[#FAF9F6] transition-colors">
+            <div className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-4 bg-white hover:bg-warm-bg transition-colors">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-8 h-6 rounded-md bg-gray-100 text-gray-800 text-xs font-mono font-medium flex items-center justify-center shrink-0 border border-gray-200">
                   0
@@ -261,9 +261,9 @@ export default function SupportPage() {
       </div>
 
       {/* Clean FAQ Card */}
-      <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-xs space-y-3">
+      <div className="bg-white border border-subtle-border rounded-2xl p-5 shadow-xs space-y-3">
         <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-          <HelpCircle className="w-4 h-4 text-[#70BF2B]" />
+          <HelpCircle className="w-4 h-4 text-kaime-blue" />
           <h2 className="text-sm font-semibold text-gray-900">Frequently Asked Questions</h2>
         </div>
 
@@ -275,17 +275,17 @@ export default function SupportPage() {
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : idx)}
-                  className="w-full flex items-center justify-between text-left gap-3 text-xs font-semibold text-gray-800 hover:text-[#55941E] transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between text-left gap-3 text-xs font-semibold text-gray-800 hover:text-kaime-blue transition-colors cursor-pointer"
                 >
                   <span>{faq.question}</span>
                   <ChevronDown
                     className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-150 ${
-                      isOpen ? 'rotate-180 text-[#70BF2B]' : ''
+                      isOpen ? 'rotate-180 text-kaime-blue' : ''
                     }`}
                   />
                 </button>
                 {isOpen && (
-                  <p className="text-xs text-gray-500 mt-2 leading-relaxed bg-[#F8F9FA] p-3 rounded-xl border border-gray-100">
+                  <p className="text-xs text-gray-500 mt-2 leading-relaxed bg-warm-bg p-3 rounded-xl border border-gray-100">
                     {faq.answer}
                   </p>
                 )}

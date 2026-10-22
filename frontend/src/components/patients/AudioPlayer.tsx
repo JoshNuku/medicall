@@ -416,7 +416,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               <div
                 key={i}
                 className={`w-[2.5px] rounded-full transition-all duration-150 ${
-                  isPassed ? 'bg-[#70BF2B]' : 'bg-gray-200'
+                  isPassed ? 'bg-kaime-blue' : 'bg-gray-200'
                 } ${isPlaying ? 'animate-wave-bar' : ''}`}
                 style={{
                   height: `${height}%`,
@@ -444,7 +444,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }
 
   return (
-    <div className="bg-[#FAF9F6] border border-[#ECEAE4] rounded-xl p-3 sm:p-3.5 transition-all hover:border-[#DFDCD4] w-full">
+    <div className="bg-warm-bg border border-subtle-border rounded-xl p-3 sm:p-3.5 transition-all hover:border-subtle-border w-full">
       {/* Top row: Language badge + title + speed pill + timing */}
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-2.5">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 max-w-full">
@@ -469,7 +469,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <button
             type="button"
             onClick={toggleSpeed}
-            className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-mono font-medium rounded-md bg-white border border-[#E2DFD7] hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
+            className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-mono font-medium rounded-md bg-white border border-subtle-border hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs cursor-pointer"
             title="Adjust playback speed for patient clarity"
           >
             {playbackSpeed}x pace
@@ -506,8 +506,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
         {/* Custom Animated Soundwave */}
         <div
-          className={`flex-1 flex items-center justify-between gap-[2px] sm:gap-[3px] h-9 px-3 bg-white border border-[#E5E3DD] rounded-xl select-none transition-all overflow-hidden ${
-            isGenerating ? 'cursor-wait opacity-50' : 'cursor-pointer hover:border-[#D6D3CB] group'
+          className={`flex-1 flex items-center justify-between gap-[2px] sm:gap-[3px] h-9 px-3 bg-white border border-subtle-border rounded-xl select-none transition-all overflow-hidden ${
+            isGenerating ? 'cursor-wait opacity-50' : 'cursor-pointer hover:border-subtle-border group'
           }`}
           onClick={(e) => {
             if (isGenerating) return;
@@ -527,8 +527,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 key={idx}
                 className={`w-[2.5px] sm:w-[3px] min-w-[2px] max-w-[4px] flex-1 rounded-full transition-all duration-150 ${
                   isPlayed
-                    ? 'bg-[#70BF2B]'
-                    : 'bg-[#E5E3DC] group-hover:bg-[#DBD8CF]'
+                    ? 'bg-kaime-blue'
+                    : 'bg-subtle-border group-hover:bg-subtle-border'
                 } ${isPlaying && isPlayed ? 'animate-wave-bar' : ''}`}
                 style={{
                   height: `${Math.max(16, height)}%`,

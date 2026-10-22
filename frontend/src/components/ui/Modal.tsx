@@ -143,7 +143,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       <div className="pointer-events-none fixed inset-0 z-10 flex items-end justify-center md:justify-end">
         <div
-          className={`drawer-sheet pointer-events-auto flex w-full flex-col overflow-hidden rounded-t-3xl border border-[#EAEAEA] bg-white shadow-2xl animate-slide-in-up ${isDragging ? 'sheet-dragging' : ''} ${maxWidthClasses} md:max-h-full md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
+          className={`drawer-sheet pointer-events-auto flex w-full flex-col overflow-hidden rounded-t-3xl border border-subtle-border bg-white shadow-2xl animate-slide-in-up ${isDragging ? 'sheet-dragging' : ''} ${maxWidthClasses} md:max-h-full md:rounded-none md:border-y-0 md:border-r-0 md:animate-slide-in-right`}
           style={sheetHeight === null ? undefined : { height: `${sheetHeight}px` }}
           role="dialog"
           aria-modal="true"
@@ -171,7 +171,7 @@ export const Modal: React.FC<ModalProps> = ({
             tabIndex={0}
             aria-label="Drag up to expand or drag down to close"
           >
-            <span className="h-1 w-10 rounded-full bg-[#D8D8D2]" />
+            <span className="h-1 w-10 rounded-full bg-subtle-border" />
           </div>
           {/* Side Pane Header */}
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-start justify-between bg-white shrink-0">

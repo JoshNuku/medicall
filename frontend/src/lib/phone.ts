@@ -1,5 +1,5 @@
 /**
- * MediCall Frontend Phone Validation and Utilities
+ * Kaime Frontend Phone Validation and Utilities
  * 
  * Specifically calibrated for Ghanaian Mobile Networks (MTN, Telecel, AT)
  * and International E.164 phone formats.

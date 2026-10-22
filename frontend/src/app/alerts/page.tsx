@@ -96,7 +96,7 @@ export default function AlertsPage() {
               {openCount} Open
             </span>
           ) : (
-            <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-[#55941E] bg-[#F0F9EB] border border-[#70BF2B]/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               All Clear
             </span>
@@ -105,7 +105,7 @@ export default function AlertsPage() {
       />
 
       {/* Category Tabs */}
-      <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 sm:overflow-x-auto pb-1 bg-white p-2 rounded-2xl border border-[#ECECEC] text-xs shadow-xs">
+      <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 sm:overflow-x-auto pb-1 bg-white p-2 rounded-2xl border border-subtle-border text-xs shadow-xs">
         <button
           onClick={() => setSelectedTab('open')}
           className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl font-medium transition-all ${
@@ -150,7 +150,7 @@ export default function AlertsPage() {
           onClick={() => setSelectedTab('resolved')}
           className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl font-medium transition-all ${
             selectedTab === 'resolved'
-              ? 'bg-[#F0F9EB] text-[#55941E] font-semibold border border-[#70BF2B]/30 shadow-xs'
+              ? 'bg-kaime-blue-light text-kaime-blue font-semibold border border-kaime-blue-border shadow-xs'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -159,11 +159,11 @@ export default function AlertsPage() {
       </div>
 
       {/* Alerts Table (Desktop) */}
-      <div className="bg-white border border-[#ECECEC] rounded-2xl overflow-hidden hidden sm:block shadow-xs">
+      <div className="bg-white border border-subtle-border rounded-2xl overflow-hidden hidden sm:block shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-[#FAF9F6]/50 text-[11px] font-semibold uppercase text-gray-400 tracking-wider">
+              <tr className="border-b border-gray-100 bg-warm-bg/50 text-[11px] font-semibold uppercase text-gray-400 tracking-wider">
                 <th className="py-3.5 px-5 font-semibold">Patient</th>
                 <th className="py-3.5 px-4 font-semibold">Reason</th>
                 <th className="py-3.5 px-4 font-semibold">Details & Context</th>
@@ -212,11 +212,11 @@ export default function AlertsPage() {
                   return (
                     <tr
                       key={alert.id}
-                      className="hover:bg-[#F8F9FA] transition-colors group"
+                      className="hover:bg-warm-bg transition-colors group"
                     >
                       <td className="py-4 px-5">
                         <Link href={`/patients/${alert.patient_id}`} className="block">
-                          <span className="font-semibold text-gray-900 group-hover:text-[#55941E] transition-colors">
+                          <span className="font-semibold text-gray-900 group-hover:text-kaime-blue transition-colors">
                             {alert.patient_name}
                           </span>
                           <span className="block text-xs text-gray-400 font-mono">
@@ -237,7 +237,7 @@ export default function AlertsPage() {
                       <td className="py-4 px-4 text-xs text-gray-700 max-w-md leading-relaxed">
                         {alert.details}
                         {alert.status === 'resolved' && alert.resolution_notes && (
-                          <div className="mt-1 text-[11px] text-[#447817] bg-[#F0F9EB] p-1.5 rounded-lg border border-[#70BF2B]/30">
+                          <div className="mt-1 text-[11px] text-emerald-800 bg-emerald-50 p-1.5 rounded-lg border border-emerald-200">
                             <strong>Note:</strong> {alert.resolution_notes} &middot; <em>{alert.resolved_by}</em>
                           </div>
                         )}
@@ -253,7 +253,7 @@ export default function AlertsPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="bg-white hover:bg-[#F0F9EB] hover:text-[#55941E] hover:border-[#70BF2B]/40 shadow-2xs"
+                            className="bg-white hover:bg-kaime-blue-light hover:text-kaime-blue hover:border-kaime-blue-border shadow-2xs"
                             onClick={() => handleOpenResolveModal(alert)}
                           >
                             Resolve alert
@@ -280,7 +280,7 @@ export default function AlertsPage() {
           </div>
         ) : filteredAlerts.length === 0 ? (
           <EmptyState
-            icon={<ShieldCheck className="w-6 h-6 text-[#70BF2B]" />}
+            icon={<ShieldCheck className="w-6 h-6 text-emerald-500" />}
             title="No alerts in this category"
             description="All clear! No open escalations found for this filter tab."
           />
@@ -288,7 +288,7 @@ export default function AlertsPage() {
           filteredAlerts.map((alert) => (
             <div
               key={alert.id}
-              className="bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-xs space-y-3"
+              className="bg-white border border-subtle-border rounded-2xl p-4 shadow-xs space-y-3"
             >
               <div className="flex items-center justify-between">
                 <Badge variant="alert" alertType={alert.escalation_type} size="sm" />
@@ -371,7 +371,7 @@ export default function AlertsPage() {
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
                 placeholder="Describe counseling, dosage adjustment, subsidy, or caregiver follow-up..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 focus:border-kaime-blue"
               />
             </div>
 
@@ -384,7 +384,7 @@ export default function AlertsPage() {
                 required
                 value={resolvedByName}
                 onChange={(e) => setResolvedByName(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-kaime-blue/20 focus:border-kaime-blue"
               />
             </div>
 

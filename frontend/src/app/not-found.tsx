@@ -8,12 +8,12 @@ import { LayoutDashboard, SearchX } from 'lucide-react';
 export default function NotFound() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-10">
-      <section className="w-full max-w-lg rounded-3xl border border-[#EBEAE5] bg-white px-6 py-10 text-center shadow-xs sm:px-10">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#70BF2B]/20 bg-[#F0F9EB] text-[#55941E]">
+      <section className="w-full max-w-lg rounded-3xl border border-subtle-border bg-white px-6 py-10 text-center shadow-xs sm:px-10">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-kaime-blue-border bg-kaime-blue-light text-kaime-blue">
           <SearchX className="h-8 w-8 stroke-[1.8]" aria-hidden="true" />
         </div>
 
-        <span className="mb-3 inline-flex rounded-full border border-[#70BF2B]/30 bg-[#F0F9EB] px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#447817]">
+        <span className="mb-3 inline-flex rounded-full border border-kaime-blue/30 bg-kaime-blue-light px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-kaime-blue">
           404 · Page not found
         </span>
 

@@ -14,7 +14,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
   isRetrying = false,
 }) => {
   return (
-    <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#FAF9F7] border border-[#E8E6E1] text-xs text-neutral-600 mb-5 animate-in fade-in duration-200">
+    <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-warm-bg border border-subtle-border text-xs text-neutral-600 mb-5 animate-in fade-in duration-200">
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
         <span className="font-medium text-neutral-800">You're offline</span>
